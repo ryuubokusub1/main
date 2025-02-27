@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>コピー用ツール</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    input[type="text"] {
+      width: 35ch;
+      margin-bottom: 10px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    select {
+      width: 100%;
+      padding: 5px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .outer-box {
+      width: 300px;
+      height: 150px;
+      background-color: #000000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 10px;
+    }
+    .inner-box {
+      width: 100px;
+      height: 100px;
+      background-color: #FFFFFF;
+      border-radius: 5px;
+    }
+    .color-code {
+      margin-top: 20px;
+      font-weight: bold;
+      color: #000000;
+    }
+    .error {
+      color: red;
+      font-size: 0.9rem;
+      margin-top: 10px;
+    }
+    .input-container {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>コピー用ツール</h1>
+
+  <!-- 場所・敵リスト -->
+  <form>
+    <label for="example3">場所・敵リスト</label><br>
+    <select id="example3" name="example3">
+      <option value="">---選択して下さい---</option>
+      <option value="rocky_plateau">★ロッキー山脈</option>
+      <option value="acronian_scout">アルカディアの偵察隊</option>
+      <option value="dysangelos_bearer">コレクター「ワルアンジェロ」</option>
+      <option value="dysangelos_elementalist">全てを受け入れた者</option>
+      <option value="dysangelos_perfected">ワルアンジェロ（完全体）</option>
+      <option value="deadwood_valley">★ 枯木の渓谷</option>
+      <option value="huge_mosquito">大きな吸血蚊</option>
+      <option value="flesh_scarab">石虫</option>
+      <option value="wasp">ハチ</option>
+      <option value="wasp_nest">ハチの巣</option>
+      <option value="tree_boss_harder">レウケの残余、「怒木」</option>
+      <option value="poena">おしおき女王、「ペンペン」</option>
+      <option value="caustlc_caves">★ 恐怖の洞窟</option>
+      <option value="small_spider">タルタル</option>
+      <option value="medlum_bat">パタパタ</option>
+      <option value="tiny_spider">ドキドキ</option>
+      <option value="small_bat">ナメナメ</option>
+      <option value="scorpion">前歩きするカニっぽいやつ</option>
+      <option value="spider_eggs">マルマル</option>
+      <option value="cool_bat">コウモリーズ</option>
+      <option value="spider_boss_harder">悪賢い「ギハカツヤ」</option>
+      <option value="fungus_forest">★ キノコの森</option>
+      <option value="collossal_snail">デカイカタツムリ</option>
+      <option value="epic_snail">マジでデカイカタツムリ</option>
+      <option value="ant">アリ</option>
+      <option value="ant_hill">アリの群れ</option>
+      <option value="fluff">ぱふぱふ</option>
+      <option value="mushroom_boss_harder">怒りキノコ</option>
+      <option value="mushroom_boss_fat">ジメジメしめじ</option>
+      <option value="mushroom_boss_skinny">DJエノキ</option>
+      <option value="undead_crypt">★ 呪われた会館</option>
+      <option value="large_skeleton">ガイコスケ</option>
+      <option value="ghost">ブー</option>
+      <option value="large_ghost">ビッグブー</option>
+      <option value="small_skeleton">ガイコージ// 非召喚</option>
+      <option value="ghost_tomb">ナムアミダブツ</option>
+      <option value="big_tomb">バラバラ～</option>
+      <option value="skeleton_boss_harder">皮なしの「ハイハイ」</option>
+      <option value="skeleton_boss_stage_2_harder">足なしの「ハイハイ」</option>
+      <option value="small_skeleton_minion">ガイコージ// ボス召喚</option>
+      <option value="bronze_mine">★地獄の鉱山</option>
+      <option value="fire_elemental">火の精霊</option>
+      <option value="mine_walker">鉱山の浮浪者</option>
+      <option value="slave_master">カチョウ</option>
+      <option value="big_slave_master">ブチョウ</option>
+      <option value="fire_geyser">ヒバシラ</option>
+      <option value="bomb_cart">ボンバーカート</option>
+      <option value="bronze_guardian">銅のガーディアン</option>
+      <option value="icy_ridge">★氷の尾根</option>
+      <option value="ki_slerper">キビュッフェ</option>
+      <option value="ki_eater">キショク</option>
+      <option value="ki_gobbler">キグイ</option>
+      <option value="ice_elemental">氷の精霊</option>
+      <option value="ice_elemental_elite">幹部クラスの氷の精霊</option>
+      <option value="ice_pillar">ツララ</option>
+      <option value="ice_elemental_elite">ガリガリさん</option>
+      <option value="yeti">霜の巨人</option>
+      <option value="ice_wall">氷の壁</option>
+      <option value="temple">★神殿</option>
+      <option value="worm_rider">ミミズ乗り</option>
+      <option value="ground_serpent">オロチーッス</option>
+      <option value="flying_serpent">カツラ泥棒</option>
+      <option value="heavy_hitter">鐘鳴らし</option>
+      <option value="cult_guard">カルトのガードマン</option>
+      <option value="poison_adept">毒使い</option>
+      <option value="cult_sorcerer">カルトの魔導師</option>
+      <option value="cult_marksman">カルトの狙撃者</option>
+      <option value="serpent_handler">蛇使い</option>
+      <option value="acronian_cultist">アルカディアのカルト団員</option>
+      <option value="nagaraja">侵食の「ナーガラージャ」</option>
+    </select><br>
+    <label for="selectedText1">code</label>
+  </form>
+  <input type="text" id="selectedText1" readonly>
+  <button onclick="copyToClipboard(this)">Copy</button>
+  <button onclick="removeIndentation('selectedText1')">-</button>
+  <button onclick="addIndentation('selectedText1')">+</button>
+  <br><br>
+
+  <!-- クールダウンID -->
+  <form>
+    <label for="example2">クールダウンID</label><br>
+    <select id="example2" name="example2">
+      <option value="">---選択して下さい---</option>
+      <option value='"aether_talisman"'>Ather Talisman</option>
+      <option value='"bardiche"'>Bardiche</option>
+      <option value='"bash"'>Bashing Shield</option>
+      <option value='"blade"'>Blade of the Fallen God</option>
+      <option value='"cinderwisp"'>Cinderwisp Devour</option>
+      <option value='"mask"'>Cultist Mask</option>
+      <option value='"dash"'>Dashing Shield</option>
+      <option value='"fire_talisman"'>Fire Talisman</option>
+      <option value='"hatchet"'>Hatchet</option>
+      <option value='"hammer"'>Heavy Hammer</option>
+      <option value='"mind"'>Mind Stone</option>
+      <option value='"quarterstaff"'>Quarterstaff</option>
+      <option value='"skeleton_arm"'>Skeleton Arm</option>
+      <option value='"voidweaver"'>Voidweaver Devour</option>
+    </select><br>
+    <label for="selectedText2">code</label>
+  </form>
+  <input type="text" id="selectedText2" readonly>
+  <button onclick="copyToClipboard(this)">Copy</button>
+  <button onclick="removeIndentation('selectedText2')">-</button>
+  <button onclick="addIndentation('selectedText2')">+</button>
+  <br><br>
+
+  <!-- 色コード -->
+  <label>色コード</label>
+  <div class="input-container">
+    <label for="color-input">6桁の英数字（0～F）を入力してください：</label><br>
+    <input type="text" id="color-input" maxlength="6" placeholder="例: 1A2B3C" style="width: 15ch;">
+    <button onclick="copyToClipboard(this)">Copy</button>
+    <div class="error" id="error-message"></div>
+  </div>
+  <div class="outer-box">
+    <div class="inner-box" id="color-box"></div>
+  </div>
+  <div class="color-code" id="color-display">#FFFFFF</div>
+
+  <script>
+    // 場所・敵リストの処理
+    const example3 = document.getElementById('example3');
+    const selectedText1 = document.getElementById('selectedText1');
+    example3.addEventListener('change', function() {
+      selectedText1.value = example3.value;
+    });
+
+    // クールダウンIDの処理
+    const example2 = document.getElementById('example2');
+    const selectedText2 = document.getElementById('selectedText2');
+    example2.addEventListener('change', function() {
+      selectedText2.value = "?item.GetCooldown(" + example2.value + ")<=0";
+    });
+
+    // クリップボードにコピーする関数
+    function copyToClipboard(button) {
+      const target = button.previousElementSibling;
+      let textToCopy = '';
+      if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') {
+        textToCopy = target.value;
+      } else {
+        textToCopy = target.textContent;
+      }
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        setTimeout(() => {
+          button.textContent = originalText;
+        }, 1000);
+      }).catch(err => {
+        console.error('クリップボードへのコピーに失敗しました: ', err);
+      });
+    }
+
+    // インデント追加
+    function addIndentation(textAreaId) {
+      const textArea = document.getElementById(textAreaId);
+      const lines = textArea.value.split('\n');
+      const indentedLines = lines.map(line => ' ' + line);
+      textArea.value = indentedLines.join('\n');
+    }
+
+    // インデント削除
+    function removeIndentation(textAreaId) {
+      const textArea = document.getElementById(textAreaId);
+      const lines = textArea.value.split('\n');
+      const allIndented = lines.every(line => line.startsWith(' '));
+      if (allIndented) {
+        const unindentedLines = lines.map(line => line.slice(1));
+        textArea.value = unindentedLines.join('\n');
+      }
+    }
+
+    // 色コード処理
+    const inputField = document.getElementById('color-input');
+    const colorBox = document.getElementById('color-box');
+    const colorDisplay = document.getElementById('color-display');
+    const errorMessage = document.getElementById('error-message');
+
+    inputField.addEventListener('input', () => {
+      const value = inputField.value.toUpperCase();
+      if (/^[0-9A-F]{6}$/.test(value)) {
+        const hexColor = `#${value}`;
+        colorBox.style.backgroundColor = hexColor;
+        colorDisplay.textContent = hexColor;
+        errorMessage.textContent = '';
+      } else {
+        colorBox.style.backgroundColor = '#FFFFFF';
+        colorDisplay.textContent = '#FFFFFF';
+        if (value.length === 6) {
+          errorMessage.textContent = '無効なカラーコードです。';
+        } else {
+          errorMessage.textContent = '';
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>

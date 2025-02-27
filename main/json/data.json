@@ -1,0 +1,6 @@
+[
+    { "id": 1, "name": "りんご", "category": "果物" },
+    { "id": 2, "name": "バナナ", "category": "果物" },
+    { "id": 3, "name": "キャベツ", "category": "野菜" },
+    { "id": 4, "name": "にんじん", "category": "野菜" }
+]
