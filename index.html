@@ -67,6 +67,7 @@
     .cm-number { color: orange !important; }
     .cm-comment { color: green !important; }
     .cm-keyword { color: aqua !important; }
+    .cm-operator { color: yellow !important;}
     #searchTool {
       padding: 10px;
     }
@@ -249,6 +250,8 @@
       <button id="runReplace">実行</button>
     </div>
     <div id="copy-tool" class="content">
+      <h3><font color="red">未完成</font></h3>
+      <textarea id="copyArea" placeholder="ここに貼り付けてコピー"></textarea>
       <!--2025/02/27/_add_ryuuboku-->
         <!-- 場所・敵リスト -->
   <form>
@@ -386,16 +389,17 @@
     <div class="inner-box" id="color-box"></div>
   </div>
   <div class="color-code" id="color-display">#FFFFFF</div>
-  <textarea id="copyArea" placeholder="ここに貼り付けてコピー"></textarea> 
-<!--2025/02/27/_add_ryuuboku-->
+
+
+      <!--2025/02/27/_add_ryuuboku-->
     </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/javascript/javascript.min.js"></script>
   <script>
-    const keywords = ["func", "var", "?", ":", "!","+","-","*","/","(",")","[","]"];
-
+    const keywords = ["func", "var", "?", ":", "!"];
+    const operator = ["+", "-", "*", "/", "(", ")", "[", "]"];
     CodeMirror.defineMode("customLang", function() {
       return {
         startState: function() {
