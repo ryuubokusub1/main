@@ -67,7 +67,7 @@
     .cm-number { color: orange !important; }
     .cm-comment { color: green !important; }
     .cm-keyword { color: aqua !important; }
-    .cm-operator { color: yellow !important;}
+    .cm-operator { color: yellow !important; }
     #searchTool {
       padding: 10px;
     }
@@ -437,6 +437,11 @@
           for (let keyword of keywords) {
             if (stream.match(keyword)) {
               return "keyword";
+            }
+          }
+           for (let operator of operator) {
+            if (stream.match(operator)) {
+              return "operator";
             }
           }
           if (stream.match(/^\d+/)) {
