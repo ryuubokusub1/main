@@ -1,23 +1,470 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSONデータ検索</title>
-    <style>
-        body { font-family: Arial, sans-serif; }
-        input { margin-bottom: 10px; padding: 5px; width: 200px; }
-        ul { list-style: none; padding: 0; }
-        li { margin: 5px 0; padding: 5px; background: #f2f2f2; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>カスタムコードエディタ＆構文検索ツール</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/theme/monokai.min.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: monospace;
+      background: #1e1e1e;
+      color: white;
+    }
+    .tabs {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      background: #282c34;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      cursor: pointer;
+      background: #3c3f41;
+      border: none;
+      color: white;
+      text-align: center;
+    }
+    .tab.active {
+      background: #007acc;
+    }
+    .sub-tabs {
+      display: flex;
+      background: #333;
+      padding: 5px;
+    }
+    .sub-tab {
+      padding: 5px 10px;
+      cursor: pointer;
+      background: #444;
+      border: 1px solid #666;
+      color: white;
+    }
+    .sub-tab.active {
+      background: #666;
+    }
+    .content {
+      display: none;
+      width: 100%;
+      height: calc(100vh - 40px);
+    }
+    .content.active {
+      display: block;
+    }
+    .CodeMirror {
+      height: 100% !important;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .cm-lineNumbers {
+      background: #282c34;
+    }
+    .cm-string { color: red !important; }
+    .cm-number { color: orange !important; }
+    .cm-comment { color: green !important; }
+    .cm-keyword { color: aqua !important; }
+    #searchTool {
+      padding: 10px;
+    }
+    #searchTool input[type="text"] {
+      padding: 5px;
+      font-size: 16px;
+      width: 300px;
+    }
+    #searchResults {
+      margin-top: 10px;
+      max-height: 20vh;
+      overflow-y: auto;
+      background: #2d2d2d;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .resultItem {
+      padding: 4px 0;
+      border-bottom: 1px solid #444;
+      cursor: pointer;
+    }
+    .resultItem:hover {
+      background: #3a3a3a;
+    }
+    #syntaxDetails {
+      margin-top: 10px;
+      padding: 10px;
+      background: #2d2d2d;
+      border-radius: 4px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    #syntaxDetails pre {
+      white-space: pre-wrap;
+      margin: 5px 0;
+    }
+    #syntaxDetails hr {
+      border: 0;
+      border-top: 1px solid #666;
+      margin: 10px 0;
+    }
+    #syntaxDetails input {
+      display: block;
+      margin: 5px 0;
+      padding: 5px;
+      width: 200px;
+    }
+    #syntaxDetails textarea {
+      width: 100%;
+      height: 100px;
+      resize: none;
+      background: #1e1e1e;
+      color: white;
+      border: none;
+      margin-top: 5px;
+    }
+    #editorContainer {
+      position: relative;
+    }
+    #hamburgerMenu {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      cursor: pointer;
+      color: white;
+      background: #3c3f41;
+      padding: 5px 10px;
+      border-radius: 4px;
+      z-index: 10;
+    }
+    #menu {
+      position: absolute;
+      top: 40px;
+      right: 10px;
+      background: #3c3f41;
+      border-radius: 4px;
+      display: none;
+      flex-direction: column;
+      z-index: 10;
+    }
+    #menu button {
+      padding: 10px;
+      background: none;
+      border: none;
+      color: white;
+      text-align: left;
+      cursor: pointer;
+    }
+    #menu button:hover {
+      background: #007acc;
+    }
+  </style>
 </head>
 <body>
+  <div class="tabs">
+    <div class="tab active" data-target="editor-container">コードエディタ</div>
+    <div class="tab" data-target="search-container">検索ツール</div>
+  </div>
 
-    <h2>JSONデータ検索</h2>
-    <input type="text" id="searchBox" placeholder="検索キーワード">
-    <ul id="results"></ul>
+  <!-- コードエディタ -->
+  <div id="editor-container" class="content active">
+    <div id="editorContainer">
+      <div id="hamburgerMenu">☰</div>
+      <div id="menu">
+        <button id="clearButton">保存データを消去</button>
+        <button id="toggleTheme">テーマ切替</button>
+        <button id="copyEditorText">コピー</button>
+      </div>
+      <textarea id="editor"></textarea>
+    </div>
+  </div>
 
-    <script src="script.js"></script>
+  <!-- 検索ツール -->
+  <div id="search-container" class="content">
+    <div class="sub-tabs" id="search-sub-tabs">
+      <div class="sub-tab active" data-target="syntax-search">構文検索</div>
+      <div class="sub-tab" data-target="find-replace">検索・置換</div>
+      <div class="sub-tab" data-target="copy-tool">コピペ用</div>
+    </div>
+    <div id="syntax-search" class="content active">
+      <div id="searchTool">
+        <label for="searchQuery">検索文字列:</label>
+        <input type="text" id="searchQuery" placeholder="例: draw">
+        <button id="runSearch">検索</button>
+        <div id="searchResults"></div>
+        <div id="syntaxDetails"></div>
+      </div>
+    </div>
+    <div id="find-replace" class="content">
+      <h3><font color="red">未完成</font></h3>
+      <label for="findQuery">検索:</label>
+      <input type="text" id="findQuery">
+      <label for="replaceText">置換:</label>
+      <input type="text" id="replaceText">
+      <button id="runReplace">実行</button>
+    </div>
+    <div id="copy-tool" class="content">
+      <h3><font color="red">未完成</font></h3>
+      <textarea id="copyArea" placeholder="ここに貼り付けてコピー"></textarea>
+    </div>
+  </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/javascript/javascript.min.js"></script>
+  <script>
+    const keywords = ["func", "var", "?", ":", "!"];
+
+    // CodeMirrorのカスタムモード定義（変更なし）
+    CodeMirror.defineMode("customLang", function() {
+      return {
+        startState: function() { return { inString: false, inComment: false }; },
+        token: function(stream, state) {
+          if (!state.inString && stream.match(/^\/\*/)) { state.inComment = true; return "comment"; }
+          if (state.inComment) {
+            if (stream.match(/^\*\//)) { state.inComment = false; return "comment"; }
+            stream.eatWhile(/[^\*]/); return "comment";
+          }
+          if (!state.inString && stream.match(/^\/\//)) { stream.skipToEnd(); return "comment"; }
+          if (!state.inString && stream.match(/^"/)) { state.inString = true; return "string"; }
+          if (state.inString) {
+            if (stream.match(/^"/)) { state.inString = false; return "string"; }
+            stream.eatWhile(/[^"]/); return "string";
+          }
+          for (let keyword of keywords) { if (stream.match(keyword)) return "keyword"; }
+          if (stream.match(/^\d+/)) return "number";
+          stream.next(); return null;
+        }
+      };
+    });
+
+    const codeMirrorEditor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+      lineNumbers: true,
+      tabSize: 4,
+      indentWithTabs: true,
+      matchBrackets: true,
+      autoCloseBrackets: true,
+      mode: "customLang",
+      theme: "monokai",
+      lineWrapping: true,
+      extraKeys: {
+        "Tab": "indentMore",
+        "Shift-Tab": "indentLess",
+        "Ctrl-/": "toggleComment",
+        "Ctrl-F": "findPersistent"
+      }
+    });
+
+    codeMirrorEditor.on("change", () => {
+      localStorage.setItem("code", codeMirrorEditor.getValue());
+    });
+
+    codeMirrorEditor.on("inputRead", (cm, change) => {
+      if (change.text[0] === '.') {
+        cm.showHint({
+          completeSingle: false,
+          hint: () => {
+            const cursor = cm.getCursor();
+            const token = cm.getTokenAt(cursor);
+            const completions = ["func", "var", "if"];
+            return {
+              list: completions,
+              from: CodeMirror.Pos(cursor.line, token.start),
+              to: CodeMirror.Pos(cursor.line, cursor.ch)
+            };
+          }
+        });
+      }
+    });
+
+    // ハンバーガーメニューのトグル（変更なし）
+    const hamburgerMenu = document.getElementById("hamburgerMenu");
+    const menu = document.getElementById("menu");
+    hamburgerMenu.addEventListener("click", () => {
+      menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+    });
+
+    // 保存データ消去ボタン（変更なし）
+    document.getElementById("clearButton").addEventListener("click", () => {
+      if (confirm("本当に保存データを消去しますか？")) {
+        localStorage.removeItem("code");
+        codeMirrorEditor.setValue("");
+      }
+      menu.style.display = "none";
+    });
+
+    // テーマ切替ボタン（変更なし）
+    document.getElementById("toggleTheme").addEventListener("click", () => {
+      const currentTheme = codeMirrorEditor.getOption("theme");
+      const newTheme = currentTheme === "monokai" ? "default" : "monokai";
+      codeMirrorEditor.setOption("theme", newTheme);
+      menu.style.display = "none";
+    });
+
+    // エディタテキストコピーボタン（変更なし）
+    document.getElementById("copyEditorText").addEventListener("click", () => {
+      const editorText = codeMirrorEditor.getValue();
+      navigator.clipboard.writeText(editorText).then(() => {
+        alert("エディタのテキストをコピーしました");
+      });
+      menu.style.display = "none";
+    });
+
+    // syntaxMasterをグローバル変数として初期化
+    let syntaxMaster = [];
+
+    // ページロード時にJSONと保存データを読み込む（統合）
+    window.onload = async () => {
+      try {
+        const response = await fetch('syntaxMaster.json');
+        syntaxMaster = await response.json();
+        console.log("構文マスターデータを読み込みました:", syntaxMaster.length, "件");
+      } catch (error) {
+        console.error("構文マスターデータの読み込みに失敗しました:", error);
+        alert("データ読み込みに失敗しました。検索機能が利用できません。");
+      }
+      const savedCode = localStorage.getItem("code");
+      if (savedCode) codeMirrorEditor.setValue(savedCode);
+    };
+
+    // メインタブ切り替え（変更なし）
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab, .content').forEach(el => el.classList.remove('active'));
+        tab.classList.add('active');
+        const targetContent = document.getElementById(tab.dataset.target);
+        targetContent.classList.add('active');
+        codeMirrorEditor.refresh();
+        menu.style.display = "none";
+        if (tab.dataset.target === "search-container") {
+          const subTabsContainer = document.getElementById('search-sub-tabs');
+          const subContents = document.querySelectorAll('#search-container .content');
+          subTabsContainer.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
+          subContents.forEach(el => el.classList.remove('active'));
+          const syntaxSearchTab = subTabsContainer.querySelector('.sub-tab[data-target="syntax-search"]');
+          const syntaxSearchContent = document.getElementById("syntax-search");
+          syntaxSearchTab.classList.add('active');
+          syntaxSearchContent.classList.add('active');
+        }
+      });
+    });
+
+    // 検索ツールのサブタブ切り替え（変更なし）
+    document.querySelectorAll('#search-sub-tabs .sub-tab').forEach(subTab => {
+      subTab.addEventListener('click', () => {
+        const subTabsContainer = document.getElementById('search-sub-tabs');
+        const subContents = document.querySelectorAll('#search-container .content');
+        subTabsContainer.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
+        subContents.forEach(el => el.classList.remove('active'));
+        subTab.classList.add('active');
+        const targetContent = document.getElementById(subTab.dataset.target);
+        if (targetContent) targetContent.classList.add('active');
+      });
+    });
+
+    // 構文検索の実装（1つに統合）
+    document.getElementById("runSearch").addEventListener("click", () => {
+      if (syntaxMaster.length === 0) {
+        alert("データがまだ読み込まれていません。しばらくお待ちください。");
+        return;
+      }
+      const query = document.getElementById("searchQuery").value.toLowerCase();
+      const resultsDiv = document.getElementById("searchResults");
+      const detailsDiv = document.getElementById("syntaxDetails");
+      resultsDiv.innerHTML = "";
+      detailsDiv.innerHTML = "";
+
+      const filtered = syntaxMaster.filter(item => item.syntax.toLowerCase().includes(query));
+      if (filtered.length === 0) {
+        resultsDiv.innerHTML = "<div class='resultItem'>該当なし</div>";
+      } else {
+        filtered.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "resultItem";
+          div.textContent = item.syntax;
+          div.addEventListener("click", () => showSyntaxDetails(item));
+          resultsDiv.appendChild(div);
+        });
+      }
+    });
+
+    // 構文詳細表示、コード生成、コピー機能（変更なし）
+    function showSyntaxDetails(syntaxItem) {
+      const detailsDiv = document.getElementById("syntaxDetails");
+      detailsDiv.innerHTML = "";
+
+      const syntaxPre = document.createElement("pre");
+      syntaxPre.textContent = syntaxItem.syntax;
+      detailsDiv.appendChild(syntaxPre);
+      detailsDiv.appendChild(document.createElement("hr"));
+
+      const descriptionPre = document.createElement("pre");
+      descriptionPre.textContent = syntaxItem.description;
+      detailsDiv.appendChild(descriptionPre);
+      detailsDiv.appendChild(document.createElement("hr"));
+
+      const examplePre = document.createElement("pre");
+      examplePre.textContent = syntaxItem.example;
+      detailsDiv.appendChild(examplePre);
+      detailsDiv.appendChild(document.createElement("hr"));
+
+      const argsContainer = document.createElement("div");
+      syntaxItem.args.forEach(arg => {
+        const label = document.createElement("label");
+        label.textContent = `${arg.name} (${arg.type}): `;
+        const input = document.createElement("input");
+        input.type = "text";
+        input.dataset.argName = arg.name;
+        input.addEventListener("input", () => updateGeneratedCode(syntaxItem));
+        argsContainer.appendChild(label);
+        argsContainer.appendChild(input);
+      });
+      detailsDiv.appendChild(argsContainer);
+      detailsDiv.appendChild(document.createElement("hr"));
+
+      const copyContainer = document.createElement("div");
+      const generatedCodeText = document.createElement("textarea");
+      generatedCodeText.id = "generatedCodeText";
+      generatedCodeText.readOnly = true;
+      copyContainer.appendChild(generatedCodeText);
+      const copyButton = document.createElement("button");
+      copyButton.textContent = "コピー";
+      copyButton.addEventListener("click", () => copyGeneratedCode());
+      copyContainer.appendChild(copyButton);
+      detailsDiv.appendChild(copyContainer);
+
+      updateGeneratedCode(syntaxItem);
+    }
+
+    function updateGeneratedCode(syntaxItem) {
+      const inputs = document.querySelectorAll("#syntaxDetails input");
+      let generated = syntaxItem.syntax;
+      inputs.forEach(input => {
+        const argName = input.dataset.argName;
+        const value = input.value || `{${argName}}`;
+        generated = generated.replace(`{${argName}}`, value);
+      });
+      document.getElementById("generatedCodeText").value = generated;
+    }
+
+    function copyGeneratedCode() {
+      const codeText = document.getElementById("generatedCodeText");
+      codeText.select();
+      document.execCommand("copy");
+      alert("コードをコピーしました: " + codeText.value);
+    }
+
+    // 検索・置換（変更なし）
+    document.getElementById("runReplace").addEventListener("click", () => {
+      const findQuery = document.getElementById("findQuery").value;
+      const replaceText = document.getElementById("replaceText").value;
+      if (!findQuery) return;
+      const doc = codeMirrorEditor.getDoc();
+      const cursor = doc.getSearchCursor(new RegExp(findQuery, "g"));
+      while (cursor.findNext()) {
+        cursor.replace(replaceText);
+      }
+    });
+  </script>
 </body>
 </html>
