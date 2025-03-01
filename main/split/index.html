@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>カスタムコードエディタ_20250226</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/theme/monokai.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldgutter.min.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: monospace;
+      background: #1e1e1e;
+      color: white;
+    }
+    .tabs {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      background: #282c34;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      cursor: pointer;
+      background: #3c3f41;
+      border: none;
+      color: white;
+      text-align: center;
+    }
+    .tab.active {
+      background: #007acc;
+    }
+    .content {
+      display: none;
+      width: 100%;
+      height: calc(100vh - 40px);
+    }
+    .content.active {
+      display: block;
+    }
+    .CodeMirror {
+      height: 100% !important;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .cm-lineNumbers {
+      background: #282c34;
+    }
+    .cm-string { color: red !important; }
+    .cm-number { color: orange !important; }
+    .cm-comment { color: green !important; }
+    .cm-keyword { color: aqua !important; }
+    .cm-operator { color: yellow !important; }
+    #editorContainer {
+      position: relative;
+    }
+    #hamburgerMenu {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      cursor: pointer;
+      color: white;
+      background: #3c3f41;
+      padding: 5px 10px;
+      border-radius: 4px;
+      z-index: 10;
+    }
+    #menu {
+      position: absolute;
+      top: 40px;
+      right: 10px;
+      background: #3c3f41;
+      border-radius: 4px;
+      display: none;
+      flex-direction: column;
+      z-index: 10;
+    }
+    #menu button {
+      padding: 10px;
+      background: none;
+      border: none;
+      color: white;
+      text-align: left;
+      cursor: pointer;
+    }
+    #menu button:hover {
+      background: #007acc;
+    }
+  </style>
+</head>
+<body>
+  <div class="tabs">
+    <div class="tab active" data-target="editor-container">コードエディタ</div>
+  </div>
+
+  <!-- コードエディタ -->
+  <div id="editor-container" class="content active">
+    <div id="editorContainer">
+      <div id="hamburgerMenu">☰</div>
+      <div id="menu">
+        <button id="clearButton">保存データを消去</button>
+        <button id="toggleTheme">テーマ切替</button>
+        <button id="copyEditorText">コピー</button>
+      </div>
+      <textarea id="editor"></textarea>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldgutter.min.js"></script>
+  <script>
+    const keywords = ["func", "var", "?", ":", "!"];
+
+    CodeMirror.defineMode("customLang", function() {
+      return {
+        startState: function() {
+          return { inString: false, inComment: false };
+        },
+        token: function(stream, state) {
+          if (!state.inString && stream.match(/^\/\*/)) {
+            state.inComment = true;
+            return "comment";
+          }
+          if (state.inComment) {
+            if (stream.match(/^\*\//)) {
+              state.inComment = false;
+              return "comment";
+            }
+            stream.eatWhile(/[^\*]/);
+            return "comment";
+          }
+          if (!state.inString && stream.match(/^\/\//)) {
+            stream.skipToEnd();
+            return "comment";
+          }
+          if (!state.inString && stream.match(/^"/)) {
+            state.inString = true;
+            return "string";
+          }
+          if (state.inString) {
+            if (stream.match(/^"/)) {
+              state.inString = false;
+              return "string";
+            }
+            stream.eatWhile(/[^"]/);
+            return "string";
+          }
+          if (stream.match(/^[+\-*\/()[\]]/)) {
+            return "operator";
+          }
+          for (let keyword of keywords) {
+            if (stream.match(keyword)) {
+              return "keyword";
+            }
+          }
+          if (stream.match(/^\d+/)) {
+            return "number";
+          }
+          stream.next();
+          return null;
+        }
+      };
+    });
+
+    // カスタム折りたたみロジックの定義（インデントが戻るまで折りたたむ）
+    CodeMirror.registerHelper("fold", "custom", function(cm, start) {
+      var line = cm.getLine(start.line);
+      var trimmedLine = line.trim();
+      if (!trimmedLine.match(/^\?/) && !trimmedLine.match(/^func/) && !trimmedLine.match(/^:/)) return undefined;
+
+      var end = start.line + 1;
+      var lastLineNo = cm.lastLine();
+      var startIndent = line.match(/^\s*/)[0].length;
+
+      while (end <= lastLineNo) {
+        var text = cm.getLine(end);
+        var indent = text.match(/^\s*/)[0].length;
+
+        if (indent <= startIndent && text.trim() !== "") {
+          return {
+            from: CodeMirror.Pos(start.line, line.length),
+            to: CodeMirror.Pos(end - 1, cm.getLine(end - 1).length)
+          };
+        }
+        end++;
+      }
+
+      if (end > lastLineNo && start.line < lastLineNo) {
+        return {
+          from: CodeMirror.Pos(start.line, line.length),
+          to: CodeMirror.Pos(lastLineNo, cm.getLine(lastLineNo).length)
+        };
+      }
+
+      return undefined;
+    });
+
+    const codeMirrorEditor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+      lineNumbers: true,
+      tabSize: 4,
+      indentWithTabs: true,
+      matchBrackets: true,
+      autoCloseBrackets: true,
+      mode: "customLang",
+      theme: "monokai",
+      lineWrapping: true,
+      foldGutter: true,
+      gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+      foldOptions: {
+        rangeFinder: CodeMirror.fold.custom,
+        scanUp: false
+      },
+      extraKeys: {
+        "Tab": "indentMore",
+        "Shift-Tab": "indentLess",
+        "Ctrl-/": "toggleComment",
+        "Ctrl-F": "findPersistent",
+        "Ctrl-Q": function(cm) { cm.foldCode(cm.getCursor()); }
+      }
+    });
+
+    codeMirrorEditor.on("change", () => {
+      localStorage.setItem("code", codeMirrorEditor.getValue());
+    });
+    window.onload = () => {
+      const savedCode = localStorage.getItem("code");
+      if (savedCode) codeMirrorEditor.setValue(savedCode);
+    };
+
+    codeMirrorEditor.on("inputRead", (cm, change) => {
+      if (change.text[0] === '.') {
+        cm.showHint({
+          completeSingle: false,
+          hint: () => {
+            const cursor = cm.getCursor();
+            const token = cm.getTokenAt(cursor);
+            const completions = ["func", "var", "if"];
+            return {
+              list: completions,
+              from: CodeMirror.Pos(cursor.line, token.start),
+              to: CodeMirror.Pos(cursor.line, cursor.ch)
+            };
+          }
+        });
+      }
+    });
+
+    // ハンバーガーメニューのトグル
+    const hamburgerMenu = document.getElementById("hamburgerMenu");
+    const menu = document.getElementById("menu");
+    hamburgerMenu.addEventListener("click", () => {
+      menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+    });
+
+    // 保存データ消去ボタン
+    document.getElementById("clearButton").addEventListener("click", () => {
+      if (confirm("本当に保存データを消去しますか？")) {
+        localStorage.removeItem("code");
+        codeMirrorEditor.setValue("");
+      }
+      menu.style.display = "none";
+    });
+
+    // テーマ切替ボタン
+    document.getElementById("toggleTheme").addEventListener("click", () => {
+      const currentTheme = codeMirrorEditor.getOption("theme");
+      const newTheme = currentTheme === "monokai" ? "default" : "monokai";
+      codeMirrorEditor.setOption("theme", newTheme);
+      menu.style.display = "none";
+    });
+
+    // エディタテキストコピーボタン
+    document.getElementById("copyEditorText").addEventListener("click", () => {
+      const editorText = codeMirrorEditor.getValue();
+      navigator.clipboard.writeText(editorText).then(() => {
+        alert("エディタのテキストをコピーしました");
+      });
+      menu.style.display = "none";
+    });
+  </script>
+</body>
+</html>
