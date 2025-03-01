@@ -1,0 +1,7404 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<title>音楽ノート</title>
+<script type="text/javascript" src="abcjs-basic-min.js"></script>
+<link rel="stylesheet" href="abcjs-audio.css" media="all" type="text/css" />
+</head>
+
+<body>
+<style>
+@charset "UTF-8";
+
+.kabuse {
+position: relative;
+/*
+  background: #ffd98a;
+*/
+padding: 2px 5px 2px 25px;
+
+font-size: 20px;
+color: #474747;
+
+left: Dm;
+
+/*
+  border-radius: 0 10px 10px 0;
+*/
+}
+
+.kabuse-before {
+content: "";
+display: inline-block;
+
+line-height: 40px;
+
+position: absolute;
+
+padding: 0;
+font-weight: 900;
+
+text-align: center;
+
+height: 40px;
+
+left: 1.2em;
+
+top: 50%;
+
+transform: translateY(-50%);
+}
+
+
+@page {
+size: A4;
+margin: 0;
+}
+
+body {
+margin: 0;
+font-family: Arial, sans-serif;
+}
+
+.page_a4 {
+page-break-before: always;
+page-break-inside: avoid;
+position: relative;
+width: 210mm;
+height: 297mm;
+margin: 0 auto;
+background-color: #FFFFFF;
+box-shadow: 0 0 5mm rgba(0, 0, 0, 0.1);
+padding: 15mm;
+box-sizing: border-box;
+}
+
+h1 {
+font-size: 24px;
+margin-top: 0;
+}
+
+p {
+font-size: 16px;
+line-height: 1.5;
+}
+
+/*↑A4ページ区切り*/
+
+
+.husen {
+padding: 0.4em 0.5em;
+/*文字の上下 左右の余白*/
+color: #494949;
+/*文字色*/
+background: #f4f4f4;
+/*背景色*/
+border-left: solid 5px #7db4e6;
+/*左線*/
+border-bottom: solid 3px #d7d7d7;
+/*下線*/
+}
+
+.underline {
+/*線の種類（実線） 太さ 色*/
+border-bottom: solid 3px black;
+}
+
+.underline_double {
+/*線の種類（二重線）太さ 色*/
+border-bottom: double 5px #FFC778;
+}
+
+.background {
+background: #c2edff;
+/*背景色*/
+padding: 0.5em;
+/*文字まわり（上下左右）の余白*/
+}
+
+.outline {
+color: #364e96;
+/*文字色*/
+border: solid 3px #364e96;
+/*線色*/
+padding: 0.5em;
+/*文字周りの余白*/
+border-radius: 0.5em;
+/*角丸*/
+}
+
+.pero {
+position: relative;
+background: #dfefff;
+box-shadow: 0px 0px 0px 5px #dfefff;
+/*border: dashed 2px white;*/
+padding: 0.2em 0.5em;
+color: #454545;
+}
+
+.pero:after {
+position: absolute;
+content: '';
+left: -7px;
+top: -7px;
+border-width: 0 0 15px 15px;
+border-style: solid;
+border-color: #fff #fff #a8d4ff;
+box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.15);
+}
+
+.stretchLine {
+position: relative;
+display: inline-block;
+padding: 0 55px;
+}
+
+.stretchLine:before,
+.stretchLine:after {
+content: '';
+position: absolute;
+top: 50%;
+display: inline-block;
+width: 45px;
+height: 1px;
+background-color: black;
+}
+
+.stretchLine:before {
+left: 0;
+}
+
+.stretchLine:after {
+right: 0;
+}
+
+.stretchLine_double {
+position: relative;
+display: inline-block;
+padding: 0 55px;
+}
+
+.stretchLine_double:before,
+.stretchLine_double:after {
+content: '';
+position: absolute;
+top: 50%;
+display: inline-block;
+width: 45px;
+height: 2px;
+border-top: solid 1px black;
+border-bottom: solid 1px black;
+}
+
+.stretchLine_double:before {
+left: 0;
+}
+
+.stretchLine_double:after {
+right: 0;
+}
+
+.cross {
+position: relative;
+padding: 0.25em Dm;
+border-top: solid 2px black;
+border-bottom: solid 2px black;
+}
+
+.cross:before,
+.cross:after {
+content: '';
+position: absolute;
+top: -7px;
+width: 2px;
+height: -webkit-calc(100% + 14px);
+height: calc(100% + 14px);
+background-color: black;
+}
+
+.cross:before {
+left: 7px;
+}
+
+.cross:after {
+right: 7px;
+}
+
+.circlebar {
+position: relative;
+background: #ffd98a;
+padding: 2px 5px 2px 25px;
+font-size: 20px;
+color: #474747;
+left: Dm;
+border-radius: 0 10px 10px 0;
+}
+
+.circlebar-before {
+content: "";
+display: inline-block;
+line-height: 40px;
+position: absolute;
+padding: 0;
+color: white;
+background: #ffa337;
+font-weight: 900;
+width: 40px;
+text-align: center;
+height: 40px;
+line-height: 40px;
+left: -1.35em;
+top: 50%;
+transform: translateY(-50%);
+border: 3px solid white;
+border-radius: 50%;
+}
+
+.graphic {
+position: relative;
+/*相対位置*/
+padding-left: 1.5em;
+/*アイコン分のスペース*/
+line-height: 1.4;
+/*行高*/
+color: black;
+/*文字色*/
+}
+
+.graphic:before {
+content: "●";
+/*●★■◆▲くらい？*/
+font-weight: 900;
+position: absolute;
+/*絶対位置*/
+font-size: 1.4em;
+/*サイズ*/
+left: 0;
+/*アイコンの位置*/
+top: -0.2em;
+/*アイコンの位置*/
+}
+
+.graphic:before {
+color: #a1ceff;
+}
+
+.circle {
+position: relative;
+color: #333;
+text-shadow: 0 0 2px white;
+}
+
+.circle:before {
+content: "";
+position: absolute;
+background: #9de5ff;
+width: 50px;
+height: 50px;
+border-radius: 50%;
+top: 50%;
+/* border: dashed 1px white; */
+left: -15px;
+-webkit-transform: translateY(-50%);
+transform: translateY(-50%);
+z-index: -1;
+}
+
+.point {
+position: relative;
+color: black;
+background: #ddeeff;
+line-height: 1.4;
+padding: 0.25em 0.5em;
+margin: 2em 0 0.5em;
+border-radius: 0 5px 5px 5px;
+}
+
+.point:after {
+/*タブ*/
+position: absolute;
+font-weight: 900;
+content: 'Point';
+background: #2299ff;
+color: #fff;
+left: 0px;
+bottom: 100%;
+border-radius: 5px 5px 0 0;
+padding: 3px 7px 1px;
+font-size: 0.9rem;
+line-height: 1;
+letter-spacing: 0.05em
+}
+
+.reason {
+position: relative;
+color: black;
+background: #ffff99;
+line-height: 1.4;
+padding: 0.25em 0.5em;
+margin: 2em 0 0.5em;
+border-radius: 0 5px 5px 5px;
+}
+
+.reason:after {
+/*タブ*/
+position: absolute;
+font-weight: 900;
+content: 'Reason';
+background: #ffcc00;
+color: #fff;
+left: 0px;
+bottom: 100%;
+border-radius: 5px 5px 0 0;
+padding: 3px 7px 1px;
+font-size: 0.9rem;
+line-height: 1;
+letter-spacing: 0.05em
+}
+
+.example {
+position: relative;
+color: black;
+background: #99ffcc;
+line-height: 1.4;
+padding: 0.25em 0.5em;
+margin: 2em 0 0.5em;
+border-radius: 0 5px 5px 5px;
+}
+
+.example:after {
+/*タブ*/
+position: absolute;
+font-weight: 900;
+content: 'Example';
+background: #44aa55;
+color: #fff;
+left: 0px;
+bottom: 100%;
+border-radius: 5px 5px 0 0;
+padding: 3px 7px 1px;
+font-size: 0.9rem;
+line-height: 1;
+letter-spacing: 0.05em
+}
+
+.bwcolor {
+position: relative;
+color: black;
+background: #bebebe;
+line-height: 1.4;
+padding: 0.25em 0.5em;
+margin: 2em 0 0.5em;
+border-radius: 0 5px 5px 5px;
+}
+
+.bwcolor:after {
+/*タブ*/
+position: absolute;
+font-weight: 900;
+content: 'Point';
+background: #667788;
+color: #fff;
+left: 0px;
+bottom: 100%;
+border-radius: 5px 5px 0 0;
+padding: 3px 7px 1px;
+font-size: 0.9rem;
+line-height: 1;
+letter-spacing: 0.05em
+}
+
+.blocknumber {
+position: relative;
+background: #fD#8ff;
+padding: 0.25em 0.5em;
+border-left: solid 2em #5c9ee7;
+}
+
+.blocknumber-before {
+content: "";
+position: absolute;
+padding: 0em;
+color: white;
+font-weight: 900;
+left: -1.65em;
+top: 50%;
+-webkit-transform: translateY(-50%);
+transform: translateY(-50%);
+}
+
+
+
+/*会話*/
+/* 吹き出しを作る*/
+.balloon {
+margin-bottom: 2em;
+position: relative;
+}
+
+.balloon:before,
+.balloon:after {
+clear: both;
+content: "";
+display: block;
+}
+
+.balloon figure {
+width: 60px;
+height: 60px;
+}
+
+.balloon-image-left {
+float: left;
+margin-right: 20px;
+}
+
+.balloon-image-right {
+float: right;
+margin-left: 20px;
+}
+
+.balloon figure img {
+width: 100%;
+height: 100%;
+border: 1px solid #aaa;
+border-radius: 50%;
+margin: 0;
+}
+
+.balloon-image-description {
+padding: 5px 0 0;
+font-size: 10px;
+text-align: center;
+}
+
+.balloon-text-right,
+.balloon-text-left {
+position: relative;
+padding: 10px;
+border: 1px solid;
+border-radius: 10px;
+max-width: -webkit-calc(100% - 120px);
+max-width: calc(100% - 120px);
+display: inline-block;
+}
+
+.balloon-text-right {
+border-color: #aaa;
+}
+
+.balloon-text-left {
+border-color: #aaa;
+}
+
+.balloon-text-right {
+float: left;
+}
+
+.balloon-text-left {
+float: right;
+}
+
+.balloon p {
+margin: 0 0 20px;
+}
+
+.balloon p:last-child {
+margin-bottom: 0;
+}
+
+/* 三角部分 */
+.balloon-text-right:before {
+position: absolute;
+content: '';
+border: 10px solid transparent;
+border-right: 10px solid #aaa;
+top: 15px;
+left: -20px;
+}
+
+.balloon-text-right:after {
+position: absolute;
+content: '';
+border: 10px solid transparent;
+border-right: 10px solid #fff;
+top: 15px;
+left: -19px;
+}
+
+.balloon-text-left:before {
+position: absolute;
+content: '';
+border: 10px solid transparent;
+border-left: 10px solid #aaa;
+top: 15px;
+right: -20px;
+}
+
+.balloon-text-left:after {
+position: absolute;
+content: '';
+border: 10px solid transparent;
+border-left: 10px solid #fff;
+top: 15px;
+right: -19px;
+}
+
+/* 考え毎 */
+.think .balloon-text-right,
+.think .balloon-text-left {
+border-radius: 30px;
+}
+
+.think .balloon-text-right:before {
+border: 1px solid #aaa;
+border-radius: 50%;
+width: 8px;
+height: 8px;
+top: 15px;
+left: -12px;
+}
+
+.think .balloon-text-right:after {
+border: 1px solid #aaa;
+border-radius: 50%;
+width: 4px;
+height: 4px;
+top: 20px;
+left: -19px;
+}
+
+.think .balloon-text-left:before {
+border: 1px solid #aaa;
+border-radius: 50%;
+width: 8px;
+height: 8px;
+top: 15px;
+right: -12px;
+}
+
+.think .balloon-text-left:after {
+border: 1px solid #aaa;
+border-radius: 50%;
+width: 4px;
+height: 4px;
+top: 20px;
+right: -19px;
+}
+
+/* ... 以前のスタイル ... */
+
+.accordion {
+margin-bottom: 20px;
+border: 1px solid #dcdcdc;
+border-radius: 5px;
+}
+
+.accordion-title {
+padding: 10px 20px;
+cursor: pointer;
+background-color: #f5f5f5;
+border-bottom: 1px solid #dcdcdc;
+}
+
+.accordion-content {
+display: none;
+padding: 20px;
+}
+</style>
+
+
+<section class="page_a4">
+<h1 align="center">
+<div class="stretchLine_double ">
+音楽ノート
+</div>
+</h1>
+
+</section>
+<section class="page_a4">
+<h2>目次</h2>
+<p>new!!</p>
+
+<p>終わり</p>
+</section>
+
+<br><br>
+<div class="pero">
+序盤は会話形式で進めようと思います。<br>
+<br>
+ここに書かれている内容について、真偽の責任は負いません。<br>
+折に触れて眺めるもよし、反面教師として活用するもよし、倉庫で寝かせて熟成させるもよし。<br>
+訂正箇所やご意見・ご感想など いただければ幸いです。<br>
+<br>
+作成環境などは最後に書いてあります。
+<br><br>
+<b>更新履歴</b><br>
+8/22 調号の表追加・標語表のレイアウト修正<br>
+TODO 標語表、余裕ができたので単語追加したい これまでの表もodtからhtmlに変換して追加<br>
+標語表の特殊文字修正！
+<br>
+8/24 習慣のレイアウト修正,abcjs導入,リンク付き目次導入<br>
+TODO 標語表、余裕ができたので単語追加したい これまでの表もodtからhtmlに変換して追加<br>
+標語表の特殊文字修正！<br>
+習慣のページ区切り・abcjsのページ区切り
+</div>
+
+<section class="page_a4">
+<h2>
+<span class="circlebar">
+資料編
+<span class="circlebar-before">00</span class="circlebar-before">
+</span>
+</h2>
+<!--画面右から話しかける-->
+<div class="balloon">
+<figure class="balloon-image-right">
+<img src="./character/s1-2L.png" alt="画像名">
+<figcaption class="balloon-image-description">
+生徒
+</figcaption>
+</figure>
+<div class="balloon-text-left">
+<p>
+まずは資料編ですね。<br>
+なんで自己紹介より先に資料編になるのでしょうか？
+
+</p>
+</div>
+</div>
+<!--画面右から話しかける-->
+<!--画面左から話しかける-->
+<div class="balloon">
+<figure class="balloon-image-left">
+<img src="./character/t1-4S.png" alt="画像名">
+<figcaption class="balloon-image-description">
+先生
+</figcaption>
+</figure>
+<div class="balloon-text-right">
+<p>
+何でだろうねぇ……<br>
+パッと見返しやすいようにってことかもしれないね。
+</p>
+</div>
+</div>
+<!--画面左から話しかける-->
+<!--画面左から考える-->
+<div class="balloon think">
+<figure class="balloon-image-left">
+<img src="./character/t1-4S.png" alt="画像名">
+<figcaption class="balloon-image-description">
+先生
+</figcaption>
+</figure>
+<div class="balloon-text-right">
+<p>
+ここに載っている内容は<br>
+急いで覚えなくて大丈夫だよ。
+</p>
+
+</div>
+</div>
+<!--画面左から考える-->
+<div class="pero">
+お急ぎの方<br>
+・ポップスは日英伊<br>
+・クラシックは日英独伊<br>
+</div>
+
+
+</section>
+<section class="page_a4">
+<h2>
+<span class="circlebar">
+資料編
+<span class="circlebar-before">00</span class="circlebar-before">
+</span>
+</h2>
+
+<!--画面左から話しかける-->
+<div class="balloon">
+<figure class="balloon-image-left">
+<img src="./character/t1-4S.png" alt="画像名">
+<figcaption class="balloon-image-description">
+先生
+</figcaption>
+</figure>
+<div class="balloon-text-right">
+<p>
+先ずは楽譜を読めるようになってもらわないと<br>
+この先大変なんだけど、<br>
+この段階で少し覚える内容に差が出てくるんだ。
+</p>
+</div>
+</div>
+<!--画面左から話しかける-->
+<!--画面右から話しかける-->
+<div class="balloon">
+<figure class="balloon-image-right">
+<img src="./character/s2-2C.png" alt="画像名">
+<figcaption class="balloon-image-description">
+主人公
+</figcaption>
+</figure>
+<div class="balloon-text-left">
+<p>
+覚える内容が違うんですか？<br>
+違うといってもこんなにたくさんあるんですよね…
+</p>
+</div>
+</div>
+<!--画面右から話しかける-->
+<!--画面左から話しかける-->
+<div class="balloon">
+<figure class="balloon-image-left">
+<img src="./character/t1-4S.png" alt="画像名">
+<figcaption class="balloon-image-description">先生</figcaption>
+</figure>
+<div class="balloon-text-right">
+<p>
+そうだね。例えば、<br>
+バンドやるよって人と、<br>
+オーケストラで演奏しますって人では<br>
+優先事項が変わってくるから注意が必要なんだ。<br>
+<br>
+もちろん全部知っておくのもいいんだけど、<br>
+最初から詰め込むのもしんどいからね。<br>
+<br>
+あと、テストじゃないから、<br>
+いつでも「この辺りに書いてあったなぁ」と調べてOK<br>
+よく使う知識はそのうち勝手に覚えるから無理をする必要はないよ。<br>
+</p>
+</div>
+</div>
+<!--画面右から話しかける-->
+<div class="balloon">
+<figure class="balloon-image-right">
+<img src="./character/s2-2C.png" alt="画像名">
+<figcaption class="balloon-image-description">
+生徒
+</figcaption>
+</figure>
+<div class="balloon-text-left">
+<p>
+分かりました！
+</p>
+</div>
+</div>
+<!--画面右から話しかける-->
+<!--画面左から考える-->
+<div class="balloon think">
+<figure class="balloon-image-left">
+<img src="./character/t1-4S.png" alt="画像名">
+<figcaption class="balloon-image-description">
+先生
+</figcaption>
+</figure>
+<div class="balloon-text-right">
+<p>とはいえ後輩ができてからもドレミを他の人に書いてもらう<br>
+っていうのは少し がっかりされるかもしれないなぁ
+</p>
+</div>
+</div>
+<!--画面左から考える-->
+
+
+</section>
+<section class="page_a4">
+<b>速度標語</b>
+<style>
+.manytable {
+border-collapse: collapse;
+border: solid 2px #000000;
+/*表全体を線で囲う*/
+}
+
+.manytable th,
+.manytable td {
+border: dashed 1px #000000;
+/**/
+/*破線 1px*/
+
+}
+
+.manytable tr:nth-child(2n) {
+background-color: #eeeeee;
+}
+</style>
+<table class="manytable" width="100%">
+<tr>
+<td>ラルゴ</td>
+<td>largo</td>
+<td>ゆっくりと、豊かに</td>
+</tr>
+<tr>
+<td>ラルゲット</td>
+<td>larghetto</td>
+<td>ゆっくりと(ラルゴよりやや速く)</td>
+</tr>
+<tr>
+<td>レント</td>
+<td>lento</td>
+<td>遅く、ゆっくりと</td>
+</tr>
+<tr>
+<td>アダージョ</td>
+<td>adagio</td>
+<td>ゆるやかに</td>
+</tr>
+<tr>
+<td>アンダンテ</td>
+<td>andante</td>
+<td>歩くくらいの速さで、ゆるやかに</td>
+</tr>
+<tr>
+<td>モデラート</td>
+<td>moderato</td>
+<td>中くらいの速さで</td>
+</tr>
+<tr>
+<td>アレグロ</td>
+<td>allegro</td>
+<td>速く</td>
+</tr>
+<tr>
+<td>ヴィヴァーチェ</td>
+<td>vivace</td>
+<td>生き生きと、きわめて速く</td>
+</tr>
+<tr>
+<td>ブレスト</td>
+<td>presto</td>
+<td>急速に</td>
+</tr>
+<tr>
+<td>リタルダンド</td>
+<td>ritardando(rit.)</td>
+<td>次第に遅く</td>
+</tr>
+<tr>
+<td>ラレンタンド</td>
+<td>rallentando(rall.)</td>
+<td>次第に遅く</td>
+</tr>
+<tr>
+<td>アッチェレランド</td>
+<td>accelerando(accel.)</td>
+<td>次第に速く</td>
+</tr>
+<tr>
+<td>メノ・モッソ</td>
+<td>meno　mosso</td>
+<td>（それまでより）もっと遅く</td>
+</tr>
+<tr>
+<td>ア・テンポ</td>
+<td>a　tempo</td>
+<td>もとの速さで</td>
+</tr>
+<tr>
+<td>テンポ・プリモ</td>
+<td>tempo　primo</td>
+<td>初めの速さで</td>
+</tr>
+<tr>
+<td>アッサイ</td>
+<td>assai</td>
+<td>十分に、非常に</td>
+</tr>
+<tr>
+<td>モルト</td>
+<td>molto</td>
+<td>きわめて、はなはだ</td>
+</tr>
+<tr>
+<td>ポコ</td>
+<td>poco</td>
+<td>すこし（poco　a　poco　すこしずつ）</td>
+</tr>
+<tr>
+<td>ノン・トロッポ</td>
+<td>non　troppo</td>
+<td>あまり…すぎないように</td>
+</tr>
+</table>
+</section>
+<section class="page_a4">
+<br><br>
+<b>発想標語</b>
+<table class="manytable" width="100%">
+<tr>
+<td>アニマート</td>
+<td>animato</td>
+<td>活発に、生き生きと</td>
+</tr>
+<tr>
+<td>アパショナート</td>
+<td>appassionato</td>
+<td>情熱的に</td>
+</tr>
+<tr>
+<td>ヴィーヴォ</td>
+<td>vivo</td>
+<td>活発に</td>
+</tr>
+<tr>
+<td>エスプレッシーヴォ</td>
+<td>espressivo</td>
+<td>表情豊かに</td>
+</tr>
+<tr>
+<td>カンタービレ</td>
+<td>cantabile</td>
+<td>歌うように（なだらかに）</td>
+</tr>
+<tr>
+<td>グラーヴェ</td>
+<td>grave</td>
+<td>重々しく</td>
+</tr>
+<tr>
+<td>グラツィオーソ</td>
+<td>grazioso</td>
+<td>優雅に</td>
+</tr>
+<tr>
+<td>コン・ブリオ</td>
+<td>con　brio</td>
+<td>生き生きと</td>
+</tr>
+<tr>
+<td>コン・モート</td>
+<td>con　moto</td>
+<td>動きを持って、元気よく</td>
+</tr>
+<tr>
+<td>ジョコーソ</td>
+<td>giocoso</td>
+<td>嬉々として</td>
+</tr>
+<tr>
+<td>センブリチェ</td>
+<td>semplice</td>
+<td>素朴に</td>
+</tr>
+<tr>
+<td>トランクィッロ</td>
+<td>tranquillo</td>
+<td>静かに</td>
+</tr>
+<tr>
+<td>ドルチェ</td>
+<td>dolce</td>
+<td>甘く、やわらかに</td>
+</tr>
+<tr>
+<td>マエストーソ</td>
+<td>maestoso</td>
+<td>堂々と、荘厳に</td>
+</tr>
+</table>
+</section>
+<section class="page_a4">
+<b>奏法</b>
+<table class="manytable" width="100%">
+<tr>
+<td>(音符の横に縦向きの波線)</td>
+<td>アルペッジョ（アルペジオ）</td>
+<td>arpeggio</td>
+<td>和音を分散和音として奏する</td>
+</tr>
+<tr>
+<td>gliss.</td>
+<td>グリッサンド</td>
+<td>glissando</td>
+<td>広い音域を急速にすべるように演奏する。</td>
+</tr>
+<tr>
+<td></td>
+<td>コン・ソルディーノ</td>
+<td>con　sordino</td>
+<td>弱音器を使用する</td>
+</tr>
+<tr>
+<td>・</td>
+<td>スタッカート</td>
+<td>sraccato</td>
+<td>一音一音を切り離して奏する</td>
+</tr>
+<tr>
+<td></td>
+<td>ソステヌート</td>
+<td>sostenuto</td>
+<td>音の長さを十分に保って（速度標語と組み合わせて）</td>
+</tr>
+<tr>
+<td>－　ten.</td>
+<td>テヌート</td>
+<td>tenuto</td>
+<td>ある一個の音の長さを十分に保って</td>
+</tr>
+<tr>
+<td>(音符に斜線)</td>
+<td>トレモロ</td>
+<td>tremolo</td>
+<td>一音または二音を急速に反復して</td>
+</tr>
+<tr>
+<td>pizz.</td>
+<td>ピッチカート（ピッツ）</td>
+<td>pizzicato</td>
+<td>指で弦をはじいて奏する</td>
+</tr>
+<tr>
+<td>(・の上に円弧)</td>
+<td>フェルマータ</td>
+<td>fermata</td>
+<td>その音符・休止符を任意の長さで奏する</td>
+</tr>
+<tr>
+<td>V</td>
+<td>ブレス</td>
+<td>breath</td>
+<td>息つぎをする</td>
+</tr>
+<tr>
+<td></td>
+<td>ポルタメント</td>
+<td>portamento</td>
+<td>次の音へ音程をずらせながら移動する</td>
+</tr>
+<tr>
+<td>marc.</td>
+<td>マルカート</td>
+<td>marcato</td>
+<td>一音一音はっきり奏する</td>
+</tr>
+<tr>
+<td></td>
+<td>レガート</td>
+<td>legato</td>
+<td>滑らかに</td>
+</tr>
+<tr>
+<td>（円弧状の曲線）</td>
+<td>スラー</td>
+<td>slur</td>
+<td>レガートの記号（弦楽器ではひと弓で奏する指示）</td>
+</tr>
+</table>
+</section>
+<section class="page_a4">
+<table border="0">
+<tr border="0">
+<td border="0">
+<table border="1" width="210mm">
+<tr>
+<td>音符</td>
+<td>休符</td>
+<td>長さのイメージ</td>
+<tr>
+<td style="font-size: 1.5em;" align="center">&#x1D15D</td>
+<td style="font-size: 1.5em;" align="center">&#x1D13B</td>
+<td>|----|----|----|----</td>
+</tr>
+<tr>
+<td style="font-size: 1.5em;" align="center">&#x1D15E</td>
+<td style="font-size: 1.5em;" align="center">&#x1D13C</td>
+<td>|----|----</td>
+</tr>
+<tr>
+<td style="font-size: 1.5em;" align="center">&#x1D15F</td>
+<td style="font-size: 1.5em;" align="center">&#x1D13D</td>
+<td>|----</td>
+</tr>
+<tr>
+<td style="font-size: 1.5em;" align="center">&#x1D160</td>
+<td style="font-size: 1.5em;" align="center">&#x1D13E</td>
+<td>|--</td>
+</tr>
+<tr>
+<td style="font-size: 1.5em;" align="center">&#x1D161</td>
+<td style="font-size: 1.5em;" align="center">&#x1D13F</td>
+<td>|-</td>
+
+</tr>
+</table>
+</td>
+<td border="0" align="left">
+<table>
+
+<tr>
+<span style="font-size: 1.5em;">&#x1D13B</span>は、拍子に関係なく「1小節休み」<br>
+として用いられることもあります。<br><br>
+</tr>
+<tr>
+強弱の順は以下の通り<br>
+<span style="font-size: 1.5em;">&#x1D18F&#x1D18F</span>　＜　
+<span style="font-size: 1.5em;">&#x1D18F</span>　＜　
+<span style="font-size: 1.5em;">&#x1D190&#x1D18F</span>　＜　
+<span style="font-size: 1.5em;">&#x1D190&#x1D191</span>　＜　
+<span style="font-size: 1.5em;">&#x1D191</span>　＜　
+<span style="font-size: 1.5em;">&#x1D191&#x1D191</span>
+<br><br>
+</tr>
+<tr>
+<span style="font-size: 1.5em;">&#x1D192</span>だんだん大きく<br>
+<span style="font-size: 1.5em;">&#x1D193</span>だんだん小さく
+<br><br>
+</tr>
+<tr>
+</tr>
+</table>
+</td>
+</tr>
+
+
+
+</table>
+
+</section>
+<section class="page_a4">
+<style>
+.keynote {
+text-align: center;
+}
+
+.keynote tr:nth-child(2n) {
+background-color: #eeeeee;
+}
+</style>
+<table class="keynote" border="1">
+<tr>
+<td colspan="3">♯のつく数</td>
+<td colspan="2">1</td>
+<td colspan="2">2</td>
+<td colspan="2">3</td>
+<td colspan="2">4</td>
+<td colspan="2">5</td>
+<td colspan="2">6</td>
+<td colspan="2">7</td>
+</tr>
+<tr>
+<td colspan="3">新たにつく音</td>
+<td colspan="2">ファ</td>
+<td colspan="2">ド</td>
+<td colspan="2">ソ</td>
+<td colspan="2">レ</td>
+<td colspan="2">ラ</td>
+<td colspan="2">ミ</td>
+<td colspan="2">シ</td>
+</tr>
+<tr>
+<td colspan="3">長調</td>
+<td>ト</td>
+<td>G</td>
+<td>ニ</td>
+<td>D</td>
+<td>イ</td>
+<td>A</td>
+<td>ホ</td>
+<td>E</td>
+<td>ロ</td>
+<td>B</td>
+<td>嬰ヘ</td>
+<td>F♯</td>
+<td>嬰ハ</td>
+<td>C♯</td>
+</tr>
+<tr>
+<td colspan="3">短調</td>
+<td>ホ</td>
+<td>Em</td>
+<td>ロ</td>
+<td>Bm</td>
+<td>嬰ヘ</td>
+<td>F♯m</td>
+<td>嬰ハ</td>
+<td>C♯m</td>
+<td>嬰ト</td>
+<td>G♯m</td>
+<td>嬰ニ</td>
+<td>D♯m</td>
+<td>嬰イ</td>
+<td>A♯m</td>
+</tr>
+<tr>
+<td colspan="3">♭のつく数</td>
+<td colspan="2">1</td>
+<td colspan="2">2</td>
+<td colspan="2">3</td>
+<td colspan="2">4</td>
+<td colspan="2">5</td>
+<td colspan="2">6</td>
+<td colspan="2">7</td>
+</tr>
+<tr>
+<td colspan="3">新たにつく音</td>
+<td colspan="2">シ</td>
+<td colspan="2">ミ</td>
+<td colspan="2">ラ</td>
+<td colspan="2">レ</td>
+<td colspan="2">ソ</td>
+<td colspan="2">ド</td>
+<td colspan="2">ファ</td>
+</tr>
+<tr>
+<td colspan="3">長調</td>
+<td>ヘ</td>
+<td>F</td>
+<td>変ロ</td>
+<td>B♭</td>
+<td>変ホ</td>
+<td>E♭</td>
+<td>変イ</td>
+<td>A♭</td>
+<td>変ニ</td>
+<td>D♭</td>
+<td>変ト</td>
+<td>G♭</td>
+<td>変ハ</td>
+<td>C♭</td>
+</tr>
+<tr>
+<td colspan="3">短調</td>
+<td>ニ</td>
+<td>Dm</td>
+<td>ト</td>
+<td>Gm</td>
+<td>ハ</td>
+<td>Cm</td>
+<td>ヘ</td>
+<td>Fm</td>
+<td>変ロ</td>
+<td>B♭m</td>
+<td>変ホ</td>
+<td>E♭m</td>
+<td>変イ</td>
+<td>A♭m</td>
+</tr>
+<tr>
+<td>な</td>
+<td>長</td>
+<td>ハ/Ｃ</td>
+<td colspan="2">長調</td>
+<td>C</td>
+<td></td>
+<td>D</td>
+<td></td>
+<td>E</td>
+<td>F</td>
+<td></td>
+<td>G</td>
+<td></td>
+<td>A</td>
+<td></td>
+<td>B</td>
+</tr>
+<tr>
+<td>し</td>
+<td>短</td>
+<td>イ/Ａ</td>
+<td colspan="2">♯の数</td>
+<td>0</td>
+<td>7</td>
+<td>2</td>
+<td>×</td>
+<td>4</td>
+<td>×</td>
+<td>6</td>
+<td>1</td>
+<td>×</td>
+<td>3</td>
+<td>×</td>
+<td>5</td>
+</tr>
+<tr>
+<td colspan="3" rowspan="4">
+<td colspan="2">♭の数</td>
+<td>0</td>
+<td>5</td>
+<td>×</td>
+<td>3</td>
+<td>×</td>
+<td>1</td>
+<td>6</td>
+<td>×</td>
+<td>4</td>
+<td>×</td>
+<td>2</td>
+<td>7</td>
+</tr>
+<tr>
+<td colspan="2">短調</td>
+<td>C</td>
+<td></td>
+<td>D</td>
+<td></td>
+<td>E</td>
+<td>F</td>
+<td></td>
+<td>G</td>
+<td></td>
+<td>A</td>
+<td></td>
+<td>B</td>
+</tr>
+<tr>
+<td colspan="2">♯の数</td>
+<td>×</td>
+<td>4</td>
+<td>×</td>
+<td>6</td>
+<td>1</td>
+<td>×</td>
+<td>3</td>
+<td>×</td>
+<td>5</td>
+<td>0</td>
+<td>7</td>
+<td>2</td>
+</tr>
+<tr>
+<td colspan="2">♭の数</td>
+<td>3</td>
+<td>×</td>
+<td>1</td>
+<td>6</td>
+<td>×</td>
+<td>4</td>
+<td>×</td>
+<td>2</td>
+<td>7</td>
+<td>0</td>
+<td>5</td>
+<td>×</td>
+</tr>
+</table>
+</section>
+<section class="page_a4">
+<p>度数</p>
+　全音・半音とは別に、コード上で音程を数えるときは１～７に置き換えた「度数」という単位を使います。数え初めを１度として、８度で同じ音名に戻るのが特徴です。<br>
+<br>
+８度のことを、特別に「オクターブ」なんて呼んだりします。Octとついている単語に"octopus"がありますが、足が８本なのでoctがついてます。
+例えば、Cを１度とすると、Dは２度、Eは３度……８度で高さの違うCになる　というのは納得してもらえると思います。<br>
+<br>
+　しかし、例えばド→レの２度と、シ→ドの２度では、半音単位の増減が異なるので、もう少し細かい名称の区別が必要になります。<br>
+　それが、音程と呼ばれるものでして、ポップスのコードやジャズのテンションに深くかかわってくるものとなります。
+<br>
+<br>
+<div class="point">
+ピタゴラスさん曰く、１度、４度、５度は振動数の比が単純で、完全に響きあうため、完全音程と名前が付きました。完全一度はコード上ではROOT音と呼ばれる、一番大事な音です。<br>
+</div>
+
+<br>
+<table class="manytable" width="80%">
+<b>音程～略称・日本語・周波数～</b>
+<tr>
+<th>英語名称</th>
+<th>英語略称</th>
+<th>日本語名称</th>
+<th>振動数の比</th>
+</tr>
+<tr>
+<td>Unison</td>
+<td>P1</td>
+<td>完全１度</td>
+<td>１：１</td>
+</tr>
+<tr>
+<td>minor2nd</td>
+<td>m2</td>
+<td>短２度</td>
+</tr>
+<tr>
+<td>Major2nd</td>
+<td>M2</td>
+<td>長２度</td>
+</tr>
+<tr>
+<td>minor3rd</td>
+<td>m3</td>
+<td>短３度</td>
+</tr>
+<tr>
+<td>Major3rd</td>
+<td>M3</td>
+<td>長３度</td>
+</tr>
+<tr>
+<td>Perfect4th</td>
+<td>4th,P4</td>
+<td>完全４度</td>
+<td>３：４</td>
+</tr>
+<tr>
+<td>diminished5th</td>
+<td>dim5</td>
+<td>減５度</td>
+</tr>
+<tr>
+<td>Perfect5th</td>
+<td>5th,P5</td>
+<td>完全５度</td>
+<td>２：３</td>
+</tr>
+<tr>
+<td>augment5th</td>
+<td>aug5th</td>
+<td>増５度</td>
+</tr>
+<tr>
+<td>Major6th</td>
+<td>M6</td>
+<td>長６度</td>
+</tr>
+<tr>
+<td>minor7th</td>
+<td>m7</td>
+<td>短７度</td>
+</tr>
+<tr>
+<td>Major7th</td>
+<td>M7</td>
+<td>長７度</td>
+</tr>
+<tr>
+<td>Octave</td>
+<td>P8</td>
+<td>完全８度</td>
+<td>１：２</td>
+</tr>
+</table>
+</section>
+<section class="page_a4">
+<p>調やコードで難しい部分になると登場する用語</p>
+<table class="manytable">
+<tr>
+<th>日本語</th>
+<th>英語</td>
+
+</tr>
+<tr>
+<td>主音</td>
+<td>Tonic</td>
+</tr>
+<tr>
+<td>上主音</td>
+<td>Super Tonic</td>
+</tr>
+<tr>
+<td>中音</td>
+<td>Mediant</td>
+</tr>
+<tr>
+<td>下属音</td>
+<td>Subdominant</td>
+</tr>
+<tr>
+<td>属音</td>
+<td>Dominant</td>
+</tr>
+<tr>
+<td>下中音</td>
+<td>Submediant</td>
+</tr>
+<tr>
+<td>導音</td>
+<td>Subtonic（Leading tonic）</td>
+</tr>
+</table>
+<br>
+<b>ここからまだデザインなし・現行順序もぐちゃぐちゃゾーン</b>
+<br>
+※五線譜のいつもの流れは<br>
+音部記号（ト音記号とか）→調号→拍子（２段目以降省略可）<br>
+<br>
+<br>
+ローインターバル・リミット載せたい！！！<br>
+<br>
+<br>
+密集配置（クローズ(ド)ボイジング）と<br>
+開離配置（オープンボイジング）<br>
+<br>
+<br>
+ソプラノとバスに当たるハーモニーを外声 耳コピは比較的楽<br>
+アルトとテナーに当たるハーモニーを内声　耳コピは大変<br>
+<br>
+<br>
+禁則・限定進行音・対斜はパス　<br>
+<br>
+<br>
+近親調・遠隔調<br>
+図をどう作ろうか<br>
+<br>
+サブドミナントマイナーは借用和音と呼ばれるんだね（飛ばします）<br>
+
+<br>
+<br>
+</section>
+<section class="page_a4">
+
+
+
+<br>
+スケール<br>
+音を低い方から高い方へ、またはその逆に順番に並べた階段のようなものです。そのため音階とも呼ばれます。<br>
+メジャー・マイナーのダイアトニックスケール以外にも、オクターブを構成する音の数や隣の音との間隔（音程）の組み合わせの違いによって、さまざまなスケールが存在します。<br>
+<br>
+<br>
+</section>
+<section class="page_a4">
+増音程・減音程<br>
+（音程の話の最後らへん）<br>
+長音程や完全協和音程から半音広い音程を増音程、短音程や完全協和音程から半音狭い音程を減音程と呼びます。<br>
+ただし、減１度という使い方はしません。ちなみに、通常我々が使用している十二平均律という調律法に従った音階では、増１度＝短２度や、増４度＝減５度のように、異名同音程になるケースが生じます。<br>
+<br>
+<br>
+次に追加できそうな内容は習慣の話！！！<br>
+（文字ばかりだし、めちゃめちゃ分量が多いけど、多分すごく大切）
+
+<br>
+</section>
+<section class="page_a4">
+目次
+<h3>実はこの目次は、タップした項目にジャンプする…気付いてた…？</h3>
+<style>
+/*
+mokuji ul, .mokuji ol {
+  padding: 0;
+  position: relative;
+}
+
+.mokuji ul li,{
+  color: black;
+  border-left: solid 8px orange;/*左側の線*/
+background: whitesmoke;
+/*背景色*/
+margin-bottom: 5px;
+/*下のバーとの余白*/
+line-height: 1.5;
+border-radius: 0 15px 15px 0;
+/*右側の角だけ丸く*/
+padding: 0.5em;
+list-style-type: none !important;
+}
+
+*/ .mokuji {
+padding: 0;
+position: relative;
+}
+
+.mokuji {
+color: black;
+border-left: solid 8px orange;
+/*左側の線*/
+background: whitesmoke;
+/*背景色*/
+margin-bottom: 5px;
+/*下のバーとの余白*/
+line-height: 1.5;
+border-radius: 0 15px 15px 0;
+/*右側の角だけ丸く*/
+padding: 0.5em;
+list-style-type: none !important;
+}
+
+a,
+a:hover,
+a:visited {
+color: inherit;
+}
+</style>
+<ul>
+<a href="#practice_custom01">
+<li class="mokuji">練習室の必需品</li>
+</a>
+<a href="#practice_custom02">
+<li class="mokuji">練習の5つの領域</li>
+</a>
+<a href="#practice_custom03">
+<li class="mokuji">練習のスケジュールの組み方</li>
+</a>
+<a href="#practice_custom04">
+<li class="mokuji">新曲の選び方</li>
+</a>
+<a href="#practice_custom05">
+<li class="mokuji">自分の演奏を録音する</li>
+</a>
+<a href="#practice_custom06">
+<li class="mokuji">卓越性（エクセレンス）の習慣</li>
+</a>
+<a href="#practice_custom07">
+<li class="mokuji">芸術的な解釈の基本</li>
+</a>
+<a href="#practice_custom08">
+<li class="mokuji">イメージトレーニング</li>
+</a>
+<a href="#practice_custom09">
+<li class="mokuji">ウォーミングアップの基本</li>
+</a>
+<a href="#practice_custom10">
+<li class="mokuji">練習で行う３つのこと</li>
+</a>
+<a href="#practice_custom11">
+<li class="mokuji">新曲の取り組み方</li>
+</a>
+<a href="#practice_custom12">
+<li class="mokuji">芸術性を養う反復練習の原則</li>
+</a>
+<a href="#practice_custom13">
+<li class="mokuji">問題解決の手法</li>
+</a>
+<a href="#practice_custom14">
+<li class="mokuji">レパートリーを仕上げる</li>
+</a>
+<a href="#practice_custom15">
+<li class="mokuji">３種類の休憩</li>
+</a>
+<a href="#practice_custom16">
+<li class="mokuji">暗譜の４段階</li>
+</a>
+<a href="#practice_custom17">
+<li class="mokuji">暗譜の戦略</li>
+</a>
+<a href="#practice_custom18">
+<li class="mokuji">テクニックを身に着ける</li>
+</a>
+<a href="#practice_custom19">
+<li class="mokuji">音楽的能力を高めるには</li>
+</a>
+</ul>
+<style>
+pre {
+margin: 0;
+font-family: Arial, sans-serif;
+}
+</style>
+<br>
+</section>
+<section class="page_a4">
+<pre>
+<b id="practice_custom01">練習室の必需品</b>
+<table class="manytable">
+<tr>
+<td>1.</td>
+<td>体に合った椅子</td>
+</tr>
+<tr>
+<td>2.</td>
+<td>譜面台</td>
+</tr>
+<tr>
+<td>3.</td>
+<td>ノートと鉛筆</td>
+</tr>
+<tr>
+<td>4.</td>
+<td>電子メトロノームとチューナー</td>
+</tr>
+<tr>
+<td>5.</td>
+<td>時計</td>
+</tr>
+<tr>
+<td>6.</td>
+<td>鏡（動きの癖がわかるように</td>
+</tr>
+<tr>
+<td>7.</td>
+<td>レコーダー</td>
+</tr>
+<tr>
+<td>8.</td>
+<td>楽器スタンド・ホルダー</td>
+</tr>
+<tr>
+<td>9.</td>
+<td>飲料水</td>
+</tr>
+<tr>
+<td>10.</td>
+<td>適切な照明・温度・湿度</td>
+</tr>
+<tr>
+<td>11.</td>
+<td>ある程度の静けさとプライバシー</td>
+</tr>
+<tr>
+<td>12.</td>
+<td>耳を守る手段</td>
+</tr>
+</table>
+
+<b id="practice_custom02">練習の五つの領域</b>
+<table class="manytable">
+<tr>
+<td>・新曲　</td>
+<td>曲の全体像をつかむ。セクションごとに分けて、遅めのテンポ。</td>
+</tr>
+<tr>
+<td>・完成度を高める曲　</td>
+<td>曲の解釈を深め、テンポを上げ、可能なら暗譜することを目指す。</td>
+</tr>
+<tr>
+<td>・発表用の曲　</td>
+<td>解釈やテクニックの細かい点を見直し、覚えたことを忘れないよう<br>にし、本番用の練習。</td>
+</tr>
+<tr>
+<td>・テクニック　</td>
+<td>スケール・アルペジオ・練習曲などで力を磨き、レベルの高い演奏<br>に到達することを目指す。</td>
+</tr>
+<tr>
+<td>・音楽的能力　</td>
+<td>初見や即興、理論、耳の訓練</td>
+</tr>
+
+</table>
+<b id="practice_custom03">練習のスケジュールの組み方</b>
+<table class="manytable">
+<tr>
+<td>１．規則正しく練習する　</td>
+<td>週に一日は休み or 軽い練習だけの日。</td>
+</tr>
+<tr>
+<td>２．短めの練習を何度か行う　</td>
+<td>疲れがたまるのを避け、一層深く練習する。</td>
+</tr>
+<tr>
+<td>３．休憩をとる　</td>
+<td>５０～６０分の練習に１０分が一般的。</td>
+</tr>
+<tr>
+<td>４．少しずつ時間を増やす　</td>
+<td>音大生レベルは1日2～3時間。声楽はもう少し短い。</td>
+</tr>
+<tr>
+<td>５．バランスのとれた生活を送る　</td>
+<td>長きにわたって成功を収めるためには欠かせない。</td>
+</tr>
+
+</table>
+</section>
+<section class="page_a4">
+
+<b id="practice_custom04">新曲の選び方</b>
+<table class="manytable">
+<tr>
+<td>１．好み　</td>
+<td>学ぶのが楽しいと思える曲 蓄えるレパートリーに個性が反映される。<br>モチベーションを保つ・高める曲。</td>
+</tr>
+<tr>
+<td>２．実力　</td>
+<td>実力以上の曲を演奏しようとすると、不安になったり緊張したりする<br>癖がついてしまう。</td>
+</tr>
+<tr>
+<td>３．計画　</td>
+<td>何を目指そうとしているのかを意識すること。</td>
+</tr>
+</pre>
+</table>
+
+</section>
+<section class="page_a4">
+<pre>
+<b id="practice_custom05">自分の演奏を録音する</b>
+<table class="manytable">
+<tr>
+<td>１．ミュージシャンシップを高める</td>
+<td>少し距離を置いて、他の人の演奏を聴いているつもりで</td>
+</tr>
+<tr>
+<td>２．気づいてなかった点に気づく</td>
+<td>演奏するという行為に気を取られずに<br>自分の演奏を判断できる。</td>
+</tr>
+<tr>
+<td>３．練習の効率が高まる</td>
+<td>練度を高めるうえで役に立つ</td>
+</tr>
+<tr>
+<td>４．レッスンが一層有意義になる</td>
+<td>レッスンごと録音する</td>
+</tr>
+<tr>
+<td>５．客観性を高める</td>
+<td>グループ練習でメンバー同士の衝突を<br>最小限に抑えることができる。</td>
+</tr>
+</table>
+
+<b id="practice_custom06">卓越性（エクセレンス）の習慣を身に着けるには</b>
+<table class="manytable">
+<tr>
+<td>１．脱力</td>
+<td>楽々と演奏するには脱力の習慣を身に着ける。<br>余力を残したまま演奏する。</td>
+</tr>
+<tr>
+<td>２．表現力</td>
+<td>フレーズの山と谷に音量を合わせる<br>強い拍は強く、弱い拍は弱く/想像力を働かせる</td>
+</tr>
+<tr>
+<td>３．正確さ</td>
+<td>やることなすことすべてを正確に</td>
+</tr>
+<tr>
+<td>４．躍動するリズム</td>
+<td>音楽は時間芸術。一定のテンポを正確に刻むことばかりではない。</td>
+</tr>
+<tr>
+<td>５．美しい音</td>
+<td>練習の際はいつでも豊かでよく響く音を出せるように。</td>
+</tr>
+<tr>
+<td>６．集中力</td>
+<td>目標をはっきりと定め、平常心を保ち、<br>神経を研ぎ澄ませて練習に取りくむ。</td>
+</tr>
+<tr>
+<td>７．前向きな姿勢</td>
+<td>困難にぶつかったら学習の機会ととらえる。</td>
+</tr>
+</table>
+<b id="practice_custom07">芸術的な解釈の基本</b>
+<table class="manytable">
+<tr>
+<td>１．曲想・様式・テンポをつかむ</td>
+<td>録音を聞く、楽譜を読み込む、背景となる知識を得る</td>
+</tr>
+<tr>
+<td>２．強弱をつける</td>
+<td>旋律が描く弧に合わせて音の強弱をつける<br>コードがトニックから遠ざかるにしたがって、<br>エネルギーが増大する</td>
+</tr>
+<tr>
+<td>３．音色を変える</td>
+<td>ビブラートも音色を変える要素の１つ</td>
+</tr>
+<tr>
+<td>４．アーティキュレーションを形作る</td>
+<td>レガートが中心。<br>ビブラート・音色、アクセントなどの要素を効果的に使う。</td>
+</tr>
+<tr>
+<td>５．表紙の輪郭を描く</td>
+<td>まず、速度記号に合わせ、<br>それから音楽そのものに合わせていく。</td>
+</tr>
+<tr>
+<td>６．リズムに躍動感を与える</td>
+<td>短い音符を長い音符に向かって進めること<br>楽譜の縦線で止まらずに、弱拍から強拍へ進む。</td>
+</tr>
+<tr>
+<td>７．形式を理解する</td>
+<td>大きな形式（２部形式など）小さな形式（フレーズなど）</td>
+</tr>
+</table>
+</pre>
+</section>
+<section class="page_a4">
+<pre>
+<b id="practice_custom08">イメージトレーニング</b>
+<table border="0">
+<tr><td>・曲を覚えるのが楽になる</td></tr>
+<tr><td>・自信をもって伸びやかな音楽を奏でられる</td></tr>
+</table>
+
+<b id="practice_custom09">ウォーミングアップの基本</b>
+<table class="manytable">
+<tr>
+<td>１．深呼吸し、体を動かし、集中する</td>
+<td>日頃の悩みはしばらく忘れる</td>
+</tr>
+<tr>
+<td>２．目標を定める</td>
+<td>書き出すのもよい</td>
+</tr>
+<tr>
+<td>３．準備とチューニングを丁寧に</td>
+<td>チューニングは毎回同じ手順で行うこと</td>
+</tr>
+<tr>
+<td>４．最初のうちは控えめに</td>
+<td>テンポも音量も、最初は控えめに</td>
+</tr>
+<tr>
+<td>５．テクニックを組み合わせる</td>
+<td>好きな曲の一部を無理のないテンポで演奏するのもOK</td>
+</tr>
+<tr>
+<td>６．１０～１５分が目安</td>
+<td>「卓越性の習慣」を忘れずに</td>
+</tr>
+</table>
+<b id="practice_custom10">練習で行う３つのこと</b>
+<table border="0">
+<tr><td>１．発見</td></tr>　
+<tr><td>２．反復</td></tr>
+<tr><td>３．評価</td></tr>
+</table><span class="husen">ここまでレイアウトしてる！</span>
+
+<b id="practice_custom11">新曲の取り組み方</b>
+
+１．全体像をつかむ　
+　　a)聴覚モデルを作る　録音や録画は複数用意する。録音がなければ譜読み
+　　b)背景となる情報を調べる　
+・曲についての5W1H
+・従来の形式をどう継承しているか/同世代のほかの曲と比べてどうか
+・歌…歌詞はどのような意味か/劇音楽…どのような物語か
+(1)書かれている言葉をすべて訳す
+(2)小節に番号を振る（振り方は話し合って決める）
+(3)[A][B]などのセクション分けをする
+(4)難しい点を突き止める
+(5)最終的なバランスを決める
+</pre>
+</section>
+<section class="page_a4">
+<pre>
+
+２．解釈の地図を作る
+　　a)楽譜を分析し、書き込みをする「芸術的な解釈の基本」
+　　　を使う
+　　b)リズムを口ずさむ
+
+３．テクニックの地図を作る
+<table border="1">
+<tr>
+<th>声楽</th>
+<th>器楽</th>
+</tr>
+<tr>
+<td>
+・歌詞をリズムにのいせて読む
+</td>
+<td>
+・系統立てて練習する
+</td>
+</tr>
+
+<tr>
+<td>
+・ディクションと理解に磨きをかける
+</td>
+<td>
+・声に出す（固定ド唱法や音名）
+</td>
+</tr>
+
+<tr>
+<td>
+・旋律を「アー」で歌う
+</td>
+<td>
+・自分の解釈の地図を作る
+</td>
+</tr>
+<tr>
+<td>
+暗唱→固定ド唱法、音名、音度など
+</td>
+<td></td>
+</tr>
+</table>
+
+４．地図に基づいて演奏する
+a.　扱いやすい分量に分ける
+b.　テンポをうまく扱う　速度を上げたらどうなるかを考えながら練習する
+c.　イメージしてから練習する　次にどんな動きがあるか
+d.　芸術的かつ客観的に
+e.　３回繰り返す　イメージ→演奏の流れを大切に
+f.　セクションをつなげる
+(1)セクションを重ねる
+(2)構造を少しずつ大きくする
+(3)部分ごとの練習とつなげたつなげた部分の練習をバランスよく行う
+(4)テンポを一定に保つ
+(5)録音する
+(6)上限を決め、休憩し、復讐する　睡眠も大切
+
+練習の習慣を変える場合、自分の力にあった新曲を楽しくマスターするのが良い
+</pre>
+</section>
+<section class="page_a4">
+<pre>
+<b id="practice_custom12">芸術性を養う反復練習の原則</b>
+　１．高いレベルを目指す　「卓越性の習慣」を大切に
+　２．漫然と繰り返さない　間違えずに３回
+　３．単に繰り返すのではなく成長を目指す
+・繰り返すたびに力を抜き、気づく力を高める
+・精神的にも身体的にもキャパシティーを広げる
+・キャパシティーが広がったら、生じた余力を使って表現力を高める
+
+<b id="practice_custom13">問題解決の手法</b>
+a.　リズムを変える
+b.　曲の最後から練習する
+c.　変化の度合いを変える
+d.　個々の要素に着目する
+e.　音を省いてまた戻す
+f.　再構成する
+g.　楽譜の手直し
+
+<b id="practice_custom14">レパートリーを仕上げる</b>
+ １．解釈を練る
+a.　自分の演奏を録音する「芸術的な解釈の基本」を体現しているか
+b.　プロの録音や生演奏を聴く　様々な解釈に触れる
+c.　楽譜をじっくり読む　特に総譜
+d.　曲との感情的なつながりを深める
+e.　いろいろ試してみる
+g.　アドバイスを受ける機会を設ける
+
+ ２．テンポを速める
+a.　問題を切り分けて解決する
+b.　少しずつスピードを上げる
+c.　大きめのまとまりでとらえ、イメージしてから演奏する
+d.　テクニックに必要な動きをシンプルにする
+e.　練習方法を考察する
+f.　短めの部分と長めの部分をバランスよく練習する
+g.　反復練習は適度に行う
+</pre>
+</section>
+<section class="page_a4">
+<pre>
+
+ ３．更新と刷新
+a.　レパートリーへの愛情を改めて育む
+　・もともとその曲のどこに惹かれたのか
+　・その曲だけが与えてくれるものは何か
+　・聞き手にとって、その曲を聴く楽しみはどこにあるのか
+b.　難しい点を練習する
+c.　当たらない身を見つける
+d.　練習する曲のローテーションを決める
+e.　発表の場を設ける
+
+
+<b id="practice_custom15">３種類の休憩</b>
+１．活動的な休憩
+２．気分転換のための休憩
+３．疲労回復のための休憩
+
+<b id="practice_custom16">暗譜の４段階</b>
+１．受け入れる　曲の構造などを理解すると覚えやすくなる
+２．定着させる　無意識の記憶は最高のコンディションでないと使えない
+３．維持する細かい点まで意識して練習する
+４．思い出す　頭を使った記憶で柔軟に思い出す
+　→曲を頭にしっかりと刻み込むことと、はっきり思い浮かべられるようにすることが目的
+
+筋肉の記憶ではなく、聴覚や視覚、触覚、時間的。空間的な情報と解釈、<br>曲の構造と意味、テクニックなどを立体的に記憶する。
+</pre>
+</section>
+<section class="page_a4">
+<pre>
+<b id="practice_custom17">暗譜の戦略</b>
+１．受け入れの戦略
+　　A.曲の構造を再確認する
+(1)全体の形式
+(2)フレーズの始まりと終わり
+(3)調性と転調
+　　B.解釈の地図を見直す
+(1)曲からどんな感情を受け取るか
+(2)それをどう伝えるか
+　　C.テクニックの地図を点検する
+(1)正確に演奏できているか
+(2)自信をもって演奏できるか
+
+２．定着させるための戦略
+　　A.まず計画を立てる
+(1)暗譜のスケジュールを立てる
+(2)セグメントの長さを決める
+(3)練習と休憩のバランス
+(4)一度に詰め込みすぎない
+　　B.イメージしてから演奏する
+　　C.様々なタイプの記憶を使う
+(1)心と感情を駆使する
+(2)要素の一つ一つを際立たせる
+
+３．維持するための戦略
+　　A.頭の中でリハーサルをする
+(1)解釈とテクニックの地図にあやふやなところはないだろうか
+(2)頭の中で曲を流す時、伴奏を含めた大きな構造と自分の位置
+　　B.本番の練習をする
+(1)あいまいなパッセージはしっかりと覚えなおす
+　　C.要素を見直す
+(1)各要素と全体のかかわり
+</pre>
+</section>
+<section class="page_a4">
+<pre>
+４．思い出すための戦略
+　　A.心の準備をする
+　・冷静で集中力が研ぎ澄まされている状態
+　　B.前もってイメージする
+　・次のまとまりを演奏する前に頭の中で作り上げる
+　　C.力を抜く
+　・力を抜いてポジティブな思考を保つ
+　　D.途中で止まらない
+　・何があっても音楽の流れを止めてはならない
+
+
+<b id="practice_custom18">テクニックを身に着ける</b>
+
+１．方針を立てる
+　　A.目標や練習する曲、課題、戦略につながりを持たせる
+　　B.スケジュールを守る
+(1)着実に練習を重ねる
+(2)幅広い練習を行う
+(3)上限を決める
+２．卓越性に重きを置く
+　　→卓越性の習慣を常に意識する
+３．細かい点を掘り下げる
+　　A.自分のすべてを使う
+→姿勢　呼吸　動作　集中力など
+　　B.練習を詳細に分析する
+→練習の中の根本的な要素を取り出して磨きをかける
+４．自分の癖に焦点を当てる
+　　→自身や楽器の癖や特性を知る
+５．テクノロジーを活用する
+　　→鏡　録音　録画など
+</pre>
+</section>
+<section class="page_a4">
+<pre>
+<b id="practice_custom19">音楽的能力を高めるには</b>
+１．耳を鍛える
+　　A.聴く力を鍛えておけば、それが豊かな土壌となって、演奏家の芸術性をはぐくんでくれる
+
+２．初見
+　　→初見能力を高めることは音楽家にとって最優先事項
+　　
+　　A.楽に演奏できるものを幅広く選ぶ
+　　B.個人練習とグループ練習の両方を行う
+　　C.基本的なスキルを強化する
+(1)まず全体をざっと
+(2)頭の中で拍子をとる
+(3)先を見見る
+(4)途中で止まらない
+(5)音楽を表現する
+(6)余分な力を抜く
+
+　　D.演奏前に楽譜をざっと読む力をつける
+(1)枠組みを把握する
+　　a)曲名・テンポ・拍子・形式・性格・声楽なら歌詞の趣旨
+　　b）中心となるリズムと発想記号、複雑なリズムがあればその特質
+　　c)反復記号などの演奏記号の位置
+(2)音程の地図を作る
+　　a)調号と調性
+　　b）旋律と和声の特性ーシャープ♭ナチュラルや難しいパッセージの構成
+　　c)音域
+
+
+３．即興演奏ジャズのみならず、曲を忘れてしまった場合にも役立つ
+４．音楽全般について学ぶ音楽の世界は実に広大
+５．芸術性を養う
+
+
+</pre>
+
+他にも重要な情報多数　今回はここまで
+<br><br>
+
+</section>
+<section class="page_a4">
+
+<h3>反復記号について（これは途中）</h3>
+<div class="score">
+T:
+M: C
+L: 1
+K:C
+V: 1
+C!fine!|C!D.C.!|
+w:a| b| c|
+</div>
+
+<div class="score">
+T:
+M: C
+L: 1
+K:C
+V: 1
+C!segno!|C!fine!|C!D.S.!|
+w:a| b| c|
+</div>
+<br>
+<div class="score">
+T:
+M: C
+L: 1
+K:C
+V: 1
+C|1[C]:|2[C]|]
+w:a b c
+</div>
+※※toコーダってどうすれば出る…？※※
+
+<!--おみそしるは-->
+
+
+<br>
+<h3>楽譜を早く読むために（こっちは完成）</h3>
+<span class="score">
+T:
+M:
+L: 1/4
+K:C
+V: 1
+CEGBdf|
+w:(お) (み) (そ) (し) (る) (は)
+w:ド ミ ソ シ レ ファ
+</span>
+<!--おみそしるは-->
+
+
+<!--
+<div class="score">
+M:4/4
+L:1/4
+K:C
+CD EF | GA Bc ||
+w:qqqq
+</div>
+-->
+<!--<div class="score">
+M:4/4
+L:1/4
+V: 1
+I：linebreak <OL> $
+K:C
+CD EF | GA Bc |
+BA GF| ED C2 ||
+</div>
+-->
+</section>
+<section class="page_a4">
+
+コピペの名残　空白
+
+<br><br>
+
+<!--連結用鍵盤(枠線は後で消す)<br>
+3オクターブ重ねたらダメ
+-->
+<h1>調の内容・コードの内容をここに入れる</h1>
+<h1>ここからは調とか和音の索引にしたい…！</h1>
+</section>
+<!--
+
+
+<style>
+table , td, th {
+border: 1px solid #595959;
+border-collapse: collapse;
+}
+d, th {
+padding: 3px;
+width: 30px;
+height: 25px;
+}
+h {
+background: #f0e6cc;
+}
+.even {
+background: #fbf8f0;
+}
+.odd {
+background: #fefcf9;
+}
+.kuro{
+background: #eeeeee;
+}
+
+</style>
+
+<table>
+<tbody>
+<tr>
+<td rowspan="4"></td>
+<td class="kuro"></td>
+<td class="kuro"></td>
+<td rowspan="4"></td>
+<td class="kuro"></td>
+<td class="kuro"></td>
+<td rowspan="4"></td>
+<td rowspan="4"></td>
+<td class="kuro"></td>
+<td class="kuro"></td>
+<td rowspan="4"></td>
+<td class="kuro"></td>
+<td class="kuro"></td>
+<td rowspan="4"></td>
+<td class="kuro"></td>
+<td class="kuro"></td>
+<td rowspan="4"></td>
+</tr>
+<tr>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+</tr>
+<tr>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+</tr>
+<tr>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"></td>
+<td colspan="3"></td>
+<td colspan="2"></td>
+<td colspan="2"></td>
+<td colspan="3"></td>
+<td colspan="3"></td>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"></td>
+<td colspan="3"></td>
+<td colspan="2"></td>
+<td colspan="2"></td>
+<td colspan="3"></td>
+<td colspan="3"></td>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"></td>
+<td colspan="3"></td>
+<td colspan="2"></td>
+<td colspan="2"></td>
+<td colspan="3"></td>
+<td colspan="3"></td>
+<td colspan="2"></td>
+</tr>
+</tbody>
+</table>
+-->
+
+
+<section class="page_a4"> 
+<h2>キャラクター紹介</h2>
+
+
+<!--表の中央に配置・絵の部分は70pxとかにしておく？-->
+<table border="1" width="90%">
+<tr>
+<td>正面</td>
+<td>斜め</td>
+<td>コメント</td>
+</tr>
+
+<tr>
+<td>
+<img src="./character/t1-1C.png">
+</td>
+<td>
+<img src="./character/t1-4S.png">
+</td>
+<td>
+顧問の先生的なポジションです。
+</td>
+</tr>
+
+<tr>
+<td>
+<img src="./character/t2-1C.png">
+</td>
+<td>
+<img src="./character/t2-2C.png">
+</td>
+<td>
+副顧問の先生的なポジションです。<br>
+いつか登場してもらおうかなと思っています。
+</td>
+</tr>
+
+<tr>
+<td>
+<img src="./character/s1-1C.png">
+</td>
+<td>
+<img src="./character/s1-2C.png">
+</td>
+<td>
+主人公1のポジションです。<br>
+一応未経験での入部って設定ですが、そのあたり良く忘れています。
+</td>
+</tr>
+
+<tr>
+<td>
+<img src="./character/s2-1C.png">
+</td>
+<td>
+<img src="./character/s2-2C.png">
+</td><td>
+主人公2のポジションです。<br>
+一応未経験での入部って設定ですが、そのあたり良く忘れています。<br>
+主人公1よりも理論が得意という設定もあったはずですが、それも忘れてます。
+</td>
+</tr>
+
+<tr>
+<td>
+<img src="./character/s3-1C.png">
+</td>
+<td>
+<img src="./character/s3-2C.png">
+</td>
+<td>
+後輩1のポジションで入れました。果たして後輩さんが入ってくる一年後の時期まで、この話は続くのでしょうか…
+</td>
+</tr>
+
+<tr>
+<td>
+<img src="./character/s4-1C.png">
+</td>
+<td>
+<img src="./character/s4-2C.png">
+</td>
+<td>
+後輩2のポジションで入れました。果たして後輩さんが入ってくる一年後の時期まで、この話は続くのでしょうか…
+</td>
+</tr>
+
+<tr>
+<td>
+<img src="./character/r1-1C.png">
+</td>
+<td>
+<img src="./character/r1-2C.png">
+</td>
+<td>
+もともとはライバルっぽい人を入れる予定だったのですが
+争いを書くのも難しく、普通の先輩になりました。
+</td>
+</tr>
+
+<tr>
+<td>
+<img src="./character/r2-1C.png">
+</td>
+<td>
+<img src="./character/r2-2C.png">
+</td>
+<td>
+もともとはライバルっぽい人を入れる予定だったのですが
+争いを書くのも難しく、この人も普通の先輩になりました。
+</td>
+</tr>
+
+<tr>
+<td>
+<img src="./character/c1-1C.png">
+</td>
+<td>
+<img src="./character/c1-2C.png">
+</td>
+<td>
+部長ポジションでもありますが、どうも斜めを向くと被ってしまう人が多いので悩みどころです。
+</td>
+</tr>
+</table>
+</section>
+
+<section class="page_a4">
+<!--画面右から話しかける-->
+<div class="balloon">
+<figure class="balloon-image-right">
+<img src="./character/s1-2L.png" alt="画像名">
+<figcaption class="balloon-image-description">
+生徒
+</figcaption>
+</figure>
+<div class="balloon-text-left">
+<p>
+自分で勉強しようとしたんですけど、<br>
+調とか和音の部分で躓いてしまいました…
+</p>
+</div>
+</div>
+<!--画面右から話しかける-->
+<!--画面左から話しかける-->
+<div class="balloon">
+<figure class="balloon-image-left">
+<img src="./character/t1-4S.png" alt="画像名">
+<figcaption class="balloon-image-description">
+先生
+</figcaption>
+</figure>
+<div class="balloon-text-right">
+<p>
+これまた随分難しそうな本だねぇ<br>
+分かりやすいかは自信がないけど、<br>
+軽く解説してみようかな。
+</p>
+</div>
+</div>
+<!--画面左から話しかける-->
+<!--画面左から考える-->
+<div class="balloon think">
+<figure class="balloon-image-left">
+<img src="./character/t1-4S.png" alt="画像名">
+<figcaption class="balloon-image-description">
+先生
+</figcaption>
+</figure>
+<div class="balloon-text-right">
+<p>
+頑張って勉強してるのに挫折しちゃうのは<br>
+何とかしたい…
+</p>
+
+</div>
+</div>
+<!--画面左から考える-->
+
+<!--
+<div class="pero">
+調の表、めちゃめちゃ不具合がありまして、かなりお先真っ暗です。<br>
+1つだけ手動で修正してあります…
+</div>
+-->
+
+</section>
+<section class="page_a4">
+<h2>
+<span class="circlebar">
+調と和音
+<span class="circlebar-before">99</span class="circlebar-before">
+</span>
+</h2>
+<pre>（レイアウトは暫定です）<!--<style>
+table , td, th {
+border: 1px solid #595959;
+border-collapse: collapse;
+}
+d, th {
+padding: 3px;
+border:none;
+}
+h {
+background: #f0e6cc;
+}
+.even {
+background: #fbf8f0;
+}
+.odd {
+background: #fefcf9;
+}
+.kuro{
+background: #eeeeee;
+}
+
+</style>
+
+<table width="40%">
+<tbody>
+<tr>
+<td rowspan="4"></td>
+<td class="kuro" left="1"></td>
+<td class="kuro"></td>
+<td rowspan="4"></td>
+<td class="kuro"></td>
+<td class="kuro"></td>
+<td rowspan="4"></td>
+<td rowspan="4"></td>
+<td class="kuro"></td>
+<td class="kuro"></td>
+<td rowspan="4"></td>
+<td class="kuro"></td>
+<td class="kuro"></td>
+<td rowspan="4"></td>
+<td class="kuro"></td>
+<td class="kuro"></td>
+<td rowspan="4"></td>
+</tr>
+<tr>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+</tr>
+<tr>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+</tr>
+<tr>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+<td class="kuro" colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"></td>
+<td colspan="3"></td>
+<td colspan="2"></td>
+<td colspan="2"></td>
+<td colspan="3"></td>
+<td colspan="3"></td>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"></td>
+<td colspan="3"></td>
+<td colspan="2"></td>
+<td colspan="2"></td>
+<td colspan="3"></td>
+<td colspan="3"></td>
+<td colspan="2"></td>
+</tr>
+<tr>
+<td colspan="2"></td>
+<td colspan="3"></td>
+<td colspan="2"></td>
+<td colspan="2"></td>
+<td colspan="3"></td>
+<td colspan="3"></td>
+<td colspan="2"></td>
+</tr>
+</tbody>
+</table>↑鍵盤壊れてますね…-->
+人間同士にも相性があるように、音にも相性があります。
+もうちょっと具体的に書きますと、調に選ばれた7つの音には、
+性格（役目）が割り当てられています。
+ということは、それぞれに名前がついているということです。
+
+・第一段階
+<div class="score">
+X: 1
+: 
+M: 
+L: 1/4
+R: 音の役割(長調・短調共に同じ名称)
+K:
+CDEFGAB|]
+w:(主音) (上主音) (中音) (下属音) (属音) (下中音) (導音)
+</div>
+とまぁこんな感じの名前がついています。
+長調・短調の音を順番に並べて、メインの音が主音……って感じです。
+とはいえ、この段階では名前まで覚える必要はありません。
+「名前付いてるなぁ」でOK
+
+備考(原理の説明はもう少し後！)
+短音階って3種類ありますよね（自然的短音階・和声的短音階・旋律的短音階）
+<div class="score">
+X: 1
+: 
+M: 
+L: 1/4
+R:自然的短音階
+K:
+ABcdefg|]</div><div class="score">
+X: 1
+: 
+M: 
+L: 1/4
+R: 和声的短音階(つまり、和音になると導音が半音上がります)
+K:
+ABcdef^g|]</div><div class="score">
+X: 1
+: 
+M: 
+L: 1/16
+R:旋律的短音階(上行と下行で変わります)
+K:
+ABcde^f^ga|a=g=fedcBA|]</div>
+
+</pre>
+</section>
+<section class="page_a4">
+<pre>
+・転調のあれこれ
+　　転調は「調を転じる」ので(A)→(B)というイメージです
+　　　　　・移調というのもありまして、これはカラオケのキーを変えるようなもの。
+　　　　　　(A)調の曲を(A')調に全部ずらしてしまう感じです。
+<div class="point">・調を転じるということは、いろんな調が出てくるということ。
+　「どんな調があるのか」「調と調の関係」の2点から見ていきます。</div>
+・調はこれらの情報を大切にします
+　　　　　　(1)どの音がメインの音…？
+　　　　　　(2)どんな並びで並んでいるか
+
+ところで、先のページで長調と短調の表を載せましたので、今回は長調・短調をメインで扱います。
+
+ドレミファソラシド　がハ長調です。始まりの音が、ド,ド♯,レ…と12個あります。
+ラシドレミファソラ　がイ短調です。始まりの音が、ラ,シ♭,ド…と12個あります。
+
+この(12+12=)24の調が同じように繋がっているのかといいますと、そんなことはございません。
+やはり、調にも相性があります。その相性にも名前がついています。
+割と直球な名前なのでご安心を。
+--------------------------------------------------------------
+・同主調
+　　　　　　主が同じ調　なので、ハ長調とハ短調　の関係です
+・平行調
+　　　　　　調号の数が同じ　なので、ハ長調とイ短調　の関係です
+・下属調
+　　　　　　下属音の調　なので、ハ長調とヘ長調　の関係です
+・属調
+　　　　　　属音の調　なので、ハ長調とト長調　の関係です
+--------------------------------------------------------------
+・下属平行調
+　　　　　　下属調の さらに 平行調　なので、ハ長調とニ短調　の関係です
+・属平行調
+　　　　　　属調の さらに 平行調　なので、ハ長調とホ短調　の関係です
+--------------------------------------------------------------
+・トラックドライバー転調（ポップス由来）
+　　　　　　キーを +1 or +2 します　嘘みたいな名前ですが…
+　　　　　　ハ長調と嬰ハ長調 or ニ長調　の関係です
+
+この中で、平行調の関係のみ、調号の変更がなく、シームレスに行われることが多いです。
+そのため、ハ長調の曲に突然イ短調の和音が登場するケースもあります。
+
+</pre>
+</section>
+<section class="page_a4">
+<pre>
+・第二段階
+<div class="score">
+X: 1
+: 
+M: 
+L: 1/4
+R: ダイアトニックコード（長調）
+K:
+[CEG][DFA][EGB][FAc][GBd][Ace][Bdf]|]
+w:C Dm Em F G Am Bm♭5
+/*
+w:Ⅰ Ⅱ Ⅲ Ⅳ Ⅴ Ⅵ Ⅶ
+w:(主和音) ― ― (下属和音) (属和音) ―  ― |]
+w:(T) ―  ― (S) (D) ―  ― |]*/</div><div class="score">
+X: 1
+: 
+M: 
+L: 1/4
+R: ダイアトニックコード（短調）
+K:
+[A,CE][B,DF][CEG][DFA][EGB][FAc][GBd]|]
+w:Am Bm♭5 C Dm Em F G
+/*
+w:ⅰ ⅱ ⅲ ⅳ ⅴ ⅵ ⅶ
+w:(主和音) ― ― (下属和音) (属和音) ―  ― |]
+w:(T) ―  ― (S) (D) ―  ― |]
+</div>
+Q.ダイアトニックコードって何ですか？
+A.ダイアトニックコードとは、その調で登場する音を並べて作った和音のことです。
+
+調というのはその曲で使われる音のパレット…ということで、つまりダイアトニックコードは
+「曲の中で登場する(可能性のある)和音」ということになります。
+
+とはいえ、●m♭5なんてコードはあまり見ないと思います。
+それもそのはず、ダイアトニックコードの中にも名前と役割・頻出度があるのです。
+先ほど、調の音に名前がある！ということを書きましたが、その内容とおおむね被っております。
+
+<div class="score">
+X: 1
+: 
+M: 
+L: 1/4
+R: ダイアトニックコード（長調）
+K:
+[CEG][DFA][EGB][FAc][GBd][Ace][Bdf]|]
+w:Ⅰ Ⅱ Ⅲ Ⅳ Ⅴ Ⅵ Ⅶ
+w:(主和音) ― ― (下属和音) (属和音) ―  ― |]
+w:(T) ―  ― (S) (D) ―  ― |]*/</div><div class="score">
+X: 1
+: 
+M: 
+L: 1/4
+R: ダイアトニックコード（短調）
+K:
+[A,CE][B,DF][CEG][DFA][EGB][FAc][GBd]|]
+w:ⅰ ⅱ ⅲ ⅳ ⅴ ⅵ ⅶ
+w:(主和音) ― ― (下属和音) (属和音) ―  ― |]
+w:(T) ―  ― (S) (D) ―  ― |]
+</div>
+</pre>
+</section>
+<section class="page_a4">
+<pre>
+主要三和音
+端的に書くと、↑ページのTDSのこと。
+ダイアトニックコードの中で最も重要な役割を果たす３つのコードのことです。
+
+１つめ、３つの中で最も重要なのが、ダイアトニックスケールの主音上に構成される
+トニックコードで、そのキーでの中心となるコードということから主和音とも呼ばれます。
+
+２つめはダイアトニックスケールの第五音（属音）上に構成されるドミナント（三和音）/
+ドミナントセブンス（四和音）コードで、属音上に構成されることから属和音とも呼ばれます。
+
+３つ目は、ダイアトニックスケールの第４音（下属音）上に構成される
+サブドミナントコードで、これは下属和音と呼ばれ、属和音の次に重要とされています。
+
+トニックコードはそのキーの中で最も安定した響きを持ち、
+調性を決定づける役割を果たします。曲の最初や終わりで登場することも多いです。
+
+ドミナント／ドミナントセブンスコードは響きが不安定で、
+トニックコードに進んで安定した状態を得ようとする性格を持ちます。
+（この性格は、ドミナントコードよりもドミナントセブンスコードの方が強いです。）
+
+サブドミナントコードは、ドミナント/ドミナントセブンスコードほどではないですが、
+やはりトニックコードに進んで安定を得ようとする性格があります。
+ただし、その一方でより不安定な響きの
+ドミナント/ドミナントセブンスコードに進もうとする性格も併せ持っており、
+どちらにも勧める中間的な立ち位置のコードともいえます。
+<div class="reason">トニックをCにしたとき、ドミナントは G ,ドミナントセブンスは G7
+サブドミナントはF になります。
+</div>
+<div class="pero">先の内容をコードにするとこんな感じになります。
+C→G→C
+C→G7→C
+C→F→C
+C→F→G→C
+C→F→G7→C
+</div>
+何でこんなことを書いているのかと言いますと、「コード進行」の部分で
+Ⅰ→Ⅴ→Ⅵm→Ⅳ(あるいは Ⅰ→Ⅴ→ⅵ→Ⅳ)という書き方を見ることになるから　です。
+ハ長調に当てはめると
+ C→ G→ Am→ Fとなるのは少し思い出してもらえれば大丈夫と思いますが、
+Amがハ長調の平行調(イ短調)のトニックコード(T)という点に注目してもらうと
+
+ポップスのほとんどが、長調と短調のTDS(にちょっとスパイス)で構成されている
+
+と分かるはず。残りはポップスの領域になるのでもう少しお待ちください…
+
+</pre>
+</section>
+
+</section>
+<section class="page_a4">
+<pre>
+
+
+
+<h1>ここから先は調とコードの表が並んでいるだけです</h1>
+
+調の名前をぽちっと押すと、その調の部分に飛べます。
+3日くらいかかりきりでしたが、まだ終わってません……
+
+※恐らく嬰○○調や、変○○調のなかにリンク切れがあります
+
+でも、基本的な部分は大丈夫だと思うので一旦上げます。
+
+コンセプト
+
+中央で　（耳コピ転調先目安1）
+１．主調
+２．同主調
+３．下属調
+４．属調
+５．平行調
+６．下属平行調
+７．属平行調
+
+左下で（耳コピコード判定用）
+主調の　TDS
+並行調のTDS
+
+右端で（耳コピ転調先目安2）
+-2 -1 0 +1 +2
+の範囲をサポート
+
+下
+音階の譜面
+
+※3種類の短調も載せています。
+　旋律と和音で使われる音が違うのは、慣れるまで大変です…
+
+</pre>
+</section>
+
+
+
+<style>
+.custom-table table,
+.custom-table td,
+.custom-table th {
+border: 1px solid #595959;
+border-collapse: collapse;
+}
+
+.custom-table td,
+.custom-table th {
+padding: 3px;
+text-align: center;
+vertical-align: middle;
+}
+
+.custom-table th {
+background: #f0e6cc;
+}
+
+.custom-table .even {
+background: #fbf8f0;
+}
+
+.custom-table .odd {
+background: #fefcf9;
+}
+
+.custom-table .space {
+border: none;
+}
+</style>
+
+
+
+
+
+<!--<p>おいしい<em>チャーハン</em>の作り方</p>
+<hr>
+ <ul>
+ <li>このように表示されます
+       <ul>
+<li>このように表示されます
+       <ul>
+       <li>このように表示されます</li>
+       <li>このように表示されます</li>
+       <li>このように表示されます</li>
+       <li>このように表示されます</li>
+       </ul>
+ </li>
+ <li>このように表示されます</li>
+ <li>このように表示されます</li>
+ <li>このように表示されます</li>
+ </ul>
+</li>
+<li>このように表示されます</li>
+<li>このように表示されます</li>
+<li>このように表示されます</li>
+<li>このように表示されます</li>
+</ul>
+-->
+<!--★★★★★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★★★★★-->
+
+
+<section class="page_a4"> <!--2134-->
+<table class="custom-table" width="80%"> <!--CCmハ長調ハ短調-->
+<!--1個目開始--> <!--C#C#m嬰ハ長調嬰ハ短調-->
+<tbody> <!--DDmニ長調ニ短調-->
+<!--EbD#m変ホ長調嬰ニ短調-->
+<tr> <!--EEmホ長調ホ短調-->
+<th id="keyC"> ハ長調 </th> <!--FFmヘ長調ヘ短調-->
+<td class="space"></td> <!--F#F#m嬰ヘ長調嬰ヘ短調-->
+<td class="space"></td> <!--GGmト長調ト短調-->
+<td class="space"></td> <!--AbG#m変イ長調嬰ト短調-->
+<td class="space"></td> <!--AAmイ長調イ短調-->
+<td class="space"></td> <!--BbA#m変ロ長調嬰イ短調-->
+<td class="space"></td> <!--BBmロ長調ロ短調-->
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyCm"> ハ短調 </a> </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyD"> ニ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td> <a href="#keyF">ヘ長調</a></td>
+<td class="space"></td>
+<td> <a href="#keyC"> ハ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyG"> ト長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyC#"> 嬰ハ長調 </a> </td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td> <a href="#keyDm"> ニ短調 </a> </td>
+<td class="space"></td>
+<td><a href="#keyAm"> イ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyEm"> ホ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyC"> ハ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>ハ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyB"> ロ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ハ長調のT↓-->
+<td> C </td>
+<!--↓ハ長調のS↓-->
+<td> F </td>
+<!--↓ハ長調のD↓-->
+<td> G </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>イ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓イ短調のT↓-->
+<td> Am </td>
+<!--↓イ短調のS↓-->
+<td> Dm </td>
+<!--↓イ短調のD↓-->
+<td> E </td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyBb"> 変ロ長調 </a> </td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L: 1/4
+K: C
+CDEFGABc|]
+</div>
+<audio controls>
+  <source src="./wav/keyC.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+</section>
+<!--1個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--2個目開始-->
+<tbody>
+
+<tr>
+<th id="keyC#"> 嬰ハ長調 </th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyC#m"> 嬰ハ短調 </a> </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyEb"> 変ホ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td> <a href="#keyF#"> 嬰ヘ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyC#"> 嬰ハ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyAb"> 変イ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyD"> ニ長調 </a> </td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td> <a href="#keyD#m"> 嬰ニ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyA#m"> 嬰イ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyFm"> ヘ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyC#"> 嬰ハ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>嬰ハ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyC"> ハ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰ハ長調のT↓-->
+<td> C# </td>
+<!--↓嬰ハ長調のS↓-->
+<td> F# </td>
+<!--↓嬰ハ長調のD↓-->
+<td> G# </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>嬰イ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰イ短調のT↓-->
+<td> A#m </td>
+<!--↓嬰イ短調のS↓-->
+<td> D#m </td>
+<!--↓嬰イ短調のD↓-->
+<td> E# </td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyB"> ロ長調 </a> </td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+K:C#
+CDEFGABc|]
+</div>
+<audio controls>
+  <source src="./wav/keyC#.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>
+<!--2個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--3個目開始-->
+<tbody>
+
+<tr>
+<th id="keyD"> ニ長調 </th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyDm"> ニ短調 </a> </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyE"> ホ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td> <a href="#keyG"> ト長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyD"> ニ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyA"> イ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyEb"> 変ホ長調 </a> </td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td> <a href="#keyEm"> ホ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyBm"> ロ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyF#m"> 嬰ヘ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyD"> ニ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>ニ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyC#"> 嬰ハ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ニ長調のT↓-->
+<td> D </td>
+<!--↓ニ長調のS↓-->
+<td> G </td>
+<!--↓ニ長調のD↓-->
+<td> A </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>ロ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ロ短調のT↓-->
+<td> Bm </td>
+<!--↓ロ短調のS↓-->
+<td> Em </td>
+<!--↓ロ短調のD↓-->
+<td> F# </td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyC"> ハ長調 </a> </td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+K:D
+DEFGABcd|]
+</div>
+<audio controls>
+  <source src="./wav/keyD.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>
+<!--3個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--4個目開始-->
+<tbody>
+
+<tr>
+<th id="keyEb"> 変ホ長調 </th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyD#m"> 嬰ニ短調 </a> </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyF"> ヘ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td> <a href="#keyAb"> 変イ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyEb"> 変ホ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyBb"> 変ロ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyE"> ホ長調 </a> </td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td> <a href="#keyFm"> ヘ短調 </a> </td>
+<td class="space"></td>
+<td > <a href="#keyCm"> ハ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyGm"> ト短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyEb"> 変ホ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>変ホ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyD"> ニ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓変ホ長調のT↓-->
+<td> Eb </td>
+<!--↓変ホ長調のS↓-->
+<td> Ab </td>
+<!--↓変ホ長調のD↓-->
+<td> Bb </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>ハ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ハ短調のT↓-->
+<td> Cm </td>
+<!--↓ハ短調のS↓-->
+<td> Fm </td>
+<!--↓ハ短調のD↓-->
+<td> G </td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyC#"> 嬰ハ長調 </a> </td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+K:Eb
+EFGABcde|]
+</div>
+<audio controls>
+  <source src="./wav/keyEb.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>
+<!--4個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--5個目開始-->
+<tbody>
+
+<tr>
+<th id="keyE"> ホ長調 </th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyEm"> ホ短調 </a> </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyF#"> 嬰ヘ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td> <a href="#keyA"> イ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyE"> ホ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyB"> ロ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyF"> ヘ長調 </a> </td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td> <a href="#keyF#m"> 嬰ヘ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyC#m"> 嬰ハ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyG#m"> 嬰ト短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyE"> ホ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>ホ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyEb"> 変ホ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ホ長調のT↓-->
+<td> E </td>
+<!--↓ホ長調のS↓-->
+<td> A </td>
+<!--↓ホ長調のD↓-->
+<td> B </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>嬰ハ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰ハ短調のT↓-->
+<td> C#m </td>
+<!--↓嬰ハ短調のS↓-->
+<td> F#m </td>
+<!--↓嬰ハ短調のD↓-->
+<td> G# </td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyD"> ニ長調 </a> </td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+K:E
+EFGABcde|]
+</div>
+<audio controls>
+  <source src="./wav/keyE.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>
+<!--5個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--6個目開始-->
+<tbody>
+
+<tr>
+<th id="keyF"> ヘ長調 </th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyFm"> ヘ短調 </a> </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyG"> ト長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td> <a href="#keyBb"> 変ロ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyF"> ヘ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyC"> ハ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyF#"> 嬰ヘ長調 </a> </td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td> <a href="#keyGm"> ト短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyDm"> ニ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyAm"> イ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyF"> ヘ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>ヘ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyE"> ホ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ヘ長調のT↓-->
+<td> F </td>
+<!--↓ヘ長調のS↓-->
+<td> Bb </td>
+<!--↓ヘ長調のD↓-->
+<td> C</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>ニ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ニ短調のT↓-->
+<td> Dm </td>
+<!--↓ニ短調のS↓-->
+<td> Gm </td>
+<!--↓ニ短調のD↓-->
+<td> A </td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyEb"> 変ホ長調 </a> </td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+K:F
+FGABcdef|]
+</div>
+<audio controls>
+  <source src="./wav/keyF.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>
+<!--6個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--7個目開始-->
+<tbody>
+
+<tr>
+<th id="keyF#"> 嬰ヘ長調 </th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyF#m"> 嬰ヘ短調 </a> </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyAb"> 変イ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td> <a href="#keyB"> ロ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyF#"> 嬰ヘ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyC#"> 嬰ハ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyG"> ト長調 </a> </td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td> <a href="#keyG#m"> 嬰ト短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyD#m"> 嬰ニ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyA#m"> 嬰イ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyF#"> 嬰ヘ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>嬰ヘ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyF"> ヘ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰ヘ長調のT↓-->
+<td> F# </td>
+<!--↓嬰ヘ長調のS↓-->
+<td> B </td>
+<!--↓嬰ヘ長調のD↓-->
+<td> C# </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>嬰ニ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰ニ短調のT↓-->
+<td> D#m </td>
+<!--↓嬰ニ短調のS↓-->
+<td> G#m </td>
+<!--↓嬰ニ短調のD↓-->
+<td> A# </td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyE"> ホ長調 </a> </td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+K:F#
+FGABcdef|]
+</div>
+<audio controls>
+  <source src="./wav/keyF#.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>
+<!--7個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--8個目開始-->
+<tbody>
+
+<tr>
+<th id="keyG"> ト長調 </th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyGm"> ト短調 </a> </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyA"> イ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td> <a href="#keyC"> ハ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyG"> ト長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyD"> ニ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyAb"> 変イ長調 </a> </td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td> <a href="#keyAm"> イ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyEm"> ホ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyBm"> ロ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyG"> ト長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>ト長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyF#"> 嬰ヘ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ト長調のT↓-->
+<td> G </td>
+<!--↓ト長調のS↓-->
+<td> C</td>
+<!--↓ト長調のD↓-->
+<td> D </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>ホ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ホ短調のT↓-->
+<td> Em </td>
+<!--↓ホ短調のS↓-->
+<td> Am </td>
+<!--↓ホ短調のD↓-->
+<td> B </td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyF"> ヘ長調 </a> </td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+K:G
+GABcdefg|]
+</div>
+<audio controls>
+  <source src="./wav/keyG.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>
+<!--8個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--9個目開始-->
+<tbody>
+
+<tr>
+<th id="keyAb"> 変イ長調 </th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyG#m"> 嬰ト短調 </a> </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyBb"> 変ロ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td> <a href="#keyC#"> 嬰ハ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyAb"> 変イ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyEb"> 変ホ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyA"> イ長調 </a> </td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td> <a href="#keyA#m"> 嬰イ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyFm"> ヘ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyCm"> ハ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyAb"> 変イ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>変イ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyG"> ト長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓変イ長調のT↓-->
+<td> Ab </td>
+<!--↓変イ長調のS↓-->
+<td> Db </td>
+<!--↓変イ長調のD↓-->
+<td> Eb </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>ヘ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ヘ短調のT↓-->
+<td> Fm </td>
+<!--↓ヘ短調のS↓-->
+<td> A#m </td>
+<!--↓ヘ短調のD↓-->
+<td> C </td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyF#"> 嬰ヘ長調 </a> </td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+K:Ab
+ABcdefga|]
+</div>
+<audio controls>
+  <source src="./wav/keyAb.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>
+<!--9個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--10個目開始-->
+<tbody>
+
+<tr>
+<th id="keyA"> イ長調 </th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyAm"> イ短調 </a> </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyB"> ロ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td> <a href="#keyD"> ニ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyA"> イ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyE"> ホ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyBb"> 変ロ長調 </a> </td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td> <a href="#keyBm"> ロ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyF#m"> 嬰ヘ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyC#m"> 嬰ハ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyA"> イ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>イ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyAb"> 変イ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓イ長調のT↓-->
+<td> A </td>
+<!--↓イ長調のS↓-->
+<td> D </td>
+<!--↓イ長調のD↓-->
+<td> E </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>嬰へ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰ヘ短調のT↓-->
+<td> F#m </td>
+<!--↓嬰ヘ短調のS↓-->
+<td> Bm </td>
+<!--↓嬰ヘ短調のD↓-->
+<td> C# </td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyG"> ト長調 </a> </td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+K:A
+ABcdefga|]
+</div>
+<audio controls>
+  <source src="./wav/keyA.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+</section>
+<!--10個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--11個目開始-->
+<tbody>
+
+<tr>
+<th id="keyBb"> 変ロ長調 </th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyA#m"> 嬰イ短調 </a> </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyC"> ハ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td> <a href="#keyEb"> 変ホ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyBb"> 変ロ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyF"> ヘ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyB"> ロ長調 </a> </td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td> <a href="#keyCm"> ハ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyGm"> ト短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyDm"> ニ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyBb"> 変ロ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+
+<tr>
+<th>変ロ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyA"> イ長調 </a> </td>
+</tr>
+
+<tr>
+<td class="space"></td>
+<!--↓変ロ長調のT↓-->
+<td> Bb </td>
+<!--↓変ロ長調のS↓-->
+<td> Eb </td>
+<!--↓変ロ長調のD↓-->
+<td> F </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+</tr>
+
+<tr>
+<th>ト短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+
+<tr>
+<td class="space"></td>
+<!--↓ト短調のT↓-->
+<td> Gm </td>
+<!--↓ト短調のS↓-->
+<td> Cm </td>
+<!--↓ト短調のD↓-->
+<td> D </td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyAb"> 変イ長調 </a> </td>
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+K:Bb
+B,CDEGAB|]
+</div>
+<audio controls>
+  <source src="./wav/keyBb.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>
+<!--11個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--12個目開始-->
+<tbody>
+
+<tr>
+<th id="keyB"> ロ長調 </th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyBm"> ロ短調 </a> </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyC#"> 嬰ハ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td> <a href="#keyE"> ホ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyB"> ロ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyF#"> 嬰ヘ長調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyC"> ハ長調 </a> </td>
+</tr>
+
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+
+<tr>
+<td> <a href="#keyC#m"> 嬰ハ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyG#m"> 嬰ト短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyD#m"> 嬰ニ短調 </a> </td>
+<td class="space"></td>
+<td> <a href="#keyB"> ロ長調 </a> </td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+
+<tr>
+<th>ロ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyBb"> 変ロ長調 </a> </td>
+</tr>
+
+<tr>
+<td class="space"></td>
+<!--↓ロ長調のT↓-->
+<td> B </td>
+<!--↓ロ長調のS↓-->
+<td> E </td>
+<!--↓ロ長調のD↓-->
+<td> F# </td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>嬰ト短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰ト短調のT↓-->
+<td> G#m </td>
+<!--↓嬰ト短調のS↓-->
+<td> C#m </td>
+<!--↓嬰ト短調のD↓-->
+<td> D# </td>
+<td class="space"></td>
+<td class="space"></td>
+<td> <a href="#keyA"> イ長調 </a> </td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+X:1
+L:1/4
+K:B
+B,CDEGAB|]
+</div>
+<audio controls>
+  <source src="./wav/keyB.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>
+<!--12個目終わり-->
+
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+
+<section class="page_a4"><!--2134-->
+<table class="custom-table" width="80%"><!--CCmハ長調ハ短調-->
+<!--1個目開始--><!--C#C#m嬰ハ長調嬰ハ短調-->
+<tbody><!--DDmニ長調ニ短調-->
+<!--EbD#m変ホ長調嬰ニ短調-->
+<tr><!--EEmホ長調ホ短調-->
+<th id="keyCm">ハ短調</th><!--FFmヘ長調ヘ短調-->
+<td class="space"></td><!--F#F#m嬰ヘ長調嬰ヘ短調-->
+<td class="space"></td><!--GGmト長調ト短調-->
+<td class="space"></td><!--AbG#m変イ長調嬰ト短調-->
+<td class="space"></td><!--AAmイ長調イ短調-->
+<td class="space"></td><!--BbA#m変ロ長調嬰イ短調-->
+<td class="space"></td><!--BBmロ長調ロ短調-->
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyC">ハ長調</a></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyDm">ニ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td><a href="#keyFm">ヘ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyCm">ハ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyGm">ト短調</a></td>
+<td class="space"></td>
+<td><a href="#keyC#m">嬰ハ短調</a></td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td><a href="#keyD">ニ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyA">イ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyE">ホ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyCm">ハ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>ハ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyBm">ロ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ハ短調のT↓-->
+<td>Cm</td>
+<!--↓ハ短調のS↓-->
+<td>Fm</td>
+<!--↓ハ短調のD↓-->
+<td>G</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>イ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓イ長調のT↓-->
+<td>A</td>
+<!--↓イ長調のS↓-->
+<td>D</td>
+<!--↓イ長調のD↓-->
+<td>E</td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyA#m">嬰イ短調</a></td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+R:自然的短音階
+K:Cm	
+CDEFGABc|]
+</div>
+<audio controls>
+  <source src="./wav/keyCm_1.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/4
+R:和声的短音階
+K:Cm
+CDEFGA=Bc|]
+</div>
+<audio controls>
+  <source src="./wav/keyCm_2.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/16
+R:旋律的短音階
+K:Cm
+CDEFG=A=Bc|c_B_AGFEDC|]
+</div>
+<audio controls>
+  <source src="./wav/keyCm_3.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>      
+<!--1個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--2個目開始-->
+<tbody>
+
+<tr>
+<th id="keyC#m">嬰ハ短調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyC#">嬰ハ長調</a></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyD#m">嬰ニ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td><a href="#keyF#m">嬰ヘ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyC#m">嬰ハ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyG#m">嬰ト短調</a></td>
+<td class="space"></td>
+<td><a href="#keyDm">ニ短調</a></td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td><a href="#keyEb">変ホ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyBb">変ロ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyF">ヘ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyC#m">嬰ハ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>嬰ハ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyCm">ハ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰ハ短調のT↓-->
+<td>C#m</td>
+<!--↓嬰ハ短調のS↓-->
+<td>F#m</td>
+<!--↓嬰ハ短調のD↓-->
+<td>Ab</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>変ロ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓変ロ長調のT↓-->
+<td>Bb</td>
+<!--↓変ロ長調のS↓-->
+<td>Eb</td>
+<!--↓変ロ長調のD↓-->
+<td>F</td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyBm">ロ短調</a></td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+R:自然的短音階
+K:C#m	
+CDEFGABc|]
+</div>
+<audio controls>
+  <source src="./wav/keyC#m_1.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/4
+R:和声的短音階
+K:C#m
+CDEFGA^Bc|]
+</div>
+<audio controls>
+  <source src="./wav/keyC#m_2.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/16
+R:旋律的短音階
+K:C#m
+CDEFG^A^Bc|c=B=AGFEDC|]
+</div>
+<audio controls>
+  <source src="./wav/keyC#m_3.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+</section>      
+<!--2個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--3個目開始-->
+<tbody>
+
+<tr>
+<th id="keyDm">ニ短調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyD">ニ長調</a></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyEm">ホ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td><a href="#keyGm">ト短調</a></td>
+<td class="space"></td>
+<td><a href="#keyDm">ニ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyAm">イ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyD#m">嬰ニ短調</a></td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td><a href="#keyE">ホ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyB">ロ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyF#">嬰ヘ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyDm">ニ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>ニ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyC#m">嬰ハ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ニ短調のT↓-->
+<td>Dm</td>
+<!--↓ニ短調のS↓-->
+<td>Gm</td>
+<!--↓ニ短調のD↓-->
+<td>A</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>ロ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ロ長調のT↓-->
+<td>B</td>
+<!--↓ロ長調のS↓-->
+<td>E</td>
+<!--↓ロ長調のD↓-->
+<td>F#</td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyCm">ハ短調</a></td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+R:自然的短音階
+K:Dm	
+DEFGABcd|]
+</div>
+
+<audio controls>
+  <source src="./wav/keyDm_1.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/4
+R:和声的短音階
+K:Dm
+DEFGAB^cd|]
+</div>
+<audio controls>
+  <source src="./wav/keyDm_2.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/16
+R:旋律的短音階
+K:Dm
+DEFGA^B^cd|d=c=BAGFED|]
+</div>
+<audio controls>
+  <source src="./wav/keyDm_3.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+</section>      
+<!--3個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--4個目開始-->
+<tbody>
+
+<tr>
+<th id="keyD#m">嬰ニ短調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyEb">変ホ長調</a></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyFm">ヘ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td><a href="#keyG#m">嬰ト短調</a></td>
+<td class="space"></td>
+<td><a href="#keyD#m">嬰ニ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyA#m">嬰イ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyEm">ホ短調</a></td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td><a href="#keyF">ヘ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyC">ハ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyG">ト長調</a></td>
+<td class="space"></td>
+<td><a href="#keyD#m">嬰ニ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>嬰ニ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyDm">ニ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰ニ短調のT↓-->
+<td>D#m</td>
+<!--↓嬰ニ短調のS↓-->
+<td>G#m</td>
+<!--↓嬰ニ短調のD↓-->
+<td>Bb</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>ハ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ハ長調のT↓-->
+<td>C</td>
+<!--↓ハ長調のS↓-->
+<td>F</td>
+<!--↓ハ長調のD↓-->
+<td>G</td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyC#m">嬰ハ短調</a></td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+R:自然的短音階
+K:D#m	
+DEFGABcd|]
+</div>
+<audio controls>
+  <source src="./wav/keyD#m_1.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+<div class="score">
+L:1/4
+R:和声的短音階
+K:D#m
+DEFGAB^cd|]
+</div>
+<audio controls>
+  <source src="./wav/keyD#m_2.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+<div class="score">
+L:1/16
+R:旋律的短音階
+K:D#m
+DEFGA^B^cd|d=c=BAGFED|]
+</div>
+<audio controls>
+  <source src="./wav/keyD#m_3.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>      
+<!--4個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--5個目開始-->
+<tbody>
+
+<tr>
+<th id="keyEm">ホ短調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyE">ホ長調</a></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyF#m">嬰ヘ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td><a href="#keyAm">イ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyEm">ホ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyBm">ロ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyFm">ヘ短調</a></td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td><a href="#keyF#">嬰ヘ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyC#">嬰ハ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyAb">変イ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyEm">ホ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>ホ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyD#m">嬰ニ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ホ短調のT↓-->
+<td>Em</td>
+<!--↓ホ短調のS↓-->
+<td>Am</td>
+<!--↓ホ短調のD↓-->
+<td>B</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>嬰ハ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰ハ長調のT↓-->
+<td>C#</td>
+<!--↓嬰ハ長調のS↓-->
+<td>F#</td>
+<!--↓嬰ハ長調のD↓-->
+<td>Ab</td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyDm">ニ短調</a></td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+R:自然的短音階
+K:Em	
+EFGABcde|]
+</div>
+<audio controls>
+  <source src="./wav/keyEm_1.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/4
+R:和声的短音階
+K:Em
+EFGABc^de|]
+</div>
+<audio controls>
+  <source src="./wav/keyEm_2.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+<div class="score">
+L:1/16
+R:旋律的短音階
+K:Em
+EFGAB^c^de|e=d=cBAGFE|]
+</div>
+<audio controls>
+  <source src="./wav/keyEm_3.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+</section>      
+<!--5個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--6個目開始-->
+<tbody>
+
+<tr>
+<th id="keyFm">ヘ短調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyF">ヘ長調</a></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyGm">ト短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td><a href="#keyA#m">嬰イ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyFm">ヘ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyCm">ハ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyF#m">嬰ヘ短調</a></td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td><a href="#keyG">ト長調</a></td>
+<td class="space"></td>
+<td><a href="#keyD">ニ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyA">イ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyFm">ヘ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>ヘ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyEm">ホ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ヘ短調のT↓-->
+<td>Fm</td>
+<!--↓ヘ短調のS↓-->
+<td>A#m</td>
+<!--↓ヘ短調のD↓-->
+<td>C</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>ニ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ニ長調のT↓-->
+<td>D</td>
+<!--↓ニ長調のS↓-->
+<td>G</td>
+<!--↓ニ長調のD↓-->
+<td>A</td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyD#m">嬰ニ短調</a></td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+R:自然的短音階
+K:Fm	
+FGABcdef|]
+</div>
+<audio controls>
+  <source src="./wav/keyFm_1.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/4
+R:和声的短音階
+K:Fm
+FGABcd^ef|]
+</div>
+<audio controls>
+  <source src="./wav/keyFm_2.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/16
+R:旋律的短音階
+K:Fm
+FGABc^d^ef|f=e=dcBAGF|]
+</div>
+<audio controls>
+  <source src="./wav/keyFm_3.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>      
+<!--6個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--7個目開始-->
+<tbody>
+
+<tr>
+<th id="keyF#m">嬰ヘ短調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyF#">嬰ヘ長調</a></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyG#m">嬰ト短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td><a href="#keyBm">ロ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyF#m">嬰ヘ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyC#m">嬰ハ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyGm">ト短調</a></td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td><a href="#keyAb">変イ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyEb">変ホ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyBb">変ロ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyF#m">嬰ヘ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>嬰ヘ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyFm">ヘ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰ヘ短調のT↓-->
+<td>F#m</td>
+<!--↓嬰ヘ短調のS↓-->
+<td>Bm</td>
+<!--↓嬰ヘ短調のD↓-->
+<td>C#</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>変ホ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓変ホ長調のT↓-->
+<td>Eb</td>
+<!--↓変ホ長調のS↓-->
+<td>Ab</td>
+<!--↓変ホ長調のD↓-->
+<td>Bb</td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyEm">ホ短調</a></td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+R:自然的短音階
+K:F#m	
+FGABcdef|]
+</div>
+<audio controls>
+  <source src="./wav/keyF#m_1.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+<div class="score">
+L:1/4
+R:和声的短音階
+K:F#m
+FGABcd^ef|]
+</div>
+<audio controls>
+  <source src="./wav/keyF#m_2.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/16
+R:旋律的短音階
+K:F#m
+FGABc^d^ef|f=e=dcBAGF|]
+</div>
+<audio controls>
+  <source src="./wav/keyF#m_3.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+</section>      
+<!--7個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--8個目開始-->
+<tbody>
+
+<tr>
+<th id="keyGm">ト短調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyG">ト長調</a></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyAm">イ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td><a href="#keyCm">ハ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyGm">ト短調</a></td>
+<td class="space"></td>
+<td><a href="#keyDm">ニ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyG#m">嬰ト短調</a></td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td><a href="#keyA">イ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyE">ホ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyB">ロ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyGm">ト短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>ト短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyF#m">嬰ヘ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ト短調のT↓-->
+<td>Gm</td>
+<!--↓ト短調のS↓-->
+<td>Cm</td>
+<!--↓ト短調のD↓-->
+<td>D</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>ホ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ホ長調のT↓-->
+<td>E</td>
+<!--↓ホ長調のS↓-->
+<td>A</td>
+<!--↓ホ長調のD↓-->
+<td>B</td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyFm">ヘ短調</a></td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+R:自然的短音階
+K:Gm	
+GABcdefg|]
+</div>
+<audio controls>
+  <source src="./wav/keyGm_1.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/4
+R:和声的短音階
+K:Gm
+GABcde^fg|]
+</div>
+<audio controls>
+  <source src="./wav/keyGm_2.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/16
+R:旋律的短音階
+K:Gm
+GABcd^e^fg|g=f=edcBAG|]
+</div>
+<audio controls>
+  <source src="./wav/keyGm_3.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+</section>      
+<!--8個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--9個目開始-->
+<tbody>
+
+<tr>
+<th id="keyG#m">嬰ト短調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyAb">変イ長調</a></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyA#m">嬰イ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td><a href="#keyC#m">嬰ハ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyG#m">嬰ト短調</a></td>
+<td class="space"></td>
+<td><a href="#keyD#m">嬰ニ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyAm">イ短調</a></td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td><a href="#keyBb">変ロ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyF">ヘ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyC">ハ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyG#m">嬰ト短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>嬰ト短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyGm">ト短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰ト短調のT↓-->
+<td>G#m</td>
+<!--↓嬰ト短調のS↓-->
+<td>C#m</td>
+<!--↓嬰ト短調のD↓-->
+<td>Eb</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>ヘ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ヘ長調のT↓-->
+<td>F</td>
+<!--↓ヘ長調のS↓-->
+<td>Bb</td>
+<!--↓ヘ長調のD↓-->
+<td>C</td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyF#m">嬰ヘ短調</a></td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+R:自然的短音階
+K:G#m	
+GABcdefg|]
+</div>
+<audio controls>
+  <source src="./wav/keyG#m_1.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/4
+R:和声的短音階
+K:G#m
+GABcde^fg|]
+</div>
+<audio controls>
+  <source src="./wav/keyG#m_2.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/16
+R:旋律的短音階
+K:G#m
+GABcd^e^fg|g=f=edcBAG|]
+</div>
+<audio controls>
+  <source src="./wav/keyG#m_3.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>      
+<!--9個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--10個目開始-->
+<tbody>
+
+<tr>
+<th id="keyAm">イ短調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyA">イ長調</a></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyBm">ロ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td><a href="#keyDm">ニ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyAm">イ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyEm">ホ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyA#m">嬰イ短調</a></td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td><a href="#keyB">ロ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyF#">嬰ヘ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyC#">嬰ハ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyAm">イ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>イ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyG#m">嬰ト短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓イ短調のT↓-->
+<td>Am</td>
+<!--↓イ短調のS↓-->
+<td>Dm</td>
+<!--↓イ短調のD↓-->
+<td>E</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>嬰ヘ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰ヘ長調のT↓-->
+<td>F#</td>
+<!--↓嬰ヘ長調のS↓-->
+<td>B</td>
+<!--↓嬰ヘ長調のD↓-->
+<td>C#</td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyGm">ト短調</a></td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+R:自然的短音階
+K:Am
+ABcdefga|]
+</div>
+<audio controls>
+  <source src="./wav/keyAm_1.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/4
+R:和声的短音階
+K:Am
+ABcdef^ga|]
+</div>
+
+<audio controls>
+  <source src="./wav/keyAm_2.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/16
+R:旋律的短音階
+K:Am
+ABcdef^g^a|a=g=fedcBA|]
+</div>
+<audio controls>
+  <source src="./wav/keyAm_3.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>      
+<!--10個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--11個目開始-->
+<tbody>
+
+<tr>
+<th id="keyA#m">嬰イ短調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyBb">変ロ長調</a></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyCm">ハ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td><a href="#keyD#m">嬰ニ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyA#m">嬰イ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyFm">ヘ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyBm">ロ短調</a></td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td><a href="#keyC">ハ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyG">ト長調</a></td>
+<td class="space"></td>
+<td><a href="#keyD">ニ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyA#m">嬰イ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>嬰イ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyAm">イ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓嬰イ短調のT↓-->
+<td>A#m</td>
+<!--↓嬰イ短調のS↓-->
+<td>D#m</td>
+<!--↓嬰イ短調のD↓-->
+<td>F</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>ト長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ト長調のT↓-->
+<td>G</td>
+<!--↓ト長調のS↓-->
+<td>C</td>
+<!--↓ト長調のD↓-->
+<td>D</td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyG#m">嬰ト短調</a></td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+R:自然的短音階
+K:A#m
+ABcdefga|]
+</div>
+
+<audio controls>
+  <source src="./wav/keyA#m_1.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/4
+R:和声的短音階
+K:A#m
+ABcdef^ga|]
+</div>
+<audio controls>
+  <source src="./wav/keyA#m_2.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/16
+R:旋律的短音階
+K:A#m
+ABcdef^g^a|a=g=fedcBA|]
+</div>
+<audio controls>
+  <source src="./wav/keyA#m_3.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>      
+<!--11個目終わり-->
+<section class="page_a4">
+<table class="custom-table" width="80%">
+<!--12個目開始-->
+<tbody>
+
+<tr>
+<th id="keyBm">ロ短調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<th>同主調</th>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音上に</th>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyB">ロ長調</a></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyC#m">嬰ハ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↑</td>
+
+</tr>
+
+<tr>
+<th>下属調</th>
+<td class="space">←</td>
+<th>主</th>
+<td class="space">→</td>
+<th>属調</th>
+<td class="space"></td>
+<th>半音上に</th>
+</tr>
+<tr>
+<td><a href="#keyEm">ホ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyBm">ロ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyF#m">嬰ヘ短調</a></td>
+<td class="space"></td>
+<td><a href="#keyCm">ハ短調</a></td>
+</tr>
+<tr>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+
+<tr>
+<th>下属平行調</th>
+<td class="space"></td>
+<th>平行調</th>
+<td class="space"></td>
+<th>属平行調</th>
+<td class="space"></td>
+<th>Original</th>
+</tr>
+<tr>
+<td><a href="#keyC#">嬰ハ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyAb">変イ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyEb">変ホ長調</a></td>
+<td class="space"></td>
+<td><a href="#keyBm">ロ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space"></td>
+<th>半音下に</th>
+</tr>
+<tr>
+<th>ロ短調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyA#m">嬰イ短調</a></td>
+</tr>
+<tr>
+<td class="space"></td>
+<!--↓ロ短調のT↓-->
+<td>Bm</td>
+<!--↓ロ短調のS↓-->
+<td>Em</td>
+<!--↓ロ短調のD↓-->
+<td>F#</td>
+<td class="space"></td>
+<td class="space"></td>
+<td class="space">↓</td>
+
+</tr>
+<tr>
+<th>変イ長調</th>
+<th>T</th>
+<th>D</th>
+<th>S</th>
+<td class="space"></td>
+<td class="space"></td>
+<th>全音下に</th>
+</tr>
+
+<tr>
+<td class="space"></td>
+<!--↓変イ長調のT↓-->
+<td>Ab</td>
+<!--↓変イ長調のS↓-->
+<td>C#</td>
+<!--↓変イ長調のD↓-->
+<td>Eb</td>
+<td class="space"></td>
+<td class="space"></td>
+<td><a href="#keyAm">イ短調</a></td>
+
+</tr>
+
+</tbody>
+</table>
+</table>
+<div class="score">
+L:1/4
+R:自然的短音階
+K:Bm
+B,CDEFGAB|]
+</div>
+<audio controls>
+  <source src="./wav/keyBm_1.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/4
+R:和声的短音階
+K:Bm
+B,CDEFG^AB|]
+</div>
+<audio controls>
+  <source src="./wav/keyBm_2.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+<div class="score">
+L:1/16
+R:旋律的短音階
+K:Bm
+B,CDEF^G^AB|B=A=GFEDCB,|]
+</div>
+<audio controls>
+  <source src="./wav/keyBm_3.wav" type="audio/wav">
+  Your browser does not support the audio element.
+</audio>
+
+</section>      
+<!--12個目終わり-->
+
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+
+<!--<section class="page_a4">-->
+
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+<!--★★★★★★★★★★★★★★★★-->
+
+</section><section class="page_a4">
+
+
+
+
+
+
+<script>
+	var scoreObj = document.getElementsByClassName("score");
+	for( var i in scoreObj ){
+		ABCJS.renderAbc( scoreObj[i], scoreObj[i].innerHTML );
+	}
+</script>
+</body>
+
+</html>
