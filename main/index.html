@@ -67,7 +67,6 @@
     .cm-number { color: orange !important; }
     .cm-comment { color: green !important; }
     .cm-keyword { color: aqua !important; }
-    .cm-operator { color: yellow !important;}
     #searchTool {
       padding: 10px;
     }
@@ -399,7 +398,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/javascript/javascript.min.js"></script>
   <script>
     const keywords = ["func", "var", "?", ":", "!"];
-    const operator = ["+", "-", "*", "/", "(", ")", "[", "]"];
+
     CodeMirror.defineMode("customLang", function() {
       return {
         startState: function() {
