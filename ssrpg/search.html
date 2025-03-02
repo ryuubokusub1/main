@@ -297,6 +297,14 @@
       copyButton.textContent = "コピー";
       copyButton.addEventListener("click", () => copyGeneratedCode());
       copyContainer.appendChild(copyButton);
+      const indentDecreaseButton = document.createElement("button");
+      indentDecreaseButton.textContent = "-";
+      indentDecreaseButton.addEventListener("click", () => removeIndentation('generatedCodeText'));
+      copyContainer.appendChild(indentDecreaseButton);
+      const indentIncreaseButton = document.createElement("button");
+      indentIncreaseButton.textContent = "+";
+      indentIncreaseButton.addEventListener("click", () => addIndentation('generatedCodeText'));
+      copyContainer.appendChild(indentIncreaseButton);
       detailsDiv.appendChild(copyContainer);
 
       updateGeneratedCode(syntaxItem);
