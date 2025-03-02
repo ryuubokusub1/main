@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>情報検索</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/theme/monokai.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldgutter.min.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: monospace;
+      background: #1e1e1e;
+      color: white;
+    }
+    .tabs {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      background: #282c34;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      cursor: pointer;
+      background: #3c3f41;
+      border: none;
+      color: white;
+      text-align: center;
+    }
+    .tab.active {
+      background: #007acc;
+    }
+    .sub-tabs {
+      display: flex;
+      background: #333;
+      padding: 5px;
+    }
+    .sub-tab {
+      padding: 5px 10px;
+      cursor: pointer;
+      background: #444;
+      border: 1px solid #666;
+      color: white;
+    }
+    .sub-tab.active {
+      background: #666;
+    }
+    .content {
+      display: none;
+      width: 100%;
+      height: calc(100vh - 40px);
+    }
+    .content.active {
+      display: block;
+    }
+    #searchTool {
+      padding: 10px;
+    }
+    #searchTool input[type="text"] {
+      padding: 5px;
+      font-size: 16px;
+      width: 300px;
+    }
+    #searchResults {
+      margin-top: 10px;
+      max-height: 20vh;
+      overflow-y: auto;
+      background: #2d2d2d;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .resultItem {
+      padding: 4px 0;
+      border-bottom: 1px solid #444;
+      cursor: pointer;
+    }
+    .resultItem:hover {
+      background: #3a3a3a;
+    }
+    #syntaxDetails {
+      margin-top: 10px;
+      padding: 10px;
+      background: #2d2d2d;
+      border-radius: 4px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    #syntaxDetails pre {
+      white-space: pre-wrap;
+      margin: 5px 0;
+    }
+    #syntaxDetails hr {
+      border: 0;
+      border-top: 1px solid #666;
+      margin: 10px 0;
+    }
+    #syntaxDetails input {
+      display: block;
+      margin: 5px 0;
+      padding: 5px;
+      width: 200px;
+    }
+    #syntaxDetails textarea {
+      width: 100%;
+      height: 100px;
+      resize: none;
+      background: #1e1e1e;
+      color: white;
+      border: none;
+      margin-top: 5px;
+    }
+    input[type="text"] {
+      width: 35ch;
+      margin-bottom: 10px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    select {
+      width: 100%;
+      padding: 5px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="tabs">
+    <a href="index.html" class="tab">ホーム</a>
+    <a href="editor.html" class="tab">エディター</a>
+    <a href="page1.html" class="tab">ページ1</a>
+  </div>
+  <div class="content">
+    <h1>情報検索</h1>
+  <!-- 検索ツール -->
+  <div id="search-container" class="content active">
+    <div class="sub-tabs" id="search-sub-tabs">
+      <div class="sub-tab active" data-target="syntax-search">構文検索</div>
+      <div class="sub-tab" data-target="copy-tool">コピペ用</div>
+    </div>
+    <div id="syntax-search" class="content active">
+      <div id="searchTool">
+        <label for="searchQuery">検索文字列:</label>
+        <input type="text" id="searchQuery" placeholder="例: draw">
+        <button id="runSearch">検索</button>
+        <div id="searchResults"></div>
+        <div id="syntaxDetails"></div>
+      </div>
+    </div>
+    <div id="copy-tool" class="content">
+      <h3><font color="red">未完成</font></h3>
+      <textarea id="copyArea" placeholder="ここに貼り付けてコピー"></textarea>
+      <!-- 場所・敵リスト -->
+      <form>
+        <label for="example3">場所・敵リスト</label><br>
+        <select id="example3" name="example3">
+          <option value="">---選択して下さい---</option>
+          <option value="rocky_plateau">★ロッキー山脈</option>
+          <option value="acronian_scout">アルカディアの偵察隊</option>
+          <!-- その他のオプションは省略 -->
+        </select><br>
+        <label for="selectedText1">code</label>
+      </form>
+      <input type="text" id="selectedText1" readonly>
+      <button onclick="copyToClipboard(this)">Copy</button><br>
+      <button onclick="removeIndentation('selectedText1')">-</button>
+      <button onclick="addIndentation('selectedText1')">+</button>
+      <br><br><br><br>
+
+      <!-- クールダウンID -->
+      <form>
+        <label for="example2">クールダウンID</label><br>
+        <select id="example2" name="example2">
+          <option value="">---選択して下さい---</option>
+          <option value='"aether_talisman"'>Ather Talisman</option>
+          <option value='"bardiche"'>Bardiche</option>
+          <!-- その他のオプションは省略 -->
+        </select><br>
+        <label for="selectedText2">code</label>
+      </form>
+      <input type="text" id="selectedText2" readonly>
+      <button onclick="copyToClipboard(this)">Copy</button><br>
+      <button onclick="removeIndentation('selectedText2')">-</button>
+      <button onclick="addIndentation('selectedText2')">+</button>
+    </div>
+  </div>
+    </div>
+  <script>
+    // 構文検索用データマスタ（一部のみ記述、完全版は元のコードを参照）
+    const syntaxMaster = [
+      {
+        syntax: "draw.Bg({x}, {y}, {color})",
+        description: "戻り値:なし\n特定の画面位置の背景色を設定します。",
+        args: [
+          { name: "x", type: "int" },
+          { name: "y", type: "int" },
+          { name: "color", type: "string" }
+        ],
+        example: "draw.Bg(5, 4, #red)\n// (5,4)に赤い背景を設定"
+      }
+      // その他の構文は省略
+    ];
+
+    // メインタブ切り替え（今回は検索ツールのみなので簡略化）
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab, .content').forEach(el => el.classList.remove('active'));
+        tab.classList.add('active');
+        const targetContent = document.getElementById(tab.dataset.target);
+        targetContent.classList.add('active');
+      });
+    });
+
+    // 検索ツールのサブタブ切り替え
+    document.querySelectorAll('#search-sub-tabs .sub-tab').forEach(subTab => {
+      subTab.addEventListener('click', () => {
+        const subTabsContainer = document.getElementById('search-sub-tabs');
+        const subContents = document.querySelectorAll('#search-container .content');
+        subTabsContainer.querySelectorAll('.sub-tab').forEach(el => el.classList.remove('active'));
+        subContents.forEach(el => el.classList.remove('active'));
+        subTab.classList.add('active');
+        const targetContent = document.getElementById(subTab.dataset.target);
+        if (targetContent) {
+          targetContent.classList.add('active');
+        }
+      });
+    });
+
+    // 構文検索の実装
+    document.getElementById("runSearch").addEventListener("click", () => {
+      const query = document.getElementById("searchQuery").value.toLowerCase();
+      const resultsDiv = document.getElementById("searchResults");
+      const detailsDiv = document.getElementById("syntaxDetails");
+      resultsDiv.innerHTML = "";
+      detailsDiv.innerHTML = "";
+
+      const filtered = syntaxMaster.filter(item => item.syntax.toLowerCase().includes(query));
+      if (filtered.length === 0) {
+        resultsDiv.innerHTML = "<div class='resultItem'>該当なし</div>";
+      } else {
+        filtered.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "resultItem";
+          div.textContent = item.syntax;
+          div.addEventListener("click", () => showSyntaxDetails(item));
+          resultsDiv.appendChild(div);
+        });
+      }
+    });
+
+    function showSyntaxDetails(syntaxItem) {
+      const detailsDiv = document.getElementById("syntaxDetails");
+      detailsDiv.innerHTML = "";
+
+      const syntaxPre = document.createElement("pre");
+      syntaxPre.textContent = syntaxItem.syntax;
+      detailsDiv.appendChild(syntaxPre);
+      detailsDiv.appendChild(document.createElement("hr"));
+
+      const descriptionPre = document.createElement("pre");
+      descriptionPre.textContent = syntaxItem.description;
+      detailsDiv.appendChild(descriptionPre);
+      detailsDiv.appendChild(document.createElement("hr"));
+
+      const examplePre = document.createElement("pre");
+      examplePre.textContent = syntaxItem.example;
+      detailsDiv.appendChild(examplePre);
+      detailsDiv.appendChild(document.createElement("hr"));
+
+      const argsContainer = document.createElement("div");
+      syntaxItem.args.forEach(arg => {
+        const label = document.createElement("label");
+        label.textContent = `${arg.name} (${arg.type}): `;
+        const input = document.createElement("input");
+        input.type = "text";
+        input.dataset.argName = arg.name;
+        input.addEventListener("input", () => updateGeneratedCode(syntaxItem));
+        argsContainer.appendChild(label);
+        argsContainer.appendChild(input);
+      });
+      detailsDiv.appendChild(argsContainer);
+      detailsDiv.appendChild(document.createElement("hr"));
+
+      const copyContainer = document.createElement("div");
+      const generatedCodeText = document.createElement("textarea");
+      generatedCodeText.id = "generatedCodeText";
+      generatedCodeText.readOnly = true;
+      copyContainer.appendChild(generatedCodeText);
+      const copyButton = document.createElement("button");
+      copyButton.textContent = "コピー";
+      copyButton.addEventListener("click", () => copyGeneratedCode());
+      copyContainer.appendChild(copyButton);
+      detailsDiv.appendChild(copyContainer);
+
+      updateGeneratedCode(syntaxItem);
+    }
+
+    function updateGeneratedCode(syntaxItem) {
+      const inputs = document.querySelectorAll("#syntaxDetails input");
+      let generated = syntaxItem.syntax;
+      inputs.forEach(input => {
+        const argName = input.dataset.argName;
+        const value = input.value || `{${argName}}`;
+        generated = generated.replace(`{${argName}}`, value);
+      });
+      document.getElementById("generatedCodeText").value = generated;
+    }
+
+    function copyGeneratedCode() {
+      const codeText = document.getElementById("generatedCodeText");
+      codeText.select();
+      document.execCommand("copy");
+      alert("コードをコピーしました: " + codeText.value);
+    }
+
+    // 場所・敵リストの処理
+    const example3 = document.getElementById('example3');
+    const selectedText1 = document.getElementById('selectedText1');
+    example3.addEventListener('change', function() {
+      selectedText1.value = example3.value;
+    });
+
+    // クールダウンIDの処理
+    const example2 = document.getElementById('example2');
+    const selectedText2 = document.getElementById('selectedText2');
+    example2.addEventListener('change', function() {
+      selectedText2.value = "?item.GetCooldown(" + example2.value + ")<=0";
+    });
+
+    // クリップボードにコピーする関数
+    function copyToClipboard(button) {
+      const target = button.previousElementSibling;
+      let textToCopy = '';
+      if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') {
+        textToCopy = target.value;
+      } else {
+        textToCopy = target.textContent;
+      }
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        setTimeout(() => {
+          button.textContent = originalText;
+        }, 1000);
+      }).catch(err => {
+        console.error('クリップボードへのコピーに失敗しました: ', err);
+      });
+    }
+
+    // インデント追加
+    function addIndentation(textAreaId) {
+      const textArea = document.getElementById(textAreaId);
+      const lines = textArea.value.split('\n');
+      const indentedLines = lines.map(line => ' ' + line);
+      textArea.value = indentedLines.join('\n');
+    }
+
+    // インデント削除
+    function removeIndentation(textAreaId) {
+      const textArea = document.getElementById(textAreaId);
+      const lines = textArea.value.split('\n');
+      const allIndented = lines.every(line => line.startsWith(' '));
+      if (allIndented) {
+        const unindentedLines = lines.map(line => line.slice(1));
+        textArea.value = unindentedLines.join('\n');
+      }
+    }
+  </script>
+</body>
+</html>

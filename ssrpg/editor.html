@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>カスタムコードエディタ_20250226</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/theme/monokai.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldgutter.min.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: monospace;
+      background: #1e1e1e;
+      color: white;
+    }
+    .tabs {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      background: #282c34;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      cursor: pointer;
+      background: #3c3f41;
+      border: none;
+      color: white;
+      text-align: center;
+    }
+    .tab.active {
+      background: #007acc;
+    }
+    .content {
+      display: none;
+      width: 100%;
+      height: calc(100vh - 40px);
+    }
+    .content.active {
+      display: block;
+    }
+    .CodeMirror {
+      height: 100% !important;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .cm-lineNumbers {
+      background: #282c34;
+    }
+    .cm-string { color: red !important; }
+    .cm-number { color: orange !important; }
+    .cm-comment { color: green !important; }
+    .cm-keyword { color: aqua !important; }
+    .cm-operator { color: yellow !important; }
+    #editorContainer {
+      position: relative;
+    }
+    #hamburgerMenu {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      cursor: pointer;
+      color: white;
+      background: #3c3f41;
+      padding: 5px 10px;
+      border-radius: 4px;
+      z-index: 10;
+    }
+    #menu {
+      position: absolute énorm
+
+      top: 40px;
+      right: 10px;
+      background: #3c3f41;
+      border-radius: 4px;
+      display: none;
+      flex-direction: column;
+      z-index: 10;
+    }
+    #menu button {
+      padding: 10px;
+      background: none;
+      border: none;
+      color: white;
+      text-align: left;
+      cursor: pointer;
+    }
+    #menu button:hover {
+      background: #007acc;
+    }
+    .search-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #282c34;
+      padding: 20px;
+      border-radius: 8px;
+      z-index: 100;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+    .search-modal.active {
+      display: block;
+    }
+    .search-modal input {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      background: #3c3f41;
+      border: none;
+      color: white;
+      border-radius: 4px;
+    }
+    .search-modal button {
+      padding: 8px 16px;
+      margin: 5px 5px 0 0;
+      background: #007acc;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .search-modal button:hover {
+      background: #005f9e;
+    }
+    .search-modal .close-btn {
+      background: #dc3545;
+      float: right;
+    }
+    .CodeMirror-search-match {
+      background: yellow;
+      color: black;
+    }
+    @media (max-width: 768px) {
+      .search-modal {
+        width: 95%;
+        padding: 15px;
+      }
+      .search-modal input {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="editor-container" class="content active">
+    <div id="editorContainer">
+      <div id="hamburgerMenu">☰</div>
+      <div id="menu">
+        <button id="clearButton">保存データを消去</button>
+        <button id="toggleTheme">テーマ切替</button>
+        <button id="copyEditorText">コピー</button>
+        <button id="searchReplace">検索と置換</button>
+        <!-- リンクをすべてボタンに変更 -->
+        <button id="goHome">ホーム</button>
+        <button id="goSearch">情報検索</button>
+        <button id="goPage1">ページ1</button>
+      </div>
+      <textarea id="editor"></textarea>
+    </div>
+  </div>
+
+  <div id="searchModal" class="search-modal">
+    <input type="text" id="searchInput" placeholder="検索...">
+    <input type="text" id="replaceInput" placeholder="置換...">
+    <button id="findNext">次を検索</button>
+    <button id="findPrev">前を検索</button>
+    <button id="replace">置換</button>
+    <button id="replaceAll">全て置換</button>
+    <button class="close-btn" id="closeSearch">閉じる</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldgutter.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/search/searchcursor.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/search/search.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/edit/closebrackets.min.js"></script>
+
+  <script>
+    const keywords = ["func", "var", "?", ":", "!"];
+
+    CodeMirror.defineMode("customLang", function() {
+      return {
+        startState: function() {
+          return { inString: false, inComment: false };
+        },
+        token: function(stream, state) {
+          if (!state.inString && stream.match(/^\/\*/)) {
+            state.inComment = true;
+            return "comment";
+          }
+          if (state.inComment) {
+            if (stream.match(/^\*\//)) {
+              state.inComment = false;
+              return "comment";
+            }
+            stream.eatWhile(/[^\*]/);
+            return "comment";
+          }
+          if (!state.inString && stream.match(/^\/\//)) {
+            stream.skipToEnd();
+            return "comment";
+          }
+          if (!state.inString && stream.match(/^"/)) {
+            state.inString = true;
+            return "string";
+          }
+          if (state.inString) {
+            if (stream.match(/^"/)) {
+              state.inString = false;
+              return "string";
+            }
+            stream.eatWhile(/[^"]/);
+            return "string";
+          }
+          if (stream.match(/^[+\-*\/()[\]]/)) {
+            return "operator";
+          }
+          for (let keyword of keywords) {
+            if (stream.match(keyword)) {
+              return "keyword";
+            }
+          }
+          if (stream.match(/^\d+/)) {
+            return "number";
+          }
+          stream.next();
+          return null;
+        }
+      };
+    });
+
+    CodeMirror.registerHelper("fold", "custom", function(cm, start) {
+      var line = cm.getLine(start.line);
+      var trimmedLine = line.trim();
+      if (!trimmedLine.match(/^\?/) && !trimmedLine.match(/^func/) && !trimmedLine.match(/^:/)) return undefined;
+
+      var end = start.line + 1;
+      var lastLineNo = cm.lastLine();
+      var startIndent = line.match(/^\s*/)[0].length;
+
+      while (end <= lastLineNo) {
+        var text = cm.getLine(end);
+        var indent = text.match(/^\s*/)[0].length;
+        if (indent <= startIndent && text.trim() !== "") {
+          return {
+            from: CodeMirror.Pos(start.line, line.length),
+            to: CodeMirror.Pos(end - 1, cm.getLine(end - 1).length)
+          };
+        }
+        end++;
+      }
+
+      if (end > lastLineNo && start.line < lastLineNo) {
+        return {
+          from: CodeMirror.Pos(start.line, line.length),
+          to: CodeMirror.Pos(lastLineNo, cm.getLine(lastLineNo).length)
+        };
+      }
+      return undefined;
+    });
+
+    const codeMirrorEditor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+      lineNumbers: true,
+      tabSize: 4,
+      indentWithTabs: true,
+      matchBrackets: true,
+      autoCloseBrackets: true,
+      mode: "customLang",
+      theme: "monokai",
+      lineWrapping: true,
+      foldGutter: true,
+      gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+      foldOptions: {
+        rangeFinder: CodeMirror.fold.custom,
+        scanUp: false
+      },
+      extraKeys: {
+        "Tab": "indentMore",
+        "Shift-Tab": "indentLess",
+        "Ctrl-/": "toggleComment",
+        "Ctrl-F": "findPersistent",
+        "Ctrl-H": "replace",
+        "Ctrl-Q": function(cm) { cm.foldCode(cm.getCursor()); }
+      }
+    });
+
+    codeMirrorEditor.on("change", () => {
+      localStorage.setItem("code", codeMirrorEditor.getValue());
+    });
+
+    window.onload = () => {
+      const savedCode = localStorage.getItem("code");
+      if (savedCode) codeMirrorEditor.setValue(savedCode);
+    };
+
+    const hamburgerMenu = document.getElementById("hamburgerMenu");
+    const menu = document.getElementById("menu");
+    hamburgerMenu.addEventListener("click", () => {
+      menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+    });
+
+    document.getElementById("clearButton").addEventListener("click", () => {
+      if (confirm("本当に保存データを消去しますか？")) {
+        localStorage.removeItem("code");
+        codeMirrorEditor.setValue("");
+      }
+      menu.style.display = "none";
+    });
+
+    document.getElementById("toggleTheme").addEventListener("click", () => {
+      const currentTheme = codeMirrorEditor.getOption("theme");
+      const newTheme = currentTheme === "monokai" ? "default" : "monokai";
+      codeMirrorEditor.setOption("theme", newTheme);
+      menu.style.display = "none";
+    });
+
+    document.getElementById("copyEditorText").addEventListener("click", () => {
+      const editorText = codeMirrorEditor.getValue();
+      navigator.clipboard.writeText(editorText).then(() => {
+        alert("エディタのテキストをコピーしました");
+      });
+      menu.style.display = "none";
+    });
+
+    const searchModal = document.getElementById('searchModal');
+    const searchInput = document.getElementById('searchInput');
+    const replaceInput = document.getElementById('replaceInput');
+
+    document.getElementById('searchReplace').addEventListener('click', () => {
+      searchModal.classList.add('active');
+      menu.style.display = 'none';
+      searchInput.focus();
+    });
+
+    document.getElementById('closeSearch').addEventListener('click', () => {
+      searchModal.classList.remove('active');
+      codeMirrorEditor.getAllMarks().forEach(mark => mark.clear());
+      codeMirrorEditor.focus();
+    });
+
+    // ページ遷移ボタンのイベントリスナー
+    document.getElementById("goHome").addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
+
+    document.getElementById("goSearch").addEventListener("click", () => {
+      window.location.href = "search.html";
+    });
+
+    document.getElementById("goPage1").addEventListener("click", () => {
+      window.location.href = "page1.html";
+    });
+
+    let currentCursor = null;
+    let lastQuery = '';
+
+    function updateSearch(query) {
+      if (!query || query === lastQuery) return;
+      codeMirrorEditor.getAllMarks().forEach(mark => mark.clear());
+      currentCursor = codeMirrorEditor.getSearchCursor(query);
+      lastQuery = query;
+    }
+
+    document.getElementById('findNext').addEventListener('click', () => {
+      const query = searchInput.value;
+      if (!query) return;
+
+      if (!currentCursor || query !== lastQuery) {
+        updateSearch(query);
+      }
+
+      if (currentCursor.findNext()) {
+        codeMirrorEditor.setSelection(currentCursor.from(), currentCursor.to());
+        codeMirrorEditor.scrollIntoView({from: currentCursor.from(), to: currentCursor.to()}, 100);
+      } else {
+        currentCursor = codeMirrorEditor.getSearchCursor(query, CodeMirror.Pos(0, 0));
+        if (currentCursor.findNext()) {
+          codeMirrorEditor.setSelection(currentCursor.from(), currentCursor.to());
+          codeMirrorEditor.scrollIntoView({from: currentCursor.from(), to: currentCursor.to()}, 100);
+        } else {
+          alert('見つかりませんでした');
+        }
+      }
+    });
+
+    document.getElementById('findPrev').addEventListener('click', () => {
+      const query = searchInput.value;
+      if (!query) return;
+
+      if (!currentCursor || query !== lastQuery) {
+        updateSearch(query);
+        const lastLine = codeMirrorEditor.lastLine();
+        currentCursor = codeMirrorEditor.getSearchCursor(query, CodeMirror.Pos(lastLine, codeMirrorEditor.getLine(lastLine).length));
+      }
+
+      if (currentCursor.findPrev()) {
+        codeMirrorEditor.setSelection(currentCursor.from(), currentCursor.to());
+        codeMirrorEditor.scrollIntoView({from: currentCursor.from(), to: currentCursor.to()}, 100);
+      } else {
+        const lastLine = codeMirrorEditor.lastLine();
+        currentCursor = codeMirrorEditor.getSearchCursor(query, CodeMirror.Pos(lastLine, codeMirrorEditor.getLine(lastLine).length));
+        if (currentCursor.findPrev()) {
+          codeMirrorEditor.setSelection(currentCursor.from(), currentCursor.to());
+          codeMirrorEditor.scrollIntoView({from: currentCursor.from(), to: currentCursor.to()}, 100);
+        } else {
+          alert('見つかりませんでした');
+        }
+      }
+    });
+
+    document.getElementById('replace').addEventListener('click', () => {
+      const query = searchInput.value;
+      const replaceWith = replaceInput.value;
+      if (!query || !currentCursor) return;
+
+      const selection = codeMirrorEditor.getSelection();
+      if (selection === query) {
+        codeMirrorEditor.replaceSelection(replaceWith);
+      }
+      
+      if (currentCursor.findNext()) {
+        codeMirrorEditor.setSelection(currentCursor.from(), currentCursor.to());
+        codeMirrorEditor.scrollIntoView({from: currentCursor.from(), to: currentCursor.to()}, 100);
+      }
+    });
+
+    document.getElementById('replaceAll').addEventListener('click', () => {
+      const query = searchInput.value;
+      const replaceWith = replaceInput.value;
+      if (!query) return;
+
+      let cursor = codeMirrorEditor.getSearchCursor(query, CodeMirror.Pos(0, 0));
+      codeMirrorEditor.operation(() => {
+        while (cursor.findNext()) {
+          cursor.replace(replaceWith);
+        }
+      });
+      currentCursor = null;
+      lastQuery = '';
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!searchModal.contains(e.target) && !hamburgerMenu.contains(e.target) && 
+          !menu.contains(e.target) && searchModal.classList.contains('active')) {
+        searchModal.classList.remove('active');
+        codeMirrorEditor.getAllMarks().forEach(mark => mark.clear());
+      }
+    });
+
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('findNext').click();
+      }
+    });
+
+    replaceInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('replace').click();
+      }
+    });
+  </script>
+</body>
+</html>

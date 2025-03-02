@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ホーム</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/theme/monokai.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldgutter.min.css">
+  <style>
+    /* 元のスタイルをそのまま使用 */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: monospace;
+      background: #1e1e1e;
+      color: white;
+    }
+    .tabs {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      background: #282c34;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      cursor: pointer;
+      background: #3c3f41;
+      border: none;
+      color: white;
+      text-align: center;
+      text-decoration: none;
+    }
+    .tab:hover {
+      background: #007acc;
+    }
+    .content {
+      padding: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="tabs">
+    <a href="index.html" class="tab">目次</a>
+    <a href="editor.html" class="tab">エディター</a>
+    <a href="search.html" class="tab">情報検索</a>
+    <a href="page1.html" class="tab">ページ1</a>
+  </div>
+  <div class="content">
+    <h1>ホーム</h1>
+    <p>各ページへは上部のタブから移動できます。</p>
+  </div>
+</body>
+</html>
