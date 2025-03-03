@@ -223,7 +223,7 @@
             stream.eatWhile(/[^"]/);
             return "string";
           }
-          if (stream.match(/^[+\-*\/()[\]]/)) {
+          if (stream.match(/^[+\-()[\]]/)) {
             return "operator";
           }
           for (let keyword of keywords) {
