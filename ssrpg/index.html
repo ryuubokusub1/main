@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/theme/monokai.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/addon/fold/foldgutter.min.css">
   <style>
-    /* 元のスタイルをそのまま使用 */
     body {
       margin: 0;
       padding: 0;
@@ -39,11 +38,26 @@
       padding: 20px;
       text-align: center;
     }
+    /* ボタンのスタイル */
+    .feedback-btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #007acc;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+    }
+    .feedback-btn:hover {
+      background: #005f99;
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+      transform: translateY(-2px);
+    }
   </style>
 </head>
 <body>
   <div class="tabs">
-    <!--<a href="index.html" class="tab">目次</a>-->
     <a href="editor.html" class="tab">エディター</a>
     <a href="search.html" class="tab">情報検索</a>
     <a href="page1.html" class="tab">ページ1</a>
@@ -52,8 +66,8 @@
     <h1>ホーム</h1>
     <p>各ページへは上部のタブから移動できます。</p>
     <br>
-    <a href="https://forms.gle/RoYwU8wVtm8aEeKp6">ご意見・ご要望</a>
-    
+    <a href="https://forms.gle/RoYwU8wVtm8aEeKp6" class="feedback-btn">ご意見・ご要望</a>
   </div>
 </body>
 </html>
+​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​
