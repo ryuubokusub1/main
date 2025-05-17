@@ -2,184 +2,82 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CodeMirror 6 Editor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>架空言語エディタ</title>
   <style>
     body {
       margin: 0;
-      padding: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: sans-serif;
+      background: #1e1e1e;
+      color: white;
     }
     #editor {
-      flex: 1;
-      height: 100%;
+      height: 100vh;
     }
-    .menu-container {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 10;
+    .cm-content {
+      font-size: 14px;
+      line-height: 1.5;
     }
-    .menu-btn {
-      background-color: #333;
-      color: white;
-      padding: 10px;
-      font-size: 24px;
-      cursor: pointer;
-      border: none;
-      border-radius: 5px;
-    }
-    .menu {
-      display: none;
-      position: absolute;
-      top: 40px;
-      right: 0;
-      background-color: #333;
-      color: white;
-      border-radius: 5px;
-      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-      width: 200px;
-    }
-    .menu a {
-      display: block;
-      padding: 12px 20px;
-      text-decoration: none;
-      color: white;
-      border-bottom: 1px solid #555;
-    }
-    .menu a:hover {
-      background-color: #444;
+    .cm-scroller {
+      overflow: auto;
+      touch-action: pan-y;
     }
   </style>
+</head>
+<body>
+  <div id="editor"></div>
 
-  <!-- CodeMirror 6 CDN -->
   <script type="module">
-    import {EditorState, Compartment} from "https://esm.sh/@codemirror/state"
-    import {EditorView, keymap, highlightSpecialChars, drawSelection, highlightActiveLine} from "https://esm.sh/@codemirror/view"
-    import {defaultHighlightStyle, syntaxHighlighting, HighlightStyle, tags as t} from "https://esm.sh/@codemirror/language"
-    import {history, historyKeymap} from "https://esm.sh/@codemirror/commands"
-    import {indentOnInput} from "https://esm.sh/@codemirror/language"
-    import {autocompletion, completeFromList} from "https://esm.sh/@codemirror/autocomplete"
-    import {searchKeymap} from "https://esm.sh/@codemirror/search"
+    import { EditorView, keymap, highlightActiveLine } from "https://esm.sh/@codemirror/view"
+    import { EditorState } from "https://esm.sh/@codemirror/state"
+    import { defaultKeymap, history, historyKeymap } from "https://esm.sh/@codemirror/commands"
+    import { searchKeymap, highlightSelectionMatches } from "https://esm.sh/@codemirror/search"
+    import { autocompletion, completeFromList } from "https://esm.sh/@codemirror/autocomplete"
+    import { StreamLanguage } from "https://esm.sh/@codemirror/language"
+    import { styleTags, tags as t } from "https://esm.sh/@codemirror/highlight"
 
-    // カスタム構文ハイライト
-    const customHighlightStyle = HighlightStyle.define([
-      { tag: t.keyword, color: "#00FFFF" },
-      { tag: t.string, color: "#FF0000" },
-      { tag: t.number, color: "#FFA500" },
-      { tag: t.comment, color: "#00FF00" },
-      { tag: t.bracket, color: "#FFFF00" },
-    ])
-
-    // 補完候補
-    const myCompletions = completeFromList([
-      { label: "func", type: "keyword" },
-      { label: "var", type: "keyword" },
-      { label: ":?", type: "keyword" },
-      { label: "canvas.SetBG(int, int, color)", type: "function" }
-    ])
-
-    // カスタム構文（簡易版）
-    import {StreamLanguage} from "https://esm.sh/@codemirror/language"
-    import {defineStreamParser} from "https://esm.sh/@codemirror/stream-parser"
-    const customLang = StreamLanguage.define(defineStreamParser({
-      token(stream) {
-        if (stream.match(/\/\/.*/)) return "comment"
+    // 架空言語のシンタックスルール（StreamLanguage）
+    import { defineStreamParser } from "https://esm.sh/@codemirror/stream-parser"
+    const myLang = StreamLanguage.define(defineStreamParser({
+      startState: () => ({}),
+      token: (stream, state) => {
+        if (stream.match("//")) {
+          stream.skipToEnd()
+          return "comment"
+        }
         if (stream.match(/"(?:[^"\\]|\\.)*"/)) return "string"
+        if (stream.match(/\b(func|if|for|var|Add|Emplace|?[^=]*=)\b/)) return "keyword"
         if (stream.match(/\b\d+\b/)) return "number"
-        if (stream.match(/\b(func|var)\b/)) return "keyword"
-        if (stream.match(/[?!:]/)) return "keyword"
-        if (stream.match(/[\[\](){}]/)) return "bracket"
+        if (stream.match(/[+\-*/=<>!]/)) return "operator"
         stream.next()
         return null
       }
     }))
 
-    let view;
+    // オートコンプリート候補
+    const keywords = [
+      "func", "for", "if", "else", "var", "Add", "Emplace", "?A=B", "?A!B", "rng"
+    ]
+    const completion = autocompletion({
+      override: [completeFromList(keywords.map(k => ({label: k, type: "keyword"})))]
+    })
 
-    window.addEventListener("DOMContentLoaded", () => {
-      const editor = document.getElementById("editor");
+    const state = EditorState.create({
+      doc: "// ここにコードを入力\nfunc greet()\n var name=\"world\"",
+      extensions: [
+        keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap]),
+        history(),
+        highlightActiveLine(),
+        highlightSelectionMatches(),
+        completion,
+        myLang
+      ]
+    })
 
-      const startState = EditorState.create({
-        doc: "",
-        extensions: [
-          highlightSpecialChars(),
-          history(),
-          drawSelection(),
-          indentOnInput(),
-          keymap.of([...historyKeymap, ...searchKeymap]),
-          customLang,
-          syntaxHighlighting(defaultHighlightStyle),
-          syntaxHighlighting(customHighlightStyle),
-          autocompletion({override: [myCompletions]}),
-          highlightActiveLine(),
-          EditorView.lineWrapping
-        ]
-      })
-
-      view = new EditorView({
-        state: startState,
-        parent: editor
-      })
-
-      // メニューイベント
-      const menuBtn = document.getElementById("hamburgerMenu")
-      const menu = document.getElementById("menu")
-      menuBtn.addEventListener("click", () => {
-        menu.style.display = menu.style.display === "block" ? "none" : "block"
-      })
-
-      document.getElementById("clearAll").addEventListener("click", e => {
-        e.preventDefault()
-        view.dispatch({changes: {from: 0, to: view.state.doc.length, insert: ""}})
-      })
-
-      document.getElementById("copy").addEventListener("click", async e => {
-        e.preventDefault()
-        const selection = view.state.sliceDoc(view.state.selection.main.from, view.state.selection.main.to)
-        const text = selection || view.state.doc.toString()
-        await navigator.clipboard.writeText(text)
-      })
-
-      document.getElementById("paste").addEventListener("click", async e => {
-        e.preventDefault()
-        const text = await navigator.clipboard.readText()
-        const {from, to} = view.state.selection.main
-        view.dispatch({changes: {from, to, insert: text}})
-      })
-
-      document.getElementById("undo").addEventListener("click", e => {
-        e.preventDefault()
-        view.dispatch({effects: history.undo.of(null)})
-      })
-
-      document.getElementById("redo").addEventListener("click", e => {
-        e.preventDefault()
-        view.dispatch({effects: history.redo.of(null)})
-      })
-
-      document.getElementById("replace").addEventListener("click", e => {
-        e.preventDefault()
-        alert("CodeMirror 6 では置換 UI は手動で実装する必要があります。")
-      })
+    const view = new EditorView({
+      state,
+      parent: document.getElementById("editor")
     })
   </script>
-</head>
-<body>
-  <div class="menu-container">
-    <button class="menu-btn" id="hamburgerMenu">☰</button>
-    <div class="menu" id="menu">
-      <a href="#" id="clearAll">すべて削除</a>
-      <a href="#" id="copy">すべてコピー</a>
-      <a href="#" id="paste">ペースト</a>
-      <a href="#" id="undo">元に戻す</a>
-      <a href="#" id="redo">やり直し</a>
-      <a href="#" id="replace">検索と置換</a>
-    </div>
-  </div>
-  <div id="editor"></div>
 </body>
 </html>
