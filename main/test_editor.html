@@ -2,83 +2,135 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>架空言語エディタ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monaco Editor Custom Language</title>
   <style>
-    body { margin: 0; font-family: sans-serif; }
-    #editor { height: 100vh; }
-    .cm-editor { font-size: 16px; }
+    html, body, #container {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+    #container {
+      width: 100vw;
+      height: 100vh;
+    }
+    @media (max-width: 768px) {
+      #container {
+        height: calc(100vh - 50px);
+      }
+      #mobileControls {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        height: 50px;
+        background: #222;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        color: white;
+        z-index: 10;
+      }
+    }
   </style>
 </head>
 <body>
-  <div id="editor"></div>
+  <div id="container"></div>
+  <div id="mobileControls">
+    <button onclick="runCode()">▶️ 実行</button>
+    <button onclick="document.getElementById('loadInput').click()">📂 開く</button>
+    <button onclick="saveFile()">💾 保存</button>
+  </div>
+  <input type="file" id="loadInput" style="display: none;">
 
-  <script type="module">
-    import { EditorView, basicSetup } from "https://esm.sh/@codemirror/basic-setup"
-    import { EditorState } from "https://esm.sh/@codemirror/state"
-    import { HighlightStyle, tags } from "https://esm.sh/@codemirror/highlight"
-    import { syntaxHighlighting, StreamLanguage } from "https://esm.sh/@codemirror/language"
-    import { keymap } from "https://esm.sh/@codemirror/view"
-    import { defaultKeymap, history, historyKeymap } from "https://esm.sh/@codemirror/commands"
-    import { searchKeymap, search, highlightSelectionMatches } from "https://esm.sh/@codemirror/search"
-    import { autocompletion, completeFromList } from "https://esm.sh/@codemirror/autocomplete"
+  <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+  <script>
+    require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@latest/min/vs' } });
+    require(['vs/editor/editor.main'], function () {
+      monaco.languages.register({ id: 'customLang' });
 
-    // ハイライト定義
-    const customHighlight = HighlightStyle.define([
-      { tag: tags.keyword, color: "#0077cc", fontWeight: "bold" },
-      { tag: tags.string, color: "#d14" },
-      { tag: tags.number, color: "#099" },
-      { tag: tags.comment, color: "#999" },
-      { tag: tags.operator, color: "#c92c2c" },
-      { tag: tags.bracket, color: "#555" },
-    ])
+      monaco.languages.setMonarchTokensProvider('customLang', {
+        keywords: ['func', 'var', 'for', '?', '!', ':'],
+        tokenizer: {
+          root: [
+            [/\b(func|var|for|\?|!|:)\b/, 'keyword'],
+            [/".*?"/, 'string'],
+            [/\/\/.*$/, 'comment'],
+            [/\/\*/, { token: 'comment', next: '@comment' }],
+          ],
+          comment: [
+            [/[^*]+/, 'comment'],
+            [/\*\//, 'comment', '@pop'],
+            [/[*]/, 'comment']
+          ]
+        }
+      });
 
-    // 架空言語のトークナイザ
-    const customLanguage = StreamLanguage.define({
-      startState: () => ({}),
-      token(stream) {
-        if (stream.match("//")) { stream.skipToEnd(); return "comment" }
-        if (stream.match(/"(?:[^"\\]|\\.)*"/)) return "string"
-        if (stream.match(/'(?:[^'\\]|\\.)*'/)) return "string"
-        if (stream.match(/\b(func|if|for|var|Add|Emplace)\b/)) return "keyword"
-        if (stream.match(/[0-9]+/)) return "number"
-        if (stream.match(/[\?\!\=\+\-\*\/\<\>\&\|]/)) return "operator"
-        if (stream.match(/[\[\]\(\)\{\}]/)) return "bracket"
-        stream.next(); return null
+      monaco.languages.registerDefinitionProvider('customLang', {
+        provideDefinition(model, position) {
+          const word = model.getWordAtPosition(position);
+          if (!word) return;
+          const regex = new RegExp(`func\\s+${word.word}\\b`);
+          const lines = model.getLinesContent();
+          for (let i = 0; i < lines.length; i++) {
+            if (regex.test(lines[i])) {
+              return {
+                uri: model.uri,
+                range: new monaco.Range(i + 1, 1, i + 1, lines[i].length + 1)
+              };
+            }
+          }
+        }
+      });
+
+      window.editor = monaco.editor.create(document.getElementById('container'), {
+        value: `// customLang example\nfunc greet:\n  "Hello"`,
+        language: 'customLang',
+        theme: 'vs-dark',
+        automaticLayout: true
+      });
+
+      editor.onDidChangeModelContent(() => {
+        validateCode(editor.getModel());
+      });
+
+      function validateCode(model) {
+        const code = model.getValue();
+        const markers = [];
+        if (!code.includes("func")) {
+          markers.push({
+            severity: monaco.MarkerSeverity.Warning,
+            message: "'func' が使われていません。",
+            startLineNumber: 1,
+            startColumn: 1,
+            endLineNumber: 1,
+            endColumn: 5
+          });
+        }
+        monaco.editor.setModelMarkers(model, 'customLang', markers);
       }
-    })
 
-    // 入力補完リスト
-    const completions = [
-      { label: "func", type: "keyword" },
-      { label: "var", type: "keyword" },
-      { label: "if", type: "keyword" },
-      { label: "for", type: "keyword" },
-      { label: "Add", type: "function" },
-      { label: "Emplace", type: "function" },
-      { label: "?", type: "operator" },
-      { label: "!", type: "operator" },
-    ]
+      window.saveFile = function () {
+        const blob = new Blob([editor.getValue()], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'code.txt';
+        a.click();
+      }
 
-    // エディタの初期化
-    const state = EditorState.create({
-      doc: "// 架空言語エディタ\nfunc test()\n var x = 10",
-      extensions: [
-        basicSetup,
-        history(),
-        search({ top: true }),
-        highlightSelectionMatches(),
-        syntaxHighlighting(customHighlight),
-        customLanguage,
-        autocompletion({ override: [completeFromList(completions)] }),
-        keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap])
-      ]
-    })
+      document.getElementById('loadInput').addEventListener('change', function () {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          editor.setValue(reader.result);
+        };
+        reader.readAsText(file);
+      });
 
-    const view = new EditorView({
-      state,
-      parent: document.getElementById("editor")
-    })
+      window.runCode = function () {
+        alert('コードを実行する処理をここに追加');
+      }
+    });
   </script>
 </body>
 </html>
