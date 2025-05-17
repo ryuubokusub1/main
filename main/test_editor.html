@@ -1,76 +1,77 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>架空言語エディタ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background: #1e1e1e;
-      color: white;
-    }
-    #editor {
-      height: 100vh;
-    }
-    .cm-content {
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .cm-scroller {
-      overflow: auto;
-      touch-action: pan-y;
-    }
+    body { margin: 0; font-family: sans-serif; }
+    #editor { height: 100vh; }
+    .cm-editor { font-size: 16px; }
   </style>
 </head>
 <body>
   <div id="editor"></div>
 
   <script type="module">
-    import { EditorView, keymap, highlightActiveLine } from "https://esm.sh/@codemirror/view"
+    import { EditorView, basicSetup } from "https://esm.sh/@codemirror/basic-setup"
     import { EditorState } from "https://esm.sh/@codemirror/state"
+    import { HighlightStyle, tags } from "https://esm.sh/@codemirror/highlight"
+    import { syntaxHighlighting, StreamLanguage } from "https://esm.sh/@codemirror/language"
+    import { keymap } from "https://esm.sh/@codemirror/view"
     import { defaultKeymap, history, historyKeymap } from "https://esm.sh/@codemirror/commands"
-    import { searchKeymap, highlightSelectionMatches } from "https://esm.sh/@codemirror/search"
+    import { searchKeymap, search, highlightSelectionMatches } from "https://esm.sh/@codemirror/search"
     import { autocompletion, completeFromList } from "https://esm.sh/@codemirror/autocomplete"
-    import { StreamLanguage } from "https://esm.sh/@codemirror/language"
-    import { styleTags, tags as t } from "https://esm.sh/@codemirror/highlight"
 
-    // 架空言語のシンタックスルール（StreamLanguage）
-    import { defineStreamParser } from "https://esm.sh/@codemirror/stream-parser"
-    const myLang = StreamLanguage.define(defineStreamParser({
+    // ハイライト定義
+    const customHighlight = HighlightStyle.define([
+      { tag: tags.keyword, color: "#0077cc", fontWeight: "bold" },
+      { tag: tags.string, color: "#d14" },
+      { tag: tags.number, color: "#099" },
+      { tag: tags.comment, color: "#999" },
+      { tag: tags.operator, color: "#c92c2c" },
+      { tag: tags.bracket, color: "#555" },
+    ])
+
+    // 架空言語のトークナイザ
+    const customLanguage = StreamLanguage.define({
       startState: () => ({}),
-      token: (stream, state) => {
-        if (stream.match("//")) {
-          stream.skipToEnd()
-          return "comment"
-        }
+      token(stream) {
+        if (stream.match("//")) { stream.skipToEnd(); return "comment" }
         if (stream.match(/"(?:[^"\\]|\\.)*"/)) return "string"
-        if (stream.match(/\b(func|if|for|var|Add|Emplace|?[^=]*=)\b/)) return "keyword"
-        if (stream.match(/\b\d+\b/)) return "number"
-        if (stream.match(/[+\-*/=<>!]/)) return "operator"
-        stream.next()
-        return null
+        if (stream.match(/'(?:[^'\\]|\\.)*'/)) return "string"
+        if (stream.match(/\b(func|if|for|var|Add|Emplace)\b/)) return "keyword"
+        if (stream.match(/[0-9]+/)) return "number"
+        if (stream.match(/[\?\!\=\+\-\*\/\<\>\&\|]/)) return "operator"
+        if (stream.match(/[\[\]\(\)\{\}]/)) return "bracket"
+        stream.next(); return null
       }
-    }))
-
-    // オートコンプリート候補
-    const keywords = [
-      "func", "for", "if", "else", "var", "Add", "Emplace", "?A=B", "?A!B", "rng"
-    ]
-    const completion = autocompletion({
-      override: [completeFromList(keywords.map(k => ({label: k, type: "keyword"})))]
     })
 
+    // 入力補完リスト
+    const completions = [
+      { label: "func", type: "keyword" },
+      { label: "var", type: "keyword" },
+      { label: "if", type: "keyword" },
+      { label: "for", type: "keyword" },
+      { label: "Add", type: "function" },
+      { label: "Emplace", type: "function" },
+      { label: "?", type: "operator" },
+      { label: "!", type: "operator" },
+    ]
+
+    // エディタの初期化
     const state = EditorState.create({
-      doc: "// ここにコードを入力\nfunc greet()\n var name=\"world\"",
+      doc: "// 架空言語エディタ\nfunc test()\n var x = 10",
       extensions: [
-        keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap]),
+        basicSetup,
         history(),
-        highlightActiveLine(),
+        search({ top: true }),
         highlightSelectionMatches(),
-        completion,
-        myLang
+        syntaxHighlighting(customHighlight),
+        customLanguage,
+        autocompletion({ override: [completeFromList(completions)] }),
+        keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap])
       ]
     })
 
