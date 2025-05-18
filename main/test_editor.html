@@ -2,134 +2,546 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Monaco Editor Custom Language</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Monaco Editor</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.js"></script>
   <style>
-    html, body, #container {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-    }
-    #container {
-      width: 100vw;
-      height: 100vh;
-    }
-    @media (max-width: 768px) {
-      #container {
-        height: calc(100vh - 50px);
-      }
-      #mobileControls {
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-        height: 50px;
-        background: #222;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        color: white;
-        z-index: 10;
-      }
-    }
+    body { margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    #container { flex: 1; }
+    .menu-container { position: fixed; top: 10px; right: 10px; z-index: 10; }
+    .menu-btn { background: #333; color: #fff; padding: 10px; font-size: 24px; border: none; border-radius: 5px; cursor: pointer; }
+    .menu { display: none; position: absolute; top: 40px; right: 10px; background: #333; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); width: 200px; }
+    .menu a { display: block; padding: 12px 20px; color: #fff; text-decoration: none; border-bottom: 1px solid #555; font-size: 12px; }
+    .menu a:hover { background: #444; }
+    .menu-btn:focus + .menu, .menu:hover { display: block; }
   </style>
 </head>
 <body>
-  <div id="container"></div>
-  <div id="mobileControls">
-    <button onclick="runCode()">▶️ 実行</button>
-    <button onclick="document.getElementById('loadInput').click()">📂 開く</button>
-    <button onclick="saveFile()">💾 保存</button>
+  <div class="menu-container">
+    <button id="hamburgerMenu" class="menu-btn">☰</button>
+    <div id="menu" class="menu">
+      <a href="#" id="openFile">📂 開く</a>
+      <a href="#" id="saveFile">💾 保存</a>
+      <a href="#" id="clearAll">🧹 すべて削除</a>
+      <a href="#" id="copy">📋 コピー</a>
+      <a href="#" id="paste">📥 ペースト</a>
+      <a href="#" id="undo">↩️ 元に戻す</a>
+      <a href="#" id="redo">↪️ やり直し</a>
+      <a href="#" id="replace">🔍 置換と置換</a>
+    </div>
   </div>
-  <input type="file" id="loadInput" style="display: none;">
 
-  <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+  <div id="container"></div>
+  <input type="file" id="fileInput" accept=".txt" style="display:none;" />
+
   <script>
-    require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@latest/min/vs' } });
-    require(['vs/editor/editor.main'], function () {
-      monaco.languages.register({ id: 'customLang' });
+    let editor, model;
 
-      monaco.languages.setMonarchTokensProvider('customLang', {
-        keywords: ['func', 'var', 'for', '?', '!', ':'],
-        tokenizer: {
-          root: [
-            [/\b(func|var|for|\?|!|:)\b/, 'keyword'],
-            [/".*?"/, 'string'],
-            [/\/\/.*$/, 'comment'],
-            [/\/\*/, { token: 'comment', next: '@comment' }],
-          ],
-          comment: [
-            [/[^*]+/, 'comment'],
-            [/\*\//, 'comment', '@pop'],
-            [/[*]/, 'comment']
-          ]
-        }
+    document.addEventListener('DOMContentLoaded', () => {
+      const menuBtn = document.getElementById('hamburgerMenu');
+      const menu = document.getElementById('menu');
+      const fileInput = document.getElementById('fileInput');
+
+      menuBtn.addEventListener('click', () => {
+        menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
       });
 
-      monaco.languages.registerDefinitionProvider('customLang', {
-        provideDefinition(model, position) {
-          const word = model.getWordAtPosition(position);
-          if (!word) return;
-          const regex = new RegExp(`func\\s+${word.word}\\b`);
-          const lines = model.getLinesContent();
-          for (let i = 0; i < lines.length; i++) {
-            if (regex.test(lines[i])) {
-              return {
-                uri: model.uri,
-                range: new monaco.Range(i + 1, 1, i + 1, lines[i].length + 1)
-              };
-            }
+      require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs' } });
+      require(['vs/editor/editor.main'], () => {
+        // カスタム言語 & ハイライト
+        monaco.languages.register({ id: 'customlang' });
+        monaco.languages.setMonarchTokensProvider('customlang', {
+          tokenizer: {
+            root: [
+              [/func\b|var\b|[?!:]/, 'keyword'],
+              [/"[^"]*"/, 'string'],
+              [/\b\d+\b/, 'number'],
+              [/\/\/.*$/, 'comment'],
+              [/\/\*/, 'comment', '@comment'],
+              [/[-+()\[\]]/, 'delimiter'],
+            ],
+            comment: [
+              [/[^*/]+/, 'comment'],
+              [/\*\//, 'comment', '@pop'],
+              [/./, 'comment']
+            ]
           }
-        }
+        });
+        // テーマ
+        monaco.editor.defineTheme('myCustomTheme', {
+          base: 'vs-dark', inherit: true,
+          rules: [
+            { token: 'string', foreground: 'FF0000' },
+            { token: 'number', foreground: 'FFA500' },
+            { token: 'comment', foreground: '00FF00' },
+            { token: 'keyword', foreground: '00FFFF' },
+            { token: 'delimiter', foreground: 'FFFF00' },
+          ],
+          colors: { 'editor.background': '#1E1E1E' }
+        });
+
+        // モデル＆エディタ
+        model = monaco.editor.createModel('', 'customlang');
+        editor = monaco.editor.create(document.getElementById('container'), {
+          model,
+          language: 'customlang',
+          theme: 'myCustomTheme',
+          wordWrap: 'on',
+          folding: true
+        });
+
+        // 補完（マスタ項目）をここで一度だけ登録
+        monaco.languages.registerCompletionItemProvider('customlang', {
+          provideCompletionItems: () => {
+            const suggestions = [
+{ "label": ":?", "insertText": ":?" },
+{ "label": "?loc", "insertText": "?loc" },
+{ "label": "?loc.id", "insertText": "?loc.id" },
+{ "label": "?loc.gp", "insertText": "?loc.gp" },
+{ "label": "?loc.name", "insertText": "?loc.name" },
+{ "label": "?loc.stars", "insertText": "?loc.stars" },
+{ "label": "?loc.begin", "insertText": "?loc.begin" },
+{ "label": "?loc.loop", "insertText": "?loc.loop" },
+{ "label": "?loc.isQuest", "insertText": "?loc.isQuest" },
+{ "label": "loc.averageTime", "insertText": "loc.averageTime" },
+{ "label": "loc.bestTime", "insertText": "loc.bestTime" },
+{ "label": "?encounter.isElite", "insertText": "?encounter.isElite" },
+{ "label": "?encounter.eliteMod", "insertText": "?encounter.eliteMod" },
+{ "label": "?foe", "insertText": "?foe" },
+{ "label": "?foe.id", "insertText": "?foe.id" },
+{ "label": "?foe.name", "insertText": "?foe.name" },
+{ "label": "?foe.damage", "insertText": "?foe.damage" },
+{ "label": "?foe.distance", "insertText": "?foe.distance" },
+{ "label": "?foe.z", "insertText": "?foe.z" },
+{ "label": "?foe.count", "insertText": "?foe.count" },
+{ "label": "?foe.GetCount(int)", "insertText": "?foe.GetCount(" },
+{ "label": "?foe.hp", "insertText": "?foe.hp" },
+{ "label": "?foe.maxhp", "insertText": "?foe.maxhp" },
+{ "label": "?foe.armor", "insertText": "?foe.armor" },
+{ "label": "?foe.maxarmor", "insertText": "?foe.maxarmor" },
+{ "label": "?foe.buffs.count", "insertText": "?foe.buffs.count" },
+{ "label": "?foe.buffs.string", "insertText": "?foe.buffs.string" },
+{ "label": "?foe.buffs.GetCount(str)", "insertText": "?foe.buffs.GetCount(" },
+{ "label": "?foe.buffs.GetTime(str)", "insertText": "?foe.buffs.GetTime(" },
+{ "label": "?buffs.oldest", "insertText": "?buffs.oldest" },
+{ "label": "?foe.debuffs.count", "insertText": "?foe.debuffs.count" },
+{ "label": "?foe.debuffs.string", "insertText": "?foe.debuffs.string" },
+{ "label": "?foe.debuffs.GetCount(str)", "insertText": "?foe.debuffs.GetCount( "},
+{ "label": "?foe.debuffs.GetTime(str)", "insertText": "?foe.debuffs.GetTime(" },
+{ "label": "?debuffs.oldest", "insertText": "?debuffs.oldest" },
+{ "label": "?foe.state", "insertText": "?foe.state" },
+{ "label": "?foe.time", "insertText": "?foe.time" },
+{ "label": "?foe.level", "insertText": "?foe.level" },
+{ "label": "?harvest", "insertText": "?harvest" },
+{ "label": "?harvest.distance", "insertText": "?harvest.distance" },
+{ "label": "?harvest.z", "insertText": "?harvest.z" },
+{ "label": "?input.x", "insertText": "?input.x" },
+{ "label": "?input.y", "insertText": "?input.y" },
+{ "label": "?item.left", "insertText": "?item.left" },
+{ "label": "?item.right", "insertText": "?item.right" },
+{ "label": "?item.left.gp", "insertText": "?item.left.gp" },
+{ "label": "?item.right.gp", "insertText": "?item.right.gp" },
+{ "label": "?item.left.id", "insertText": "?item.left.id" },
+{ "label": "?item.right.id", "insertText": "?item.right.id" },
+{ "label": "?item.left.state", "insertText": "?item.left.state" },
+{ "label": "?item.left.time", "insertText": "?item.left.time" },
+{ "label": "?item.right.state", "insertText": "?item.right.state" },
+{ "label": "?item.right.time", "insertText": "?item.right.time" },
+{ "label": "?item.potion", "insertText": "?item.potion" },
+{ "label": "?pickup", "insertText": "?pickup" },
+{ "label": "?pickup.distance", "insertText": "?pickup.distance" },
+{ "label": "?pickup.z", "insertText": "?pickup.z" },
+{ "label": "?armor", "insertText": "?armor" },
+{ "label": "?armor.f", "insertText": "?armor.f" },
+{ "label": "?buffs.count", "insertText": "?buffs.count" },
+{ "label": "?buffs.string", "insertText": "?buffs.string" },
+{ "label": "?buffs.GetCount(str)", "insertText": "?buffs.GetCount(" },
+{ "label": "?buffs.GetTime(str)", "insertText": "?buffs.GetTime(" },
+{ "label": "?debuffs.count", "insertText": "?debuffs.count" },
+{ "label": "?debuffs.string", "insertText": "?debuffs.string" },
+{ "label": "?debuffs.GetCount(str)", "insertText": "?debuffs.GetCount(" },
+{ "label": "?debuffs.GetTime(str)", "insertText": "?debuffs.GetTime(" },
+{ "label": "?hp", "insertText": "?hp" },
+{ "label": "?maxhp", "insertText": "?maxhp" },
+{ "label": "?maxarmor", "insertText": "?maxarmor" },
+{ "label": "?pos.x", "insertText": "?pos.x" },
+{ "label": "?pos.y", "insertText": "?pos.y" },
+{ "label": "?pos.z", "insertText": "?pos.z" },
+{ "label": "?ai.enabled", "insertText": "?ai.enabled" },
+{ "label": "?ai.paused", "insertText": "?ai.paused" },
+{ "label": "?ai.idle", "insertText": "?ai.idle" },
+{ "label": "?ai.walking", "insertText": "?ai.walking" },
+{ "label": "?bighead", "insertText": "?bighead" },
+{ "label": "?face", "insertText": "?face" },
+{ "label": "?key", "insertText": "?key" },
+{ "label": "?res.stone", "insertText": "?res.stone" },
+{ "label": "?res.wood", "insertText": "?res.wood" },
+{ "label": "?res.tar", "insertText": "?res.tar" },
+{ "label": "?res.ki", "insertText": "?res.ki" },
+{ "label": "?res.bronze", "insertText": "?res.bronze" },
+{ "label": "?res.crystals", "insertText": "?res.crystals" },
+{ "label": "?player.direction", "insertText": "?player.direction" },
+{ "label": "player.framesPerMove", "insertText": "player.framesPerMove" },
+{ "label": "player.name", "insertText": "player.name" },
+{ "label": "player.GetNextLegendName", "insertText": "player.GetNextLegendName" },
+{ "label": "?rng", "insertText": "?rng" },
+{ "label": "?rngf", "insertText": "?rngf" },
+{ "label": "?screen.i", "insertText": "?screen.i" },
+{ "label": "?screen.x", "insertText": "?screen.x" },
+{ "label": "?screen.w", "insertText": "?screen.w" },
+{ "label": "?screen.h", "insertText": "?screen.h" },
+{ "label": "?summon.count", "insertText": "?summon.count" },
+{ "label": "summon.GetId(index = 0)", "insertText": "summon.GetId()" },
+{ "label": "summon.GetName(index = 0)", "insertText": "summon.GetName()" },
+{ "label": "summon.GetVar(varName, index = 0)", "insertText": "summon.GetVar(varName)" },
+{ "label": "summon.GetState(index = 0)", "insertText": "summon.GetState()" },
+{ "label": "summon.GetTime(index = 0)", "insertText": "summon.GetTime()" },
+{ "label": "?totalgp", "insertText": "totalgp" },
+{ "label": "?time", "insertText": "time" },
+{ "label": "?totaltime", "insertText": "totaltime" },
+{ "label": "time.msbn", "insertText": "time.msbn" },
+{ "label": "time.year", "insertText": "time.year" },
+{ "label": "time.month", "insertText": "time.month" },
+{ "label": "time.day", "insertText": "time.day" },
+{ "label": "time.hour", "insertText": "time.hour" },
+{ "label": "time.minute", "insertText": "time.minute" },
+{ "label": "time.second", "insertText": "time.second" },
+{ "label": "utc.year", "insertText": "utc.year" },
+{ "label": "utc.month", "insertText": "utc.month" },
+{ "label": "utc.day", "insertText": "utc.day" },
+{ "label": "utc.hour", "insertText": "utc.hour" },
+{ "label": "utc.minute", "insertText": "utc.minute" },
+{ "label": "utc.second", "insertText": "utc.second" },
+{ "label": "activate (ability)", "insertText": "activate " },
+{ "label": "brew (ingredients)", "insertText": "brew " },
+{ "label": "equip (str)", "insertText": "equip " },
+{ "label": "equipL (str)", "insertText": "equipL " },
+{ "label": "equipR (str)", "insertText": "equipR " },
+{ "label": "equip @var@", "insertText": "equip " },
+{ "label": "loadout (n)", "insertText": "loadout " },
+{ "label": ">(str)", "insertText": "> " },
+{ "label": "> @varName@", "insertText": "> @varName@" },
+{ "label": ">(abcd", "insertText": ">(abcd" },
+{ "label": ">oX,Y,[#rrggbb,](str)", "insertText": ">oX,Y,[#rrggbb,]" },
+{ "label": ">hX,Y,[#rrggbb,](str)", "insertText": ">hX,Y,[#rrggbb,]" },
+{ "label": ">`X,Y,[#rrggbb,](str)", "insertText": ">`X,Y,[#rrggbb,]" },
+{ "label": ">cX,Y,[#rrggbb,](str)", "insertText": ">cX,Y,[#rrggbb,]" },
+{ "label": ">fX,Y,[#rrggbb,](str)", "insertText": ">fX,Y,[#rrggbb,]" },
+{ "label": "var (variable)", "insertText": "var " },
+{ "label": "func (function)", "insertText": "func " },
+{ "label": "for v = a..b", "insertText": "for v = a..b" },
+{ "label": "import (script)", "insertText": "import " },
+{ "label": "new (script)", "insertText": "new " },
+{ "label": "disable abilities", "insertText": "disable abilities" },
+{ "label": "enable abilities", "insertText": "enable abilities" },
+{ "label": "disable banner", "insertText": "disable banner" },
+{ "label": "enable banner", "insertText": "enable banner" },
+{ "label": "disable hud (opts)", "insertText": "disable hud " },
+{ "label": "enable hud (opts)", "insertText": "enable hud " },
+{ "label": "disable loadout input", "insertText": "disable loadout input" },
+{ "label": "enable loadout input", "insertText": "enable loadout input" },
+{ "label": "disable loadout print", "insertText": "disable loadout print" },
+{ "label": "enable loadout print", "insertText": "enable loadout print" },
+{ "label": "disable npcDialog", "insertText": "disable npcDialog" },
+{ "label": "enable npcDialog", "insertText": "enable npcDialog" },
+{ "label": "disable pause", "insertText": "disable pause" },
+{ "label": "enable pause", "insertText": "enable pause" },
+{ "label": "disable player", "insertText": "disable player" },
+{ "label": "enable player", "insertText": "enable player" },
+{ "label": "play (sound) (pitch)", "insertText": "play " },
+  { "label": "?ambient", "insertText": "?ambient" },
+  { "label": "ambient.Add(str)", "insertText": "ambient.Add(" },
+  { "label": "ambient.Stop()", "insertText": "ambient.Stop()" },
+  { "label": "b.Add(num)", "insertText": "b.Add(" },
+  { "label": "b.Add(BigNumber)", "insertText": "b.Add(" },
+  { "label": "b.Sub(num)", "insertText": "b.Sub(" },
+  { "label": "b.Sub(BigNumber)", "insertText": "b.Sub(" },
+  { "label": "b.Mul(num)", "insertText": "b.Mul(" },
+  { "label": "b.Mul(BigNumber)", "insertText": "b.Mul(" },
+  { "label": "b.Div(num)", "insertText": "b.Div(" },
+  { "label": "b.Div(BigNumber)", "insertText": "b.Div(" },
+  { "label": "b.Eq(num)", "insertText": "b.Eq(" },
+  { "label": "b.Eq(BigNumber)", "insertText": "b.Eq(" },
+  { "label": "b.Gt(num)", "insertText": "b.Gt(" },
+  { "label": "b.Gt(BigNumber)", "insertText": "b.Gt(" },
+  { "label": "b.Ge(num)", "insertText": "b.Ge(" },
+  { "label": "b.Ge(BigNumber)", "insertText": "b.Ge(" },
+  { "label": "b.Lt(num)", "insertText": "b.Lt(" },
+  { "label": "b.Lt(BigNumber)", "insertText": "b.Lt(" },
+  { "label": "b.Le(num)", "insertText": "b.Le(" },
+  { "label": "b.Le(BigNumber)", "insertText": "b.Le(" },
+  { "label": "b.ToFloat()", "insertText": "b.ToFloat()" },
+  { "label": "b.ToInt()", "insertText": "b.ToInt()" },
+  { "label": "b.ToString()", "insertText": "b.ToString()" },
+  { "label": "b.ToUI()", "insertText": "b.ToUI()" },
+  { "label": "color.FromRGB(r,g,b)", "insertText": "color.FromRGB(" },
+  { "label": "color.ToRGB(string)", "insertText": "color.ToRGB(" },
+  { "label": "color.Lerp(c1,c2,t)", "insertText": "color.Lerp(" },
+  { "label": "color.Random()", "insertText": "color.Random()" },
+  { "label": "draw.Bg(x, y, color)", "insertText": "draw.Bg(" },
+  { "label": "draw.Bg(x, y, color, w, h)", "insertText": "draw.Bg(" },
+  { "label": "draw.Box(x, y, w, h, color, style)", "insertText": "draw.Box(" },
+  { "label": "draw.Clear()", "insertText": "draw.Clear()" },
+  { "label": "draw.GetSymbol(x, y)", "insertText": "draw.GetSymbol(" },
+  { "label": "draw.Player()", "insertText": "draw.Player()" },
+  { "label": "draw.Player(x, y)", "insertText": "draw.Player(" },
+  { "label": "int.Parse(str)", "insertText": "int.Parse(" },
+  { "label": "event.GetObjectiveId(int)", "insertText": "event.GetObjectiveId(" },
+  { "label": "event.GetObjectiveProgress(int)", "insertText": "event.GetObjectiveProgress(" },
+  { "label": "event.GetObjectiveGoal(int)", "insertText": "event.GetObjectiveGoal(" },
+  { "label": "item.CanActivate()", "insertText": "item.CanActivate()" },
+  { "label": "item.CanActivate(str)", "insertText": "item.CanActivate(" },
+  { "label": "item.GetCooldown(str)", "insertText": "item.GetCooldown(" },
+  { "label": "item.GetCount(str)", "insertText": "item.GetCount(" },
+  { "label": "item.GetLoadoutL(int)", "insertText": "item.GetLoadoutL(" },
+  { "label": "item.GetLoadoutR(int)", "insertText": "item.GetLoadoutR(" },
+  { "label": "item.GetTreasureCount()", "insertText": "item.GetTreasureCount()" },
+  { "label": "item.GetTreasureLimit()", "insertText": "item.GetTreasureLimit()" },
+  { "label": "key.Bind(act, key1)", "insertText": "key.Bind(" },
+  { "label": "key.Bind(act, key1, key2)", "insertText": "key.Bind(" },
+  { "label": "key.GetKeyAct(key)", "insertText": "key.GetKeyAct(" },
+  { "label": "key.GetActKey(act)", "insertText": "key.GetActKey(" },
+  { "label": "key.GetActKey2(act)", "insertText": "key.GetActKey2(" },
+  { "label": "key.GetActLabel(act)", "insertText": "key.GetActLabel(" },
+  { "label": "key.ResetBinds()", "insertText": "key.ResetBinds()" },
+  { "label": "loc.Leave()", "insertText": "loc.Leave()" },
+  { "label": "loc.Pause()", "insertText": "loc.Pause()" },
+  { "label": "math.Abs(num)", "insertText": "math.Abs(" },
+  { "label": "math.Acos(num)", "insertText": "math.Acos(" },
+  { "label": "math.Asin(num)", "insertText": "math.Asin(" },
+  { "label": "math.Atan(num)", "insertText": "math.Atan(" },
+  { "label": "math.Atan2(y, x)", "insertText": "math.Atan2(" },
+  { "label": "math.BigNumber()", "insertText": "math.BigNumber()" },
+  { "label": "math.BigNumber(number)", "insertText": "math.BigNumber(" },
+  { "label": "math.BigNumber(str)", "insertText": "math.BigNumber(" },
+  { "label": "math.Ceil(num)", "insertText": "math.Ceil(" },
+  { "label": "math.CeilToInt(num)", "insertText": "math.CeilToInt(" },
+  { "label": "math.Clamp(num, min, max)", "insertText": "math.Clamp(" },
+  { "label": "math.Cos(num)", "insertText": "math.Cos(" },
+  { "label": "math.e", "insertText": "math.e" },
+  { "label": "math.Exp(num)", "insertText": "math.Exp(" },
+  { "label": "math.Floor(num)", "insertText": "math.Floor(" },
+  { "label": "math.FloorToInt(num)", "insertText": "math.FloorToInt(" },
+  { "label": "math.Lerp(a, b, t)", "insertText": "math.Lerp(" },
+  { "label": "math.Log(num, base)", "insertText": "math.Log(" },
+  { "label": "math.Max(num1, num2)", "insertText": "math.Max(" },
+  { "label": "math.Min(num1, num2)", "insertText": "math.Min(" },
+  { "label": "math.pi", "insertText": "math.pi" },
+  { "label": "math.Pow(num, p)", "insertText": "math.Pow(" },
+  { "label": "math.Round(num)", "insertText": "math.Round(" },
+  { "label": "math.RoundToInt(num)", "insertText": "math.RoundToInt(" },
+  { "label": "math.Sign(num)", "insertText": "math.Sign(" },
+  { "label": "math.Sin(num)", "insertText": "math.Sin(" },
+  { "label": "math.Sqrt(num)", "insertText": "math.Sqrt(" },
+  { "label": "math.Tan(num)", "insertText": "math.Tan(" },
+  { "label": "math.ToDeg(num)", "insertText": "math.ToDeg(" },
+  { "label": "math.ToRad(num)", "insertText": "math.ToRad(" },
+  { "label": "?music", "insertText": "?music" },
+  { "label": "music.Play(str)", "insertText": "music.Play(" },
+  { "label": "music.Stop()", "insertText": "music.Stop()" },
+  { "label": "player.ShowScaredFace(num)", "insertText": "player.ShowScaredFace(" },
+  { "label": "screen.FromWorldX(int)", "insertText": "screen.FromWorldX(" },
+  { "label": "screen.FromWorldZ(int)", "insertText": "screen.FromWorldZ(" },
+  { "label": "screen.ToWorldX(int)", "insertText": "screen.ToWorldX(" },
+  { "label": "screen.ToWorldZ(int)", "insertText": "screen.ToWorldZ(" },
+  { "label": "screen.Next()", "insertText": "screen.Next()" },
+  { "label": "screen.Previous()", "insertText": "screen.Previous()" },
+  { "label": "screen.ResetOffset()", "insertText": "screen.ResetOffset()" },
+  { "label": "storage.Delete(string)", "insertText": "storage.Delete(" },
+  { "label": "storage.Get(string)", "insertText": "storage.Get(" },
+  { "label": "storage.Get(string, value)", "insertText": "storage.Get(" },
+  { "label": "storage.Has(string)", "insertText": "storage.Has(" },
+  { "label": "storage.Incr(string)", "insertText": "storage.Incr(" },
+  { "label": "storage.Keys()", "insertText": "storage.Keys()" },
+  { "label": "storage.Incr(string, integer)", "insertText": "storage.Incr(" },
+  { "label": "storage.Set(string, value)", "insertText": "storage.Set(" },
+  { "label": "string.Break(string, integer)", "insertText": "string.Break(" },
+  { "label": "string.Capitalize(str)", "insertText": "string.Capitalize(" },
+  { "label": "string.Equals(str1, str2)", "insertText": "string.Equals(" },
+  { "label": "string.Format(str1, ...)", "insertText": "string.Format(" },
+  { "label": "string.IndexOf(str, criteria)", "insertText": "string.IndexOf(" },
+  { "label": "string.IndexOf(str, criteria, startAt)", "insertText": "string.IndexOf(" },
+  { "label": "string.Join(s, [])", "insertText": "string.Join(" },
+  { "label": "string.Join(s, [], int)", "insertText": "string.Join(" },
+  { "label": "string.Join(s, [], int, int)", "insertText": "string.Join(" },
+  { "label": "string.Size(str)", "insertText": "string.Size(" },
+  { "label": "string.Split(str)", "insertText": "string.Split(" },
+  { "label": "string.Split(str, s…)", "insertText": "string.Split(" },
+  { "label": "string.Split(str, s…, bool)", "insertText": "string.Split(" },
+  { "label": "string.Split(str, bool)", "insertText": "string.Split(" },
+  { "label": "string.Sub(str, startAt)", "insertText": "string.Sub(" },
+  { "label": "string.Sub(str, startAt, length)", "insertText": "string.Sub(" },
+  { "label": "string.ToLower(str)", "insertText": "string.ToLower(" },
+  { "label": "string.ToUpper(str)", "insertText": "string.ToUpper(" },
+  { "label": "sys.cacheRemoteFiles", "insertText": "sys.cacheRemoteFiles" },
+  { "label": "sys.fileUrl", "insertText": "sys.fileUrl" },
+  { "label": "sys.SetFileUrl(str)", "insertText": "sys.SetFileUrl(" },
+  { "label": "sys.MindConnect()", "insertText": "sys.MindConnect()" },
+  { "label": "sys.isMobile", "insertText": "sys.isMobile" },
+  { "label": "sys.isPC", "insertText": "sys.isPC" },
+  { "label": "sys.os", "insertText": "sys.os" },
+  { "label": "te.language", "insertText": "te.language" },
+  { "label": "te.xt(str)", "insertText": "te.xt(" },
+  { "label": "te.GetTID(str)", "insertText": "te.GetTID(" },
+  { "label": "te.ToEnglish(str)", "insertText": "te.ToEnglish(" },
+  { "label": "time.FormatCasual(int)", "insertText": "time.FormatCasual(" },
+  { "label": "time.FormatCasual(int,bool)", "insertText": "time.FormatCasual(" },
+  { "label": "time.FormatDigital(int)", "insertText": "time.FormatDigital(" },
+  { "label": "time.FormatDigital(int,bool)", "insertText": "time.FormatDigital(" },
+  { "label": "ui.OpenInv()", "insertText": "ui.OpenInv()" },
+  { "label": "ui.OpenMind()", "insertText": "ui.OpenMind()" },
+  { "label": "ui.ShowBanner(str)", "insertText": "ui.ShowBanner(" },
+  { "label": "ui.ShowBanner(str,str)", "insertText": "ui.ShowBanner(" },
+  { "label": "Type(var)", "insertText": "Type(" },
+  { "label": "a[integer]", "insertText": "a[" },
+  { "label": ".Add(value)", "insertText": ".Add(" },
+  { "label": ".Clear()", "insertText": ".Clear()" },
+  { "label": ".Contains(value)", "insertText": ".Contains(" },
+  { "label": ".Count()", "insertText": ".Count()" },
+  { "label": ".Emplace(integer, value)", "insertText": ".Emplace(" },
+  { "label": ".IndexOf(value)", "insertText": ".IndexOf(" },
+  { "label": ".Insert(integer, value)", "insertText": ".Insert(" },
+  { "label": ".RemoveAt(integer)", "insertText": ".RemoveAt(" },
+  { "label": ".Sort()", "insertText": ".Sort()" },
+  { "label": "ui.root", "insertText": "ui.root" },
+  { "label": "Panel", "insertText": "Panel" },
+  { "label": "ui.AddAnim(string)", "insertText": "ui.AddAnim(" },
+  { "label": "ui.AddButton()", "insertText": "ui.AddButton()" },
+  { "label": "ui.AddPanel()", "insertText": "ui.AddPanel()" },
+  { "label": "ui.AddStyle()", "insertText": "ui.AddStyle()" },
+  { "label": "ui.AddText()", "insertText": "ui.AddText()" },
+  { "label": "ui.Clear()", "insertText": "ui.Clear()" },
+  { "label": "component.x", "insertText": "component.x" },
+  { "label": "component.y", "insertText": "component.y" },
+  { "label": "component.w", "insertText": "component.w" },
+  { "label": "component.h", "insertText": "component.h" },
+  { "label": "component.absoluteX", "insertText": "component.absoluteX" },
+  { "label": "component.absoluteY", "insertText": "component.absoluteY" },
+  { "label": "component.anchor", "insertText": "component.anchor" },
+  { "label": "component.dock", "insertText": "component.dock" },
+  { "label": "component.ax", "insertText": "component.ax" },
+  { "label": "component.ay", "insertText": "component.ay" },
+  { "label": "component.dx", "insertText": "component.dx" },
+  { "label": "component.dy", "insertText": "component.dy" },
+  { "label": "component.parent", "insertText": "component.parent" },
+  { "label": "component.visible", "insertText": "component.visible" },
+  { "label": "component.Recycle()", "insertText": "component.Recycle()" },
+  { "label": "panel.children", "insertText": "panel.children" },
+  { "label": "panel.clip", "insertText": "panel.clip" },
+  { "label": "panel.color", "insertText": "panel.color" },
+  { "label": "panel.style", "insertText": "panel.style" },
+  { "label": "panel.Add(Component)", "insertText": "panel.Add(Component)" },
+  { "label": "panel.Clear()", "insertText": "panel.Clear()" },
+  { "label": "panel.Remove(Component)", "insertText": "panel.Remove(Component)" },
+  { "label": "text.align", "insertText": "text.align" },
+  { "label": "text.color", "insertText": "text.color" },
+  { "label": "text.lines", "insertText": "text.lines" },
+  { "label": "text.text", "insertText": "text.text" },
+  { "label": "button.text", "insertText": "button.text" },
+  { "label": "button.tcolor", "insertText": "button.tcolor" },
+  { "label": "button.bcolor", "insertText": "button.bcolor" },
+  { "label": "button.hcolor", "insertText": "button.hcolor" },
+  { "label": "button.sound", "insertText": "button.sound" },
+  { "label": "button.style", "insertText": "button.style" },
+  { "label": "button.SetPressed(f)", "insertText": "button.SetPressed(" },
+  { "label": "button.SetDown(f)", "insertText": "button.SetDown(" },
+  { "label": "button.SetUp(f)", "insertText": "button.SetUp(" },
+  { "label": "anim.color", "insertText": "anim.color" },
+  { "label": "anim.duration", "insertText": "anim.duration" },
+  { "label": "anim.flipX", "insertText": "anim.flipX" },
+  { "label": "anim.flipY", "insertText": "anim.flipY" },
+  { "label": "anim.frame", "insertText": "anim.frame" },
+  { "label": "anim.gamePause", "insertText": "anim.gamePause" },
+  { "label": "anim.loop", "insertText": "anim.loop" },
+  { "label": "anim.playing", "insertText": "anim.playing" },
+  { "label": "anim.paused", "insertText": "anim.paused" },
+  { "label": "anim.pivotX", "insertText": "anim.pivotX" },
+  { "label": "anim.pivotY", "insertText": "anim.pivotY" },
+  { "label": "anim.playOnStart", "insertText": "anim.playOnStart" },
+  { "label": "anim.AddLayer(string)", "insertText": "anim.AddLayer(" },
+  { "label": "anim.Load(string)", "insertText": "anim.Load(" },
+  { "label": "anim.Pause()", "insertText": "anim.Pause()" },
+  { "label": "anim.Play()", "insertText": "anim.Play()" },
+  { "label": "anim.Stop()", "insertText": "anim.Stop()" },
+  { "label": "canvas.blend", "insertText": "canvas.blend" },
+  { "label": "canvas.Get(int, int)","insertText": "canvas.Get("},
+  { "label": "canvas.Set(str)","insertText": "canvas.Set(" },
+  { "label": "canvas.Set(int, int, str)", "insertText": "canvas.Set(" },
+  { "label": "canvas.Set(int, int, fg, str)", "insertText": "canvas.Set("},
+  { "label": "canvas.Set(int, int, fg, bg, str)", "insertText": "canvas.Set(" },
+  { "label": "canvas.SetFG(color)", "insertText": "canvas.SetFG(" },
+  { "label": "canvas.SetFG(int, int, color)", "insertText": "canvas.SetFG(" },
+  { "label": "canvas.SetBG(color)", "insertText": "canvas.SetBG(" },
+  { "label": "canvas.SetBG(int, int, color)", "insertText": "canvas.SetBG(" },
+            ].map(item => ({
+              label: item.label,
+              kind: monaco.languages.CompletionItemKind.Keyword,
+              insertText: item.insertText
+            }));
+            return { suggestions };
+          }
+        });
+
+        // メニューの各機能
+        document.getElementById('openFile').addEventListener('click', e => {
+          e.preventDefault();
+          fileInput.click();
+        });
+        fileInput.addEventListener('change', () => {
+          const f = fileInput.files[0];
+          if (!f) return;
+          const reader = new FileReader();
+          reader.onload = ev => model.setValue(ev.target.result);
+          reader.readAsText(f);
+        });
+
+        document.getElementById('saveFile').addEventListener('click', e => {
+          e.preventDefault();
+          const text = model.getValue();
+          const blob = new Blob([text], { type: 'text/plain' });
+          const name = prompt('保存ファイル名を入力してください', 'script.txt');
+          if (!name) return;
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = name;
+          link.click();
+        });
+
+        document.getElementById('clearAll').addEventListener('click', e => {
+          e.preventDefault();
+          model.setValue('');
+        });
+
+        document.getElementById('copy').addEventListener('click', async e => {
+          e.preventDefault();
+          const sel = editor.getSelection();
+          const txt = model.getValueInRange(sel) || model.getValue();
+          try { await navigator.clipboard.writeText(txt); } catch { alert('コピーに失敗しました'); }
+        });
+
+        document.getElementById('paste').addEventListener('click', async e => {
+          e.preventDefault();
+          try {
+            const txt = await navigator.clipboard.readText();
+            model.applyEdits([{ range: editor.getSelection(), text: txt }]);
+          } catch { alert('ペーストに失敗しました'); }
+        });
+
+        document.getElementById('undo').addEventListener('click', e => {
+          e.preventDefault();
+          editor.trigger('', 'undo');
+        });
+
+        document.getElementById('redo').addEventListener('click', e => {
+          e.preventDefault();
+          editor.trigger('', 'redo');
+        });
+
+        document.getElementById('replace').addEventListener('click', e => {
+          e.preventDefault();
+          editor.getAction('editor.action.startFindReplaceAction').run();
+        });
       });
-
-      window.editor = monaco.editor.create(document.getElementById('container'), {
-        value: `// customLang example\nfunc greet:\n  "Hello"`,
-        language: 'customLang',
-        theme: 'vs-dark',
-        automaticLayout: true
-      });
-
-      editor.onDidChangeModelContent(() => {
-        validateCode(editor.getModel());
-      });
-
-      function validateCode(model) {
-        const code = model.getValue();
-        const markers = [];
-        if (!code.includes("func")) {
-          markers.push({
-            severity: monaco.MarkerSeverity.Warning,
-            message: "'func' が使われていません。",
-            startLineNumber: 1,
-            startColumn: 1,
-            endLineNumber: 1,
-            endColumn: 5
-          });
-        }
-        monaco.editor.setModelMarkers(model, 'customLang', markers);
-      }
-
-      window.saveFile = function () {
-        const blob = new Blob([editor.getValue()], { type: 'text/plain' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'code.txt';
-        a.click();
-      }
-
-      document.getElementById('loadInput').addEventListener('change', function () {
-        const file = this.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          editor.setValue(reader.result);
-        };
-        reader.readAsText(file);
-      });
-
-      window.runCode = function () {
-        alert('コードを実行する処理をここに追加');
-      }
     });
   </script>
 </body>
