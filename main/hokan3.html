@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Monaco Editor</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.js"></script>
+  <style>
+    body { margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    #container { flex: 1; }
+    .menu-container { position: fixed; top: 10px; right: 10px; z-index: 10; }
+    .menu-btn { background: #333; color: #fff; padding: 10px; font-size: 24px; border: none; border-radius: 5px; cursor: pointer; }
+    .menu { display: none; position: absolute; top: 40px; right: 10px; background: #333; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); width: 200px; }
+    .menu a { display: block; padding: 12px 20px; color: #fff; text-decoration: none; border-bottom: 1px solid #555; font-size: 12px; }
+    .menu a:hover { background: #444; }
+    .menu-btn:focus + .menu, .menu:hover { display: block; }
+  </style>
+</head>
+<body>
+  <div class="menu-container">
+    <button id="hamburgerMenu" class="menu-btn">☰</button>
+    <div id="menu" class="menu">
+      <a href="#" id="openFile">📂 開く</a>
+      <a href="#" id="saveFile">💾 保存</a>
+      <a href="#" id="clearAll">🧹 すべて削除</a>
+      <a href="#" id="copy">📋 コピー</a>
+      <a href="#" id="paste">📥 ペースト</a>
+      <a href="#" id="undo">↩️ 元に戻す</a>
+      <a href="#" id="redo">↪️ やり直し</a>
+      <a href="#" id="replace">🔍 置換と置換</a>
+    </div>
+  </div>
+
+  <div id="container"></div>
+  <input type="file" id="fileInput" accept=".txt" style="display:none;" />
+
+  <script>
+    let editor, model;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const menuBtn = document.getElementById('hamburgerMenu');
+      const menu = document.getElementById('menu');
+      const fileInput = document.getElementById('fileInput');
+
+      menuBtn.addEventListener('click', () => {
+        menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+      });
+
+      require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs' } });
+      require(['vs/editor/editor.main'], () => {
+        // カスタム言語 & ハイライト
+        monaco.languages.register({ id: 'customlang' });
+        monaco.languages.setMonarchTokensProvider('customlang', {
+          tokenizer: {
+            root: [
+              [/func\b|var\b|[?!:]/, 'keyword'],
+              [/"[^"]*"/, 'string'],
+              [/\b\d+\b/, 'number'],
+              [/\/\/.*$/, 'comment'],
+              [/\/\*/, 'comment', '@comment'],
+              [/[-+()\[\]]/, 'delimiter'],
+            ],
+            comment: [
+              [/[^*/]+/, 'comment'],
+              [/\*\//, 'comment', '@pop'],
+              [/./, 'comment']
+            ]
+          }
+        });
+        // テーマ
+        monaco.editor.defineTheme('myCustomTheme', {
+          base: 'vs-dark', inherit: true,
+          rules: [
+            { token: 'string', foreground: 'FF0000' },
+            { token: 'number', foreground: 'FFA500' },
+            { token: 'comment', foreground: '00FF00' },
+            { token: 'keyword', foreground: '00FFFF' },
+            { token: 'delimiter', foreground: 'FFFF00' },
+          ],
+          colors: { 'editor.background': '#1E1E1E' }
+        });
+
+        // モデル＆エディタ
+        model = monaco.editor.createModel('', 'customlang');
+        editor = monaco.editor.create(document.getElementById('container'), {
+          model,
+          language: 'customlang',
+          theme: 'myCustomTheme',
+          wordWrap: 'on',
+          folding: true
+        });
+
+        // 補完（マスタ項目）をここで一度だけ登録
+monaco.languages.registerCompletionItemProvider('customlang', {
+  provideCompletionItems: () => {
+    const suggestions = [
+      {
+        label: 'foe.distance',
+        kind: monaco.languages.CompletionItemKind.Field,
+        insertText: 'foe.distance',
+        filterText: 'foe', // ← これで `foe` 入力時に表示される
+        detail: '敵の距離',
+        documentation: '敵までの距離を表します。'
+      },
+      {
+        label: 'foe.hp',
+        kind: monaco.languages.CompletionItemKind.Field,
+        insertText: 'foe.hp',
+        filterText: 'foe',
+        detail: '敵のHP',
+        documentation: '敵の体力。'
+      },
+      {
+        label: 'player.hp',
+        kind: monaco.languages.CompletionItemKind.Field,
+        insertText: 'player.hp',
+        filterText: 'player',
+        detail: 'プレイヤーのHP',
+        documentation: 'プレイヤーの体力。'
+      },
+      {
+        label: 'player.mp',
+        kind: monaco.languages.CompletionItemKind.Field,
+        insertText: 'player.mp',
+        filterText: 'player',
+        detail: 'プレイヤーのMP',
+        documentation: 'プレイヤーのマジックポイント。'
+      },
+      {
+        label: 'player.position',
+        kind: monaco.languages.CompletionItemKind.Field,
+        insertText: 'player.position',
+        filterText: 'player',
+        detail: 'プレイヤーの位置',
+        documentation: 'プレイヤーの現在位置（座標など）。'
+      },
+      {
+        label: 'func',
+        kind: monaco.languages.CompletionItemKind.Keyword,
+        insertText: 'func',
+        filterText: 'func',
+        detail: '関数定義キーワード',
+        documentation: '関数を定義します。'
+      },
+      {
+        label: 'var',
+        kind: monaco.languages.CompletionItemKind.Keyword,
+        insertText: 'var',
+        filterText: 'var',
+        detail: '変数定義キーワード',
+        documentation: '変数を定義します。'
+      }
+    ];
+    return { suggestions };
+  }
+});
+
+
+        // メニューの各機能
+        document.getElementById('openFile').addEventListener('click', e => {
+          e.preventDefault();
+          fileInput.click();
+        });
+        fileInput.addEventListener('change', () => {
+          const f = fileInput.files[0];
+          if (!f) return;
+          const reader = new FileReader();
+          reader.onload = ev => model.setValue(ev.target.result);
+          reader.readAsText(f);
+        });
+
+        document.getElementById('saveFile').addEventListener('click', e => {
+          e.preventDefault();
+          const text = model.getValue();
+          const blob = new Blob([text], { type: 'text/plain' });
+          const name = prompt('保存ファイル名を入力してください', 'script.txt');
+          if (!name) return;
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = name;
+          link.click();
+        });
+
+        document.getElementById('clearAll').addEventListener('click', e => {
+          e.preventDefault();
+          model.setValue('');
+        });
+
+        document.getElementById('copy').addEventListener('click', async e => {
+          e.preventDefault();
+          const sel = editor.getSelection();
+          const txt = model.getValueInRange(sel) || model.getValue();
+          try { await navigator.clipboard.writeText(txt); } catch { alert('コピーに失敗しました'); }
+        });
+
+        document.getElementById('paste').addEventListener('click', async e => {
+          e.preventDefault();
+          try {
+            const txt = await navigator.clipboard.readText();
+            model.applyEdits([{ range: editor.getSelection(), text: txt }]);
+          } catch { alert('ペーストに失敗しました'); }
+        });
+
+        document.getElementById('undo').addEventListener('click', e => {
+          e.preventDefault();
+          editor.trigger('', 'undo');
+        });
+
+        document.getElementById('redo').addEventListener('click', e => {
+          e.preventDefault();
+          editor.trigger('', 'redo');
+        });
+
+        document.getElementById('replace').addEventListener('click', e => {
+          e.preventDefault();
+          editor.getAction('editor.action.startFindReplaceAction').run();
+        });
+      });
+    });
+  </script>
+</body>
+</html>
