@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+　<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>軽量コードエディタ（textarea版）</title>
   <style>
     :root {
@@ -28,6 +29,7 @@
     }
 textarea.editor {
   /* width: 100%; ← この行を削除またはコメントアウト */
+  width: 40ch;
   height: 90vh;
   box-sizing: border-box;
   background: var(--bg-color);
@@ -55,8 +57,7 @@ textarea.editor {
     <button onclick="toggleDarkMode()">🌓 ダークモード切替</button>
   </div>
 
-<textarea class="editor" id="editor" cols="39" spellcheck="false"></textarea>
-
+<textarea class="editor" id="editor" spellcheck="false"></textarea>
 
 <script>
   const editor = document.getElementById('editor');
