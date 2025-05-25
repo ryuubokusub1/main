@@ -51,41 +51,82 @@
       outline: none;
       -webkit-text-size-adjust: 100%;
       touch-action: manipulation;
+      position: relative;
     }
     .info {
       font-size: 12px;
       margin-left: auto;
+    }
+    #autocomplete {
+      position: absolute;
+      background: #fff;
+      border: 1px solid #999;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+      display: none;
+      max-height: 150px;
+      overflow-y: auto;
+      z-index: 1000;
+      font-size: 14px;
+    }
+    .autocomplete-item {
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    .autocomplete-item.selected {
+      background-color: #def;
+    }
+    .autocomplete-item small {
+      display: block;
+      font-size: 12px;
+      color: #666;
     }
   </style>
 </head>
 <body>
   <div class="toolbar">
     <div>
-    <button onclick="undo()">↩️ 戻る</button>
-    <button onclick="redo()">↪️ 進む</button>
-    <button onclick="saveFile()">💾 保存</button>
-    <input type="file" id="loadFile" style="display:none" onchange="loadFile(event)" />
-    <button onclick="document.getElementById('loadFile').click()">📂 開く</button>
-    <button onclick="changeFontSize(1)">🔎＋大</button>
-    <button onclick="changeFontSize(-1)">🔍−小</button>
-    <button onclick="toggleDarkMode()">🌓 表示切替</button>
-<select onchange="setCols(this.value)">
-  <option value="30">30字</option>
-  <option value="40">40字</option>
-  <option value="50">50字</option>
-  <option value="free" selected>フリー</option>
-</select>
+      <button onclick="undo()">↩️ 戻る</button>
+      <button onclick="redo()">↪️ 進む</button>
+      <button onclick="saveFile()">💾 保存</button>
+      <input type="file" id="loadFile" style="display:none" onchange="loadFile(event)" />
+      <button onclick="document.getElementById('loadFile').click()">📂 開く</button>
+      <button onclick="changeFontSize(1)">🔎＋大</button>
+      <button onclick="changeFontSize(-1)">🔍−小</button>
+      <button onclick="toggleDarkMode()">🌓 表示切替</button>
+      <select onchange="setCols(this.value)">
+        <option value="30">30字</option>
+        <option value="40">40字</option>
+        <option value="50">50字</option>
+        <option value="free" selected>フリー</option>
+      </select>
     </div>
     <div class="info">フォントサイズ: <span id="fontSizeDisplay">16</span>px</div>
   </div>
-  
+
   <textarea class="editor" id="editor" spellcheck="false" rows="30"></textarea>
+  <div id="autocomplete"></div>
 
   <script>
     const editor = document.getElementById('editor');
     const fontSizeDisplay = document.getElementById('fontSizeDisplay');
     const history = [], redoStack = [];
     let fontSize = 16;
+
+    const keywords = [
+      { word: 'func', desc: '関数定義' },
+      { word: 'var', desc: '変数宣言' },
+      { word: 'return', desc: '値を返す' },
+      { word: 'if', desc: '条件分岐' },
+      { word: 'else', desc: '条件分岐の否定' },
+      { word: 'for', desc: '繰り返し処理' },
+      { word: 'while', desc: '条件付きループ' },
+      { word: 'true', desc: '真（真理値）' },
+      { word: 'false', desc: '偽（真理値）' },
+      { word: 'null', desc: '空の値' }
+    ];
+
+    const autocompleteBox = document.getElementById('autocomplete');
+    let selectedIndex = 0;
 
     function saveHistory() {
       if (history.length === 0 || history[history.length - 1] !== editor.value) {
@@ -136,30 +177,106 @@
       fontSizeDisplay.textContent = fontSize;
     }
 
-function setCols(value) {
-  if (value === "free") {
-    editor.removeAttribute("cols");
-    editor.style.width = "100%";
-  } else {
-    editor.setAttribute("cols", value-1);
-    editor.style.width = "auto";
-  }
-}
+    function setCols(value) {
+      if (value === "free") {
+        editor.removeAttribute("cols");
+        editor.style.width = "100%";
+      } else {
+        editor.setAttribute("cols", value - 1);
+        editor.style.width = "auto";
+      }
+    }
 
-
-    editor.addEventListener('input', saveHistory);
+    editor.addEventListener('input', () => {
+      saveHistory();
+      showAutocomplete();
+    });
 
     editor.addEventListener('keydown', (e) => {
       if (e.key === 'Tab') {
         e.preventDefault();
         const start = editor.selectionStart;
         const end = editor.selectionEnd;
-        const value = editor.value;
-        editor.value = value.slice(0, start) + '  ' + value.slice(end);
-        editor.selectionStart = editor.selectionEnd = start + 2;
+        editor.setRangeText('  ', start, end, 'end');
         saveHistory();
       }
+
+      if (autocompleteBox.style.display === 'block') {
+        const items = autocompleteBox.querySelectorAll('.autocomplete-item');
+        if (e.key === 'ArrowDown') {
+          selectedIndex = (selectedIndex + 1) % items.length;
+          updateSelection(items);
+          e.preventDefault();
+        } else if (e.key === 'ArrowUp') {
+          selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+          updateSelection(items);
+          e.preventDefault();
+        } else if (e.key === 'Enter') {
+          const word = getWordBeforeCaret();
+          if (word && items[selectedIndex]) {
+            const selectedWord = items[selectedIndex].dataset.word;
+            insertAutocomplete(selectedWord, word);
+            e.preventDefault();
+          }
+        } else if (e.key === 'Escape') {
+          autocompleteBox.style.display = 'none';
+        }
+      }
     });
+
+    function updateSelection(items) {
+      items.forEach((item, i) => {
+        item.classList.toggle('selected', i === selectedIndex);
+      });
+    }
+
+    function getWordBeforeCaret() {
+      const pos = editor.selectionStart;
+      const before = editor.value.slice(0, pos);
+      const match = before.match(/[\w_]+$/);
+      return match ? match[0] : '';
+    }
+
+    function insertAutocomplete(selected, partial) {
+      const pos = editor.selectionStart;
+      const start = pos - partial.length;
+      editor.setRangeText(selected, start, pos, 'end');
+      autocompleteBox.style.display = 'none';
+      editor.focus();
+    }
+
+    function showAutocomplete() {
+      const word = getWordBeforeCaret();
+      if (!word) {
+        autocompleteBox.style.display = 'none';
+        return;
+      }
+
+      const matches = keywords.filter(k => k.word.startsWith(word));
+      if (matches.length === 0) {
+        autocompleteBox.style.display = 'none';
+        return;
+      }
+
+      autocompleteBox.innerHTML = '';
+      matches.forEach((item, i) => {
+        const div = document.createElement('div');
+        div.className = 'autocomplete-item';
+        if (i === 0) div.classList.add('selected');
+        div.dataset.word = item.word;
+        div.innerHTML = `${item.word}<small>${item.desc}</small>`;
+        div.addEventListener('click', () => {
+          insertAutocomplete(item.word, word);
+        });
+        autocompleteBox.appendChild(div);
+      });
+      selectedIndex = 0;
+
+      const rect = editor.getBoundingClientRect();
+      autocompleteBox.style.left = rect.left + 10 + 'px';
+      autocompleteBox.style.top = rect.top + 10 + 'px';
+      autocompleteBox.style.display = 'block';
+    }
 
     saveHistory();
   </script>
