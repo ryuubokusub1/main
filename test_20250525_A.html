@@ -65,19 +65,19 @@
     <button onclick="saveFile()">💾 保存</button>
     <input type="file" id="loadFile" style="display:none" onchange="loadFile(event)" />
     <button onclick="document.getElementById('loadFile').click()">📂 開く</button>
-    <button onclick="changeFontSize(1)">🔎＋文字大</button>
-    <button onclick="changeFontSize(-1)">🔍−文字小</button>
-    <button onclick="toggleDarkMode()">🌓 ダークモード切替</button>
-    <select onchange="setRows(this.value)">
-      <option value="10">10行</option>
-      <option value="20">20行</option>
-      <option value="30" selected>30行</option>
-      <option value="50">50行</option>
-      <option value="80">80行</option>
-    </select>
+    <button onclick="changeFontSize(1)">🔎＋大</button>
+    <button onclick="changeFontSize(-1)">🔍−小</button>
+    <button onclick="toggleDarkMode()">🌓 表示切替</button>
+<select onchange="setCols(this.value)">
+  <option value="30">30字</option>
+  <option value="40">40字</option>
+  <option value="50">50字</option>
+  <option value="free" selected>フリー</option>
+</select>
+
     <div class="info">フォントサイズ: <span id="fontSizeDisplay">16</span>px</div>
   </div>
-
+  
   <textarea class="editor" id="editor" spellcheck="false" rows="30"></textarea>
 
   <script>
@@ -135,9 +135,16 @@
       fontSizeDisplay.textContent = fontSize;
     }
 
-    function setRows(n) {
-      editor.rows = n;
-    }
+function setCols(value) {
+  if (value === "free") {
+    editor.removeAttribute("cols");
+    editor.style.width = "100%";
+  } else {
+    editor.setAttribute("cols", value-1);
+    editor.style.width = "auto";
+  }
+}
+
 
     editor.addEventListener('input', saveHistory);
 
