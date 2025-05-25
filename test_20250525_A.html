@@ -2,44 +2,45 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>軽量コードエディタ（textarea版）</title>
+  <!-- ズーム防止 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="HandheldFriendly" content="true">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>軽量コードエディタ</title>
   <style>
     :root {
-      --bg-color: #f7f7f7;
-      --text-color: #222222;
+      --bg-color: #fdfdfd;
+      --editor-bg: #f5f5f5;
+      --text-color: #000000;
       --highlight-color: #e0e0e0;
     }
     body.dark {
-      --bg-color: #2a2a2a;
-      --text-color: #e0e0e0;
-      --highlight-color: #444;
+      --bg-color: #1e1e1e;
+      --editor-bg: #2b2b2b;
+      --text-color: #cccccc;
+      --highlight-color: #333333;
     }
     body {
       margin: 0;
       font-family: sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
-      -webkit-text-size-adjust: 100%; /* iOSズーム防止 */
+      touch-action: manipulation;
     }
     .toolbar {
       padding: 5px;
       background: var(--highlight-color);
       display: flex;
-      gap: 5px;
       flex-wrap: wrap;
+      gap: 5px;
       align-items: center;
     }
-    .font-display {
-      font-size: 14px;
-      margin-left: auto;
-    }
-    textarea.editor {
-      width: 40ch;
-      height: 90vh;
+    .editor {
+      width: 100%;
+      height: 60vh;
       box-sizing: border-box;
-      background: var(--bg-color);
+      background: var(--editor-bg);
       color: var(--text-color);
       border: none;
       font-family: monospace;
@@ -48,11 +49,12 @@
       resize: none;
       line-height: 1.4;
       outline: none;
-      -webkit-text-size-adjust: none; /* iOSフォームズーム防止 */
-      touch-action: manipulation; /* モバイルタップズーム防止 */
+      -webkit-text-size-adjust: 100%;
+      touch-action: manipulation;
     }
-    button {
-      font-size: 14px;
+    .info {
+      font-size: 12px;
+      margin-left: auto;
     }
   </style>
 </head>
@@ -66,15 +68,23 @@
     <button onclick="changeFontSize(1)">🔎＋文字大</button>
     <button onclick="changeFontSize(-1)">🔍−文字小</button>
     <button onclick="toggleDarkMode()">🌓 ダークモード切替</button>
-    <span class="font-display" id="fontDisplay">文字サイズ: 16px</span>
+    <select onchange="setRows(this.value)">
+      <option value="10">10行</option>
+      <option value="20">20行</option>
+      <option value="30" selected>30行</option>
+      <option value="50">50行</option>
+      <option value="80">80行</option>
+    </select>
+    <div class="info">フォントサイズ: <span id="fontSizeDisplay">16</span>px</div>
   </div>
 
-  <textarea class="editor" id="editor" spellcheck="false"></textarea>
+  <textarea class="editor" id="editor" spellcheck="false" rows="30"></textarea>
 
   <script>
     const editor = document.getElementById('editor');
-    const fontDisplay = document.getElementById('fontDisplay');
+    const fontSizeDisplay = document.getElementById('fontSizeDisplay');
     const history = [], redoStack = [];
+    let fontSize = 16;
 
     function saveHistory() {
       if (history.length === 0 || history[history.length - 1] !== editor.value) {
@@ -119,6 +129,16 @@
       document.body.classList.toggle('dark');
     }
 
+    function changeFontSize(delta) {
+      fontSize = Math.max(12, Math.min(40, fontSize + delta));
+      editor.style.fontSize = fontSize + 'px';
+      fontSizeDisplay.textContent = fontSize;
+    }
+
+    function setRows(n) {
+      editor.rows = n;
+    }
+
     editor.addEventListener('input', saveHistory);
 
     editor.addEventListener('keydown', (e) => {
@@ -134,13 +154,6 @@
     });
 
     saveHistory();
-
-    let fontSize = 16;
-    function changeFontSize(delta) {
-      fontSize = Math.max(12, Math.min(40, fontSize + delta));
-      editor.style.fontSize = fontSize + 'px';
-      fontDisplay.textContent = '文字サイズ: ' + fontSize + 'px';
-    }
   </script>
 </body>
 </html>
