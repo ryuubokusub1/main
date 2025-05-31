@@ -38,7 +38,6 @@
     }
     .editor {
       width: 100%;
-      height: 60vh;
       box-sizing: border-box;
       background: var(--editor-bg);
       color: var(--text-color);
@@ -277,7 +276,18 @@
       autocompleteBox.style.top = rect.top + 10 + 'px';
       autocompleteBox.style.display = 'block';
     }
+  function adjustEditorHeight() {
+    const toolbar = document.querySelector('.toolbar');
+    const autocomplete = document.getElementById('autocomplete');
+    const windowHeight = window.innerHeight;
+    const toolbarHeight = toolbar.offsetHeight;
+    const buffer = 10; // 少し余裕をもたせる
+    const editorHeight = windowHeight - toolbarHeight - buffer;
+    editor.style.height = editorHeight + 'px';
+  }
 
+  window.addEventListener('resize', adjustEditorHeight);
+  window.addEventListener('load', adjustEditorHeight);
     saveHistory();
   </script>
 </body>
