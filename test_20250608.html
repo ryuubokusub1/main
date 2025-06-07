@@ -1,0 +1,2276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- ズーム防止 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="HandheldFriendly" content="true">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>軽量コードエディタ</title>
+  <style>
+    :root {
+      --bg-color: #fdfdfd;
+      --editor-bg: #f5f5f5;
+      --text-color: #000000;
+      --highlight-color: #e0e0e0;
+    }
+    body.dark {
+      --bg-color: #1e1e1e;
+      --editor-bg: #2b2b2b;
+      --text-color: #cccccc;
+      --highlight-color: #333333;
+    }
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      touch-action: manipulation;
+    }
+    .toolbar {
+      padding: 5px;
+      background: var(--highlight-color);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+    }
+    .editor {
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--editor-bg);
+      color: var(--text-color);
+      border: none;
+      font-family: monospace;
+      font-size: 16px;
+      padding: 10px;
+      resize: none;
+      line-height: 1.4;
+      outline: none;
+      -webkit-text-size-adjust: 100%;
+      touch-action: manipulation;
+      position: relative;
+    }
+    .info {
+      font-size: 12px;
+      margin-left: auto;
+    }
+    #autocomplete {
+      position: absolute;
+      background: #fff;
+      border: 1px solid #999;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+      display: none;
+
+      overflow-y: auto;
+      z-index: 1000;
+      font-size: 14px;
+    }
+    .autocomplete-item {
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    .autocomplete-item.selected {
+      background-color: #def;
+    }
+    .autocomplete-item small {
+      display: block;
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+  <div>
+      <button onclick="undo()">↩️ 戻る</button>
+      <button onclick="redo()">↪️ 進む</button>
+      <button onclick="saveFile()">💾 保存</button>
+      <input type="file" id="loadFile" style="display:none" onchange="loadFile(event)" />
+      <button onclick="document.getElementById('loadFile').click()">📂 開く</button>
+      <button onclick="changeFontSize(1)">🔎＋大</button>
+      <button onclick="changeFontSize(-1)">🔍−小</button>
+      <button onclick="toggleDarkMode()">🌓 表示切替</button>
+      <select onchange="setCols(this.value)">
+        <option value="free"selected>フリー</option>
+        <option value="30">30字</option>
+        <option value="40">40字</option>
+        <option value="50">50字</option>
+      </select>
+      </div>
+    <div class="info">font: <span id="fontSizeDisplay">16</span>px</div>
+  </div>
+
+  <textarea class="editor" id="editor" spellcheck="false" rows="30"></textarea>
+  <div id="autocomplete"></div>
+
+  <script>
+    const editor = document.getElementById('editor');
+    const fontSizeDisplay = document.getElementById('fontSizeDisplay');
+    const history = [], redoStack = [];
+    let fontSize = 16;
+
+        editor.setAttribute("cols", 40 - 3);
+        editor.style.width = "auto";
+// 修正された keywords 定義
+const keywords = [
+      {
+    syntax: "?",
+    insertText: "?",
+    description: "戻り値:なし\n論理条件を評価します。条件が真の場合、インデントされた行（ifブロック）を実行します。",
+  },
+  {
+    syntax: ":",
+    insertText: ":",
+    description: "戻り値:なし\n直前の '?' 条件が偽の場合に実行される代替の論理分岐（elseブロック）を示します。",
+  },
+  {
+    syntax: ":?",
+    insertText: ":?",
+    description: "戻り値:なし\n直前の '?' または ':?' 条件が偽の場合に、さらに追加の条件を評価する代替の論理分岐（else-ifブロック）を示します。",
+  },
+  {
+    syntax: "//",
+    insertText: "//",
+    description: "戻り値:なし\nコメントを示します。'//' の右側のテキストはスクリプト実行時に論理的な影響を与えません。",
+  },
+  {
+    syntax: "/*",
+    insertText: "/*",
+    description: "戻り値:なし\nブロックコメントを示します。'/*' と '*/' の間のテキストはスクリプト実行時に論理的な影響を与えません。",
+  },
+  {
+    syntax: "*/",
+    insertText: "*/",
+    description: "戻り値:なし\nブロックコメントを示します。'/*' と '*/' の間のテキストはスクリプト実行時に論理的な影響を与えません。",
+  },
+  {
+    syntax: "^",
+    insertText: "^",
+    description: "戻り値:なし\n前の行を継続します。複数行にわたる条件や出力を1行として扱う際に使用します。",
+  },
+  {
+    syntax: "loc",
+    insertText: "loc",
+    description: "戻り値:string\nプレイヤーが現在訪れている場所を示します。",
+  },
+  {
+    syntax: "?loc.id",
+    insertText: "?loc.id",
+    description: "戻り値:string\n現在の場所のユニークな識別子を示します。",
+  },
+  {
+    syntax: "loc.gp",
+    insertText: "loc.gp",
+    description: "戻り値:int\n現在のランで使用されている総ギアパワーを示します。",
+  },
+  {
+    syntax: "loc.name",
+    insertText: "loc.name",
+    description: "戻り値:string\n現在の場所のローカライズされた名前を示します。",
+  },
+  {
+    syntax: "loc.stars",
+    insertText: "loc.stars",
+    description: "戻り値:int\n現在の場所の難易度を示します。",
+  },
+  {
+    syntax: "?loc.begin",
+    insertText: "?loc.begin",
+    description: "戻り値:bool\n場所の最初のフレーム（time = 0）でのみ真となり、ゲームシミュレーションが実行される前です。Ouroborosループ後では真になりません。変数のリセットに役立ちます。",
+  },
+  {
+    syntax: "?loc.loop",
+    insertText: "?loc.loop",
+    description: "戻り値:bool\nOuroborosループ後のランの最初のフレームで真となります。",
+  },
+  {
+    syntax: "?loc.isQuest",
+    insertText: "?loc.isQuest",
+    description: "戻り値:bool\n現在の場所がレジェンドやカスタムクエストの特別な場所であれば真、それ以外は偽となります。",
+  },
+  {
+    syntax: "loc.averageTime",
+    insertText: "loc.averageTime",
+    description: "戻り値:int\n現在の場所の平均クリア時間を示します。最新のクリア時間が最も重み付けされ、古い時間ほど影響が少なくなります。",
+  },
+  {
+    syntax: "loc.bestTime",
+    insertText: "loc.bestTime",
+    description: "戻り値:int\n現在の場所の最短クリア時間（ハイスコア）を示します。",
+  },
+  {
+    syntax: "?encounter.isElite",
+    insertText: "?encounter.isElite",
+    description: "戻り値:bool\n現在のエンカウンターがエリートエンカウンターかどうかを示します。",
+  },
+  {
+    syntax: "?encounter.eliteMod",
+    insertText: "?encounter.eliteMod",
+    description: "戻り値:string\n現在のエンカウンターの特別な修飾子（存在する場合）を示します。",
+  },
+  {
+    syntax: "?foe",
+    insertText: "?foe",
+    description: "戻り値:string\nプレイヤーが現在ターゲットにしている敵を示します。",
+  },
+  {
+    syntax: "?foe.id",
+    insertText: "?foe.id",
+    description: "戻り値:string\nプレイヤーがターゲットにしている敵のユニークなID（またはタイプ）を示します。",
+  },
+  {
+    syntax: "?foe.name",
+    insertText: "?foe.name",
+    description: "戻り値:string\nプレイヤーがターゲットにしている敵のローカライズされた名前を示します。",
+  },
+  {
+    syntax: "?foe.damage",
+    insertText: "?foe.damage",
+    description: "戻り値:int\nプレイヤーがターゲットにしている敵の1回ごとの攻撃ダメージを示します。",
+  },
+  {
+    syntax: "?foe.distance",
+    insertText: "?foe.distance",
+    description: "戻り値:int\nプレイヤーとターゲットにしている敵との距離を示します。",
+  },
+  {
+    syntax: "?foe.z",
+    insertText: "?foe.z",
+    description: "戻り値:int\nターゲットにしている敵のZ位置を示します。",
+  },
+  {
+    syntax: "?foe.count",
+    insertText: "?foe.count",
+    description: "戻り値:int\nプレイヤーから46ユニット以内にいる敵の数を示します。",
+  },
+  {
+    syntax: "?foe.GetCount({distance})",
+    insertText: "?foe.GetCount()",
+    description: "戻り値:int\n指定したユニット数以内にいる敵の数を示します。",
+  },
+  {
+    syntax: "?foe.hp",
+    insertText: "?foe.hp",
+    description: "戻り値:int\nプレイヤーがターゲットにしている敵の現在のヒットポイントを示します。",
+  },
+  {
+    syntax: "?foe.maxhp",
+    insertText: "?foe.maxhp",
+    description: "戻り値:int\nプレイヤーがターゲットにしている敵の最大ヒットポイントを示します。",
+  },
+  {
+    syntax: "?foe.armor",
+    insertText: "?foe.armor",
+    description: "戻り値:int\nプレイヤーがターゲットにしている敵の現在のアーマーを示します。",
+  },
+  {
+    syntax: "?foe.maxarmor",
+    insertText: "?foe.maxarmor",
+    description: "戻り値:int\nプレイヤーがターゲットにしている敵の最大アーマーを示します。",
+  },
+  {
+    syntax: "?foe.buffs.count",
+    insertText: "?foe.buffs.count",
+    description: "戻り値:int\nターゲットにしている敵にかかっているバフ（正の効果）の数を返します。",
+  },
+  {
+    syntax: "?foe.buffs.string",
+    insertText: "?foe.buffs.string",
+    description: "戻り値:string\nターゲットにしている敵のすべてのバフに関する情報を合成した文字列を返します。",
+  },
+  {
+    syntax: "?foe.buffs.GetCount({buff})",
+    insertText: "?foe.buffs.GetCount()",
+    description: "戻り値:int\nターゲットにしている敵に特定のバフがいくつあるかを返します。",
+  },
+  {
+    syntax: "?foe.buffs.GetTime({buff})",
+    insertText: "?foe.buffs.GetTime()",
+    description: "戻り値:int\nターゲットにしている敵に特定のバフの持続時間を返します。",
+  },
+  {
+    syntax: "?buffs.oldest",
+    insertText: "?buffs.oldest",
+    description: "戻り値:string\nプレイヤーにかかっている最も古いバフのIDを返します。",
+  },
+  {
+    syntax: "?foe.debuffs.count",
+    insertText: "?foe.debuffs.count",
+    description: "戻り値:int\nターゲットにしている敵にかかっているデバフ（負の効果）の数を返します。",
+  },
+  {
+    syntax: "?foe.debuffs.string",
+    insertText: "?foe.debuffs.string",
+    description: "戻り値:string\nターゲットにしている敵のすべてのデバフに関する情報を合成した文字列を返します。",
+  },
+  {
+    syntax: "?foe.debuffs.GetCount({debuff})",
+    insertText: "?foe.debuffs.GetCount()",
+    description: "戻り値:int\nターゲットにしている敵に特定のデバフがいくつあるかを返します。",
+  },
+  {
+    syntax: "?foe.debuffs.GetTime({debuff})",
+    insertText: "?foe.debuffs.GetTime()",
+    description: "戻り値:int\nターゲットにしている敵に特定のデバフの持続時間を返します。",
+  },
+  {
+    syntax: "?debuffs.oldest",
+    insertText: "?debuffs.oldest",
+    description: "戻り値:string\nプレイヤーにかかっている最も古いデバフのIDを返します。",
+  },
+  {
+    syntax: "?foe.state",
+    insertText: "?foe.state",
+    description: "戻り値:int\nターゲットにしている敵の現在の状態を表す数値を返します。",
+  },
+  {
+    syntax: "?foe.time",
+    insertText: "?foe.time",
+    description: "戻り値:int\nターゲットにしている敵が現在の状態になってからの経過フレーム数を返します。",
+  },
+  {
+    syntax: "?foe.level",
+    insertText: "?foe.level",
+    description: "戻り値:int\nターゲットにしている敵のレベル番号を返します。",
+  },
+  {
+    syntax: "?harvest",
+    insertText: "?harvest",
+    description: "戻り値:string\n次に採取可能なオブジェクト（木や岩など）を示します。",
+  },
+  {
+    syntax: "?harvest.distance",
+    insertText: "?harvest.distance",
+    description: "戻り値:int\nプレイヤーと最も近い採取可能オブジェクトとの距離を示します。",
+  },
+  {
+    syntax: "?harvest.z",
+    insertText: "?harvest.z",
+    description: "戻り値:int\n最も近い採取可能オブジェクトのZ位置を示します。",
+  },
+  {
+    syntax: "?input.x",
+    insertText: "?input.x",
+    description: "戻り値:int\n入力デバイス（マウス/タッチ）のASCIIグリッド上のX位置を示します。",
+  },
+  {
+    syntax: "?input.y",
+    insertText: "?input.y",
+    description: "戻り値:int\n入力デバイス（マウス/タッチ）のASCIIグリッド上のY位置を示します。",
+  },
+  {
+    syntax: "?item.left",
+    insertText: "?item.left",
+    description: "戻り値:string\n左手に装備されているアイテムを示します。",
+  },
+    {
+    syntax: "?item.right",
+    insertText: "?item.right",
+    description: "戻り値:string\n右手に装備されているアイテムを示します。",
+  },
+  {
+    syntax: "?item.left.gp",
+    insertText: "?item.left.gp",
+    description: "戻り値:int\n左手に装備されているアイテムのギアパワーの値を返します。",
+  },
+  {
+    syntax: "?item.right.gp",
+    insertText: "?item.right.gp",
+    description: "戻り値:int\n右手に装備されているアイテムのギアパワーの値を返します。",
+  },
+  {
+    syntax: "?item.left.id",
+    insertText: "?item.left.id",
+    description: "戻り値:string\n左手に装備されているアイテムのIDを返します。",
+  },
+  {
+    syntax: "?item.right.id",
+    insertText: "?item.right.id",
+    description: "戻り値:string\n右手に装備されているアイテムのIDを返します。",
+  },
+  {
+    syntax: "?item.left.state",
+    insertText: "?item.left.state",
+    description: "戻り値:int\n左手に装備されている武器の現在の状態を数値で示します。",
+  },
+  {
+    syntax: "?item.left.time",
+    insertText: "?item.left.time",
+    description: "戻り値:int\n左手に装備されている武器の現在の状態での経過フレーム数を返します。",
+  },
+  {
+    syntax: "?item.right.state",
+    insertText: "?item.right.state",
+    description: "戻り値:int\n右手に装備されている武器の現在の状態を数値で示します。",
+  },
+  {
+    syntax: "?item.right.time",
+    insertText: "?item.right.time",
+    description: "戻り値:int\n右手に装備されている武器の現在の状態での経過フレーム数を返します。",
+  },
+  {
+    syntax: "?item.potion",
+    insertText: "?item.potion",
+    description: "戻り値:string\n現在調合されているポーションを示します。自動補充が有効な場合'auto'を含みます。",
+  },
+  {
+    syntax: "?pickup",
+    insertText: "?pickup",
+    description: "戻り値:string\nプレイヤーが現在ターゲットにしているピックアップを示します。",
+  },
+  {
+    syntax: "?pickup.distance",
+    insertText: "?pickup.distance",
+    description: "戻り値:int\nプレイヤーとターゲットにしているピックアップとの距離を示します。",
+  },
+  {
+    syntax: "?pickup.z",
+    insertText: "?pickup.z",
+    description: "戻り値:int\nターゲットにしているピックアップのZ位置を示します。",
+  },
+  {
+    syntax: "?armor",
+    insertText: "?armor",
+    description: "戻り値:int\nプレイヤーの現在のアーマーを、小数点以下切り捨てで示します。",
+  },
+  {
+    syntax: "?armor.f",
+    insertText: "?armor.f",
+    description: "戻り値:int\nプレイヤーの現在のアーマーの小数部分を示します。",
+  },
+  {
+    syntax: "?buffs.count",
+    insertText: "?buffs.count",
+    description: "戻り値:int\nプレイヤーにかかっているバフ（正の効果）の数を返します。",
+  },
+  {
+    syntax: "?buffs.string",
+    insertText: "?buffs.count",
+    description: "戻り値:string\nプレイヤーのすべてのバフに関する情報を合成した文字列を返します。",
+  },
+  {
+    syntax: "?buffs.GetCount({buff})",
+    insertText: "?buffs.GetCount()",
+    description: "戻り値:int\nプレイヤーに特定のバフがいくつあるかを返します。",
+  },
+  {
+    syntax: "?buffs.GetTime({buff})",
+    insertText: "?buffs.GetTime()",
+    description: "戻り値:int\nプレイヤーに特定のバフの持続時間を返します。",
+  },
+  {
+    syntax: "?debuffs.count",
+    insertText: "?debuffs.count",
+    description: "戻り値:int\nプレイヤーにかかっているデバフ（負の効果）の数を返します。",
+  },
+  {
+    syntax: "?debuffs.string",
+    insertText: "?debuffs.string",
+    description: "戻り値:string\nプレイヤーのすべてのデバフに関する情報を合成した文字列を返します。",
+  },
+  {
+    syntax: "?debuffs.GetCount({debuff})",
+    insertText: "?debuffs.GetCount()",
+    description: "戻り値:int\nプレイヤーに特定のデバフがいくつあるかを返します。",
+  },
+  {
+    syntax: "?debuffs.GetTime({debuff})",
+    insertText: "?debuffs.GetTime()",
+    description: "戻り値:int\nプレイヤーに特定のデバフの持続時間を返します。",
+  },
+  {
+    syntax: "?hp",
+    insertText: "?hp",
+    description: "戻り値:int\nプレイヤーの現在のヒットポイントを示します。",
+  },
+  {
+    syntax: "?maxhp",
+    insertText: "?maxhp",
+    description: "戻り値:int\nプレイヤーの最大ヒットポイントを示します。",
+  },
+  {
+    syntax: "?maxarmor",
+    insertText: "?maxarmor",
+    description: "戻り値:int\nプレイヤーの最大アーマーを、小数点以下切り捨てで示します。",
+  },
+  {
+    syntax: "?pos.x",
+    insertText: "?pos.x",
+    description: "に戻り値:int\nプレイヤーの現在のX位置を示します。",
+  },
+  {
+    syntax: "?pos.y",
+    insertText: "?pos.y",
+    description: "戻り値:int\nプレイヤーの現在のY位置を示します。",
+  },
+  {
+    syntax: "?pos.z",
+    insertText: "?pos.z",
+    description: "戻り値:int\nプレイヤーの現在のZ位置を示します。",
+  },
+  {
+    syntax: "?ai.enabled",
+    insertText: "?ai.enabled",
+    description: "戻り値:bool\nAIがオンなら真、オフ（例: シネマティック中）なら偽を返します。",
+  },
+  {
+    syntax: "?ai.paused",
+    insertText: "?ai.paused",
+    description: "戻り値:bool\nAIが一時停止中（例: 宝物待ち）なら真を返します。",
+  },
+  {
+    syntax: "?ai.idle",
+    insertText: "?ai.idle",
+    description: "戻り値:bool\nプレイヤーがアイドル状態（攻撃完了待ちなど）なら真を返します。",
+  },
+  {
+    syntax: "?ai.walking",
+    insertText: "?ai.walking",
+    description: "戻り値:bool\nプレイヤーが移動中なら真を返します。",
+  },
+  {
+    syntax: "?bighead",
+    insertText: "?bighead",
+    description: "戻り値:bool\nプレイヤーがビッグヘッド（Moondial）を有効にしている場合に真を返します。",
+  },
+  {
+    syntax: "?face",
+    insertText: "?face",
+    description: "戻り値:string\nプレイヤーの現在の表情を示します。",
+  },
+  {
+    syntax: "?key",
+    insertText: "?key",
+    description: "戻り値:string\nカスタムゲーム入力の状態を示します。",
+  },
+  {
+    syntax: "?res.stone",
+    insertText: "?res.stone",
+    description: "戻り値:int\nプレイヤーのインベントリにある石のリソース量を示します。",
+  },
+  {
+    syntax: "?res.wood",
+    insertText: "?res.wood",
+    description: "戻り値:int\nプレイヤーのインベントリにある木のリソース量を示します。",
+  },
+  {
+    syntax: "?res.tar",
+    insertText: "?res.tar",
+    description: "戻り値:int\nプレイヤーのインベントリにあるタールのリソース量を示します。",
+  },
+  {
+    syntax: "?res.ki",
+    insertText: "?res.ki",
+    description: "戻り値:int\nプレイヤーのインベントリにあるキのリソース量を示します。",
+  },
+  {
+    syntax: "?res.bronze",
+    insertText: "?res.bronze",
+    description: "戻り値:int\nプレイヤーのインベントリにあるブロンズのリソース量を示します。",
+  },
+    {
+    syntax: "?res.crystals",
+    insertText: "?res.crystals",
+    description: "戻り値:int\nプレイヤーのインベントリにあるクリスタルのリソース量を示します。",
+  },
+  {
+    syntax: "?player.direction",
+    insertText: "?player.direction",
+    description: "戻り値:int\nプレイヤーが向いている方向を示します。右なら1、左なら-1を返します。",
+  },
+  {
+    syntax: "player.framesPerMove",
+    insertText: "player.framesPerMove",
+    description: "戻り値:int\nプレイヤーが1ポジション進むのにかかるフレーム数を示します。",
+  },
+  {
+    syntax: "player.name",
+    insertText: "player.name",
+    description: "戻り値:string\nプレイヤーが選んだ名前を示します。",
+  },
+  {
+    syntax: "player.GetNextLegendName()",
+    insertText: "player.GetNextLegendName()",
+    description: "戻り値:string\nプレイヤーがまだクリアしていない次にアンロックされるレジェンドクエストの名前を返します。",
+  },
+  {
+    syntax: "?rng",
+    insertText: "?rng",
+    description: "戻り値:int\n0から9999までのランダムな整数を返します。",
+  },
+  {
+    syntax: "?rngf",
+    insertText: "?rngf",
+    description: "戻り値:float\n0から1までのランダムな浮動小数点数を返します。",
+  },
+  {
+    syntax: "?screen.i",
+    insertText: "?screen.i",
+    description: "戻り値:int\nゲーム内の画面位置を示すインデックスで、プレイヤーが右端に達してスライドすると増加します。",
+  },
+  {
+    syntax: "?screen.x",
+    insertText: "?screen.x",
+    description: "戻り値:int\nゲーム内の画面のX位置を示します。",
+  },
+  {
+    syntax: "?screen.w",
+    insertText: "?screen.w",
+    description: "戻り値:int\n画面のASCIIグリッドの幅を示します。",
+  },
+  {
+    syntax: "?screen.h",
+    insertText: "?screen.h",
+    description: "戻り値:int\n画面のASCIIグリッドの高さを示します。",
+  },
+  {
+    syntax: "?summon.count",
+    insertText: "?summon.count",
+    description: "戻り値:int\nゲーム内に現在存在する召喚された味方の数を返します。",
+  },
+  {
+    syntax: "summon.GetId({index = 0})",
+    insertText: "summon.GetId()",
+    description: "戻り値:string\n指定したインデックスの召喚のIDを返します。インデックスはオプションで、デフォルトは0（最初の召喚）。該当する召喚がない場合はnullを返します。",
+  },
+  {
+    syntax: "summon.GetName({index = 0})",
+    insertText: "summon.GetName()",
+    description: "戻り値:string\n指定したインデックスの召喚のローカライズされた名前を返します。インデックスはオプションで、デフォルトは0。該当する召喚がない場合はnullを返します。",
+  },
+  {
+    syntax: "summon.GetVar({varName}, {index = 0})",
+    insertText: "summon.GetVar()",
+    description: "戻り値:any\n召喚のカスタム変数の値を返します。召喚の種類によって公開される変数は異なります。インデックスはオプションで、デフォルトは0。該当する召喚がない場合はnullを返します。変数名が無効な場合はエラーを表示します。",
+  },
+  {
+    syntax: "summon.GetState({index = 0})",
+    insertText: "summon.GetState()",
+    description: "戻り値:int\n指定したインデックスの召喚の現在の状態を表す数値を返します。インデックスはオプションで、デフォルトは0。該当する召喚がない場合は-1を返します。",
+  },
+  {
+    syntax: "summon.GetTime({index = 0})",
+    insertText: "summon.GetTime()",
+    description: "戻り値:int\n指定したインデックスの召喚の現在の状態での経過フレーム数を返します。インデックスはオプションで、デフォルトは0。該当する召喚がない場合は-1を返します。",
+  },
+  {
+    syntax: "?totalgp",
+    insertText: "?totalgp",
+    description: "戻り値:int\nインベントリの総'Gear Power'を返します。アイテムの星レベルとエンチャントボーナスから計算されます。",
+  },
+  {
+    syntax: "?time",
+    insertText: "?time",
+    description: "戻り値:int\n現在の場所のフレーム番号を返します。",
+  },
+  {
+    syntax: "?totaltime",
+    insertText: "?totaltime",
+    description: "戻り値:int\nボスのサブロケーションがある場合に累積された現在の場所のフレーム番号を返します。",
+  },
+  {
+    syntax: "time.msbn",
+    insertText: "time.msbn",
+    description: "戻り値:BigNumber\n1970-01-01T00:00:00Zからの経過ミリ秒数を表すUnix時間を返します。うるう秒は考慮されません。",
+  },
+  {
+    syntax: "time.year",
+    insertText: "time.year",
+    description: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（年）を返します。",
+  },
+  {
+    syntax: "time.month",
+    insertText: "time.month",
+    description: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（月）を返します。",
+  },
+  {
+    syntax: "time.day",
+    insertText: "time.day",
+    description: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（日）を返します。",
+  },
+  {
+    syntax: "time.hour",
+    insertText: "time.hour",
+    description: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（時）を返します。",
+  },
+  {
+    syntax: "time.minute",
+    insertText: "time.minute",
+    description: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（分）を返します。",
+  },
+  {
+    syntax: "time.second",
+    insertText: "time.second",
+    description: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（秒）を返します。",
+  },
+  {
+    syntax: "utc.year",
+    insertText: "utc.year",
+    description: "戻り値:int\n現在のUTC時間（年）を返します。",
+  },
+  {
+    syntax: "utc.month",
+    insertText: "utc.month",
+    description: "戻り値:int\n現在のUTC時間（月）を返します。",
+  },
+  {
+    syntax: "utc.day",
+    insertText: "utc.day",
+    description: "戻り値:int\n現在のUTC時間（日）を返します。",
+  },
+  {
+    syntax: "utc.hour",
+    insertText: "utc.hour",
+    description: "戻り値:int\n現在のUTC時間（時）を返します。",
+  },
+  {
+    syntax: "utc.minute",
+    insertText: "utc.minute",
+    description: "戻り値:int\n現在のUTC時間（分）を返します。",
+  },
+  {
+    syntax: "utc.second",
+    insertText: "utc.second",
+    description: "戻り値:int\n現在のUTC時間（秒）を返します。",
+  },
+  {
+    syntax: "activate {ability}",
+    insertText: "activate ",
+    description: "戻り値:なし\nアイテムのアビリティを起動します。abilityは'potion', 'P', 'left', 'L', 'right', 'R'、またはアビリティIDを指定可能です。",
+  },
+  {
+    syntax: "brew {ingredients}",
+    insertText: "brew ",
+    description: "戻り値:なし\nポーション瓶を指定した材料の組み合わせで補充します。ラン開始時（time 0）でのみ実行されます。材料はstone, wood, tar, bronzeで、+で区切ります。材料名は英語または設定で選択した言語で記述可能です。",
+  },
+  {
+    syntax: "equip {str}",
+    insertText: "equip ",
+    description: "戻り値:なし\n指定した基準に基づいてアイテムを装備します。strは最大7つの基準を指定可能。両手持ちアイテムにはこの形式を使用する必要があります。",
+  },
+    {
+    syntax: "equipL {str}",
+    insertText: "equipL ",
+    description: "戻り値:なし\n指定した基準に最も適合するアイテムを左手で装備します。",
+  },
+  {
+    syntax: "equipR {str}",
+    insertText: "equipR ",
+    description: "戻り値:なし\n指定した基準に最も適合するアイテムを右手で装備します。",
+  },
+  {
+    syntax: "equip @{var}@",
+    insertText: "equip ",
+    description: "戻り値:なし\n文字列変数から基準を取得してアイテムを装備します。減算基準もサポートします。",
+  },
+  {
+    syntax: "loadout {n}",
+    insertText: "loadout ",
+    description: "戻り値:なし\n指定した番号のロードアウトを装備します。",
+  },
+  {
+    syntax: "> {str}",
+    insertText: "loadout ",
+    description: "戻り値:なし\n画面上部に文字列を表示します。",
+  },
+  {
+    syntax: "> @{varName}@",
+    insertText: ">",
+    description: "戻り値:なし\n変数の値を挿入して文字列を表示します。複数の変数を1つの表示に挿入可能です。挿入するには変数名を@で囲みます。",
+  },
+  {
+    syntax: ">(abcd",
+    insertText: ">(",
+    description: "戻り値:なし\nプレイヤーにカスタム表情を表示します。ビッグヘッドが必要です。",
+  },
+  {
+    syntax: ">o{X},{Y},[#rrggbb,]{str}",
+    insertText: ">o",
+    description: "戻り値:なし\nプレイヤーの位置を基準に高度な表示を行います。XとYは座標オフセット、#rrggbbは16進数のテキスト色です。色は#white, #cyanなども使用可能。虹色は#rainFFで指定（FFは明るさ）。",
+  },
+  {
+    syntax: ">h{X},{Y},[#rrggbb,]{str}",
+    insertText: ">h",
+    description: "戻り値:なし\nビッグヘッドと同じレイヤーに表示します。帽子などのアクセサリーに最適です。",
+  },
+  {
+    syntax: ">`{X},{Y},[#rrggbb,]{str}",
+    insertText: ">`",
+    description: "戻り値:なし\n画面の左上を基準に高度な表示を行います。",
+  },
+  {
+    syntax: ">c{X},{Y},[#rrggbb,]{str}",
+    insertText: ">c",
+    description: "戻り値:なし\n画面中央を基準に高度な表示を行います。色はオプションです。",
+  },
+  {
+    syntax: ">f{X},{Y},[#rrggbb,]{str}",
+    insertText: ">f",
+    description: "戻り値:なし\nターゲットにしている敵の頭の位置を基準に高度な表示を行います。",
+  },
+  {
+    syntax: "var {variable}",
+    insertText: "var ",
+    description: "戻り値:なし\n数学的、論理的、文字列操作に使用できる変数を宣言します。ライフサイクルや動作は他の言語と異なる場合があります。",
+  },
+  {
+    syntax: "func {function}",
+    insertText: "func ",
+    description: "戻り値:なし\n後で呼び出せる関数を宣言します。",
+  },
+  {
+    syntax: "for {v} = {a}..{b}",
+    insertText: "for ",
+    description: "戻り値:なし\n変数'v'を値'a'から'b'まで反復するループを作成します。ループ内のコードは複数回実行されます。",
+  },
+  {
+    syntax: "import {script}",
+    insertText: "import ",
+    description: "戻り値:なし\n外部スクリプトの単一コピーをロードして実行します。",
+  },
+  {
+    syntax: "new {script}",
+    insertText: "new ",
+    description: "戻り値:any\n'import'と同様に外部スクリプトをロードして実行しますが、'new'でロードされたオブジェクトはそれぞれ独立したコピーであり、スクリプト本体は1回のみ実行されます。",
+  },
+  {
+    syntax: "disable abilities",
+    insertText: "disable abilities",
+    description: "戻り値:なし\nポーションと武器のアビリティの起動を無効にします。HUDボタンもグレーアウトします。",
+  },
+  {
+    syntax: "enable abilities",
+    insertText: "enable abilities",
+    description: "戻り値:なし\n以前に'disable abilities'で無効化されたアビリティの起動を復元します。",
+  },
+  {
+    syntax: "disable banner",
+    insertText: "disable banner",
+    description: "戻り値:なし\n場所の開始と終了時に表示される水平バナーのレンダリングを無効にします。",
+  },
+  {
+    syntax: "enable banner",
+    insertText: "enable banner",
+    description: "戻り値:なし\n水平バナーのレンダリングを復元します。",
+  },
+  {
+    syntax: "disable hud [{opts}]",
+    insertText: "disable hud ",
+    description: "戻り値:なし\nゲームプレイのユーザーインターフェース要素を非表示かつ無効にします。オプションで指定する要素: p=プレイヤーのHPとデバフ, f=敵のHPとデバフ, a=アビリティボタン, r=リソース, b=バナー, u=ユーティリティベルト。",
+  },
+  {
+    syntax: "enable hud [{opts}]",
+    insertText: "enable hud ",
+    description: "戻り値:なし\n'disable hud'で非表示にしたUI要素を復元します。オプションは'disable hud'と同じです。",
+  },
+  {
+    syntax: "disable loadout input",
+    insertText: "enable hud ",
+    description: "戻り値:なし\n入力キーによる武器ロードアウトの保存や呼び出しを無効にします。",
+  },
+  {
+    syntax: "enable loadout input",
+    insertText: "enable loadout input",
+    description: "戻り値:なし\n入力キーによる武器ロードアウトの保存や呼び出しを復元します。",
+  },
+  {
+    syntax: "disable loadout print",
+    insertText: "disable loadout print",
+    description: "戻り値:なし\nロードアウトが呼び出されたときに表示されるメッセージを非表示にします。",
+  },
+  {
+    syntax: "enable loadout print",
+    insertText: "enable loadout print",
+    description: "戻り値:なし\nロードアウトメッセージの表示を復元します。",
+  },
+  {
+    syntax: "disable npcDialog",
+    insertText: "disable npcDialog",
+    description: "戻り値:なし\nNPCの会話バブルを非表示にし、自動スキップします。",
+  },
+  {
+    syntax: "enable npcDialog",
+    insertText: "enable npcDialog",
+    description: "戻り値:なし\nNPCの会話バブルを復元します。",
+  },
+  {
+    syntax: "disable pause",
+    insertText: "disable pause",
+    description: "戻り値:なし\nポーズボタンのUIを非表示にします。[P]ショートカットではポーズ可能です。",
+  },
+  {
+    syntax: "enable pause",
+    insertText: "enable pause",
+    description: "戻り値:なし\n'disable pause'で非表示にしたポーズボタンを復元します。",
+  },
+  {
+    syntax: "disable player",
+    insertText: "disable player",
+    description: "戻り値:なし\nプレイヤーを非表示にします。戦闘には影響せず、見た目のみの変更です。",
+  },
+  {
+    syntax: "enable player",
+    insertText: "enable player",
+    description: "戻り値:なし\n'disable player'で非表示にしたプレイヤーの表示を復元します。",
+  },
+  {
+    syntax: "play {sound} [{pitch}]",
+    insertText: "play ",
+    description: "戻り値:なし\n効果音を再生します。ピッチはオプションで、デフォルトは100。高い値で高音、低い値で低音になります。",
+  },
+  {
+    syntax: "= ",
+    insertText: "= ",
+    description: "戻り値:bool\n値が等しいか、文字列が含まれているかを比較します。",
+  },
+  {
+    syntax: "! ",
+    insertText: "! ",
+    description: "戻り値:bool\n値が等しくないか、文字列が含まれていないかを比較します。",
+  },
+  {
+    syntax: "& ",
+    insertText: "& ",
+    description: "戻り値:bool\n論理AND演算子です。",
+  },
+  {
+    syntax: "| ",
+    insertText: "| ",
+    description: "戻り値:bool\n論理OR演算子です。'&'と'|'が混在する場合、'&'が先に評価されます。",
+  },
+  {
+    syntax: "> ",
+    insertText: "> ",
+    description: "戻り値:bool\n大なり比較です。難易度、敵の数、HPなどで使用可能です。",
+  },
+  {
+    syntax: "< ",
+    insertText: "< ",
+    description: "戻り値:bool\n小なり比較です。",
+  },
+  {
+    syntax: ">= ",
+    insertText: ">= ",
+    description: "戻り値:bool\n大なりイコール比較です。'>'と'='を組み合わせたもの。",
+  },
+  {
+    syntax: "<= ",
+    insertText: "<= ",
+    description: "戻り値:bool\n小なりイコール比較です。'<'と'='を組み合わせたもの。",
+  },
+  {
+    syntax: "+ ",
+    insertText: "+ ",
+    description: "戻り値:number\n2つの数値または変数を加算します。",
+  },
+  {
+    syntax: "- ",
+    insertText: "- ",
+    description: "戻り値:number\n2つの数値または変数を減算します。",
+  },
+  {
+    syntax: "* ",
+    insertText: "* ",
+    description: "戻り値:number\n2つの数値または変数を乗算します。",
+  },
+  {
+    syntax: "/ ",
+    insertText: "/ ",
+    description: "戻り値:number\n1つの数値または変数を別の数値で除算します。整数の場合、結果は切り捨てられます。",
+  },
+  {
+    syntax: "++ ",
+    insertText: "++ ",
+    description: "戻り値:なし\n変数を1増加させます。",
+  },
+  {
+    syntax: "-- ",
+    insertText: "-- ",
+    description: "戻り値:なし\n変数を1減少させます。",
+  },
+  {
+    syntax: "% ",
+    insertText: "% ",
+    description: "戻り値:number\nモジュロ演算子。1つの数を別の数で割った余りを返します。",
+  },
+  {
+    syntax: "( ) ",
+    insertText: "() ",
+    description: "戻り値:なし\n演算の優先順位を指定するために使用します。",
+  },
+  {
+    syntax: "! ",
+    insertText: "! ",
+    description: "戻り値:bool\nブール式の値を反転します。",
+  },
+  {
+    syntax: "?ambient",
+    insertText: "?ambient",
+    description: "戻り値:string\n現在アクティブなすべてのアンビエント音声IDをカンマ区切りリストで返します。",
+  },
+  {
+    syntax: "ambient.Add({str})",
+    insertText: "ambient.Add()",
+    description: "戻り値:なし\n指定した音声IDでアンビエント音声のレイヤーを追加します。最大4レイヤー。5つ目のレイヤーを追加すると最古のレイヤーが削除されます。",
+  },
+  {
+    syntax: "ambient.Stop()",
+    insertText: "ambient.Stop()",
+    description: "戻り値:なし\nすべてのアンビエント音声レイヤーをクリアします。",
+  },
+  {
+    syntax: "b.Add({num})",
+    insertText: "b.Add()",
+    description: "戻り値:自身\nBigNumberに数を加算します（+）。",
+  },
+  {
+    syntax: "b.Sub({num})",
+    insertText: "b.Sub()",
+    description: "戻り値:自身\nBigNumberから数を減算します（-）。",
+  },
+  {
+    syntax: "b.Mul({num})",
+    insertText: "b.Mul()",
+    description: "戻り値:自身\nBigNumberに数を乗算します（*）。",
+  },
+  {
+    syntax: "b.Div({num})",
+    insertText: "b.Div()",
+    description: "戻り値:自身\nBigNumberを数で除算します（/）。",
+  },
+  {
+    syntax: "b.Eq({num})",
+    insertText: "b.Eq()",
+    description: "戻り値:bool\nBigNumberが数と等しいかを判定します（=）。",
+  },
+  {
+    syntax: "b.Gt({num})",
+    insertText: "b.Gt()",
+    description: "戻り値:bool\nBigNumberが数より大きいかを判定します（>）。",
+  },
+  {
+    syntax: "b.Ge({num})",
+    insertText: "b.Ge()",
+    description: "戻り値:bool\nBigNumberが数以上かを判定します（>=）。",
+  },
+  {
+    syntax: "b.Lt({num})",
+    insertText: "b.Lt()",
+    description: "戻り値:bool\nBigNumberが数より小さいかを判定します（<）。",
+  },
+  {
+    syntax: "b.Le({num})",
+    insertText: "b.Le()",
+    description: "戻り値:bool\nBigNumberが数以下かを判定します（<=）。",
+  },
+  {
+    syntax: "b.ToFloat()",
+    insertText: "b.ToFloat()",
+    description: "戻り値:float\nBigNumberを浮動小数点数に変換します。数が大きすぎるか小さすぎる場合はエラーをスローします。",
+  },
+  {
+    syntax: "b.ToInt()",
+    insertText: "b.ToInt()",
+    description: "戻り値:int\nBigNumberを整数に変換します。数が大きすぎるか小さすぎる場合はエラーをスローします。",
+  },
+  {
+    syntax: "b.ToString()",
+    insertText: "b.ToString()",
+    description: "戻り値:string\nBigNumberの文字列表現を返します。保存用にシリアル化できます。",
+  },
+  {
+    syntax: "b.ToUI()",
+    insertText: "b.ToUI()",
+    description: "戻り値:string\nユーザーインターフェース用の短縮された文字列表現を返します。",
+  },
+  {
+    syntax: "color.FromRGB({r},{g},{b})",
+    insertText: "color.FromRGB()",
+    description: "戻り値:string\n3つの整数（0-255）から色を文字列に変換します。",
+  },
+  {
+    syntax: "color.ToRGB({string})",
+    insertText: "color.ToRGB()",
+    description: "戻り値:int[3]\n文字列から3つの整数（0-255）に色を変換します。",
+  },
+  {
+    syntax: "color.Lerp({c1},{c2},{t})",
+    insertText: "color.Lerp()",
+    description: "戻り値:string\n色c1からc2へ時間（パーセンテージ）tで線形補間します。",
+  },
+  {
+    syntax: "color.Random()",
+    insertText: "color.Random()",
+    description: "戻り値:string\nランダムな色を返します。",
+  },
+  {
+    syntax: "draw.Bg({x}, {y}, {color})",
+    insertText: "draw.Bg()",
+    description: "戻り値:なし\n特定の画面位置の背景色を設定します。",
+  },
+  {
+    syntax: "draw.Bg({x}, {y}, {color}, {w}, {h})",
+    insertText: "draw.Bg()",
+    description: "戻り値:なし\n画面上の矩形領域の背景色を設定します。",
+  },
+  {
+    syntax: "draw.Box({x}, {y}, {w}, {h}, {color}, {style})",
+    insertText: "draw.Box()",
+    description: "戻り値:なし\n指定した位置とサイズで矩形を描画します。矩形の境界は色とスタイル番号で定義されます。負のスタイル番号は矩形の中央を透明にします。注意: 現在、高度なプリントは常にボックスの上に描画されます。",
+  },
+  {
+    syntax: "draw.Clear()",
+    insertText: "draw.Clear()",
+    description: "戻り値:なし\n画面全体をクリアします。",
+  },
+  {
+    syntax: "draw.GetSymbol({x}, {y})",
+    insertText: "draw.GetSymbol()",
+    description: "戻り値:string\n画面位置(x, y)のグリフを返します。",
+  },
+  {
+    syntax: "draw.Player()",
+    insertText: "draw.Player()",
+    description: "戻り値:なし\nスクリプトの特定の地点で、装備やアドオンを含むプレイヤーキャラクターを描画します。",
+  },
+  {
+    syntax: "draw.Player({x},{y})",
+    insertText: "draw.Player()",
+    description: "戻り値:なし\nスクリプトの特定の地点で、装備やアドオンを含むプレイヤーキャラクターを指定したオフセット(x, y)で描画します。絶対位置での描画はscreen名前空間を参照。",
+  },
+  {
+    syntax: "int.Parse({str})",
+    insertText: "int.Parse()",
+    description: "戻り値:integer\n数値の文字列を整数値に変換します。数値でない文字列の場合はエラーをスローします。",
+  },
+  {
+    syntax: "event.GetObjectiveId({int})",
+    insertText: "event.GetObjectiveId()",
+    description: "戻り値:string\nコミュニティまたはシーズンイベントのアクティブな目標のIDを返します。目標のインデックスを渡します（通常0, 1, 2）。",
+  },
+  {
+    syntax: "event.GetObjectiveProgress({int})",
+    insertText: "event.GetObjectiveProgress()",
+    description: "戻り値:int\nコミュニティまたはシーズンイベントのアクティブな目標の進捗を返します。目標のインデックスを渡します（通常0, 1, 2）。",
+  },
+  {
+    syntax: "event.GetObjectiveGoal({int})",
+    insertText: "event.GetObjectiveGoal()",
+    description: "戻り値:int\nコミュニティまたはシーズンイベントのアクティブな目標のゴールを返します。目標のインデックスを渡します（通常0, 1, 2）。",
+  },
+  {
+    syntax: "item.CanActivate()",
+    insertText: "item.CanActivate()",
+    description: "戻り値:boolean\nアイテムのアビリティを起動できる場合は真、そうでない場合は偽を返します。ボス戦前やシネマティック中など、一部の状況ではクールダウンがなくても起動が無効になります。",
+  },
+  {
+    syntax: "item.CanActivate({str})",
+    insertText: "item.CanActivate()",
+    description: "戻り値:boolean\n特定のアイテムを起動できる場合は真を返します。アイテムが装備されている場合にのみ真になります。特定の基準を満たさないと起動できないアイテムもあります。item.GetCooldown()のサブセットです。",
+  },
+  {
+    syntax: "item.GetCooldown({str})",
+    insertText: "item.GetCooldown()",
+    description: "戻り値:integer\n指定したアビリティの残りクールダウン時間（フレーム単位）を返します。無効なアビリティ文字列は-1を返します。未使用の武器アビリティも-1を返す場合があります。",
+  },
+  {
+    syntax: "item.GetCount({str})",
+    insertText: "item.GetCount()",
+    description: "戻り値:integer\nインベントリ内のアイテムのコピー数を返します。アイテムが見つからない場合は0を返します。",
+  },
+  {
+    syntax: "item.GetLoadoutL({int})",
+    insertText: "item.GetLoadoutL()",
+    description: "戻り値:string\n特定のロードアウトの左手のアイテムを返します。整数パラメータはクエリするロードアウト番号です。スロットにアイテムがない場合は空文字列を返します。",
+  },
+  {
+    syntax: "item.GetLoadoutR({int})",
+    insertText: "item.GetLoadoutR(})",
+    description: "戻り値:string\n特定のロードアウトの右手のアイテムを返します。整数パラメータはクエリするロードアウト番号です。スロットにアイテムがない場合は空文字列を返します。",
+  },
+  {
+    syntax: "item.GetTreasureCount()",
+    insertText: "item.GetTreasureCount()",
+    description: "戻り値:integer\nインベントリ内の宝箱の現在の数を返します。",
+  },
+  {
+    syntax: "item.GetTreasureLimit()",
+    insertText: "item.GetTreasureLimit()",
+    description: "戻り値:integer\nインベントリ内の宝箱の総容量（最大容量）を返します。",
+  },
+  {
+    syntax: "key.Bind({act}, {key1})",
+    insertText: "key.Bind()",
+    description: "戻り値:なし\n特定のアクションに新しいキーを割り当てます。他のアクションがそのキーを使っている場合、元のアクションからキーが放棄されます。",
+  },
+  {
+    syntax: "key.Bind({act}, {key1}, {key2})",
+    insertText: "key.Bind()",
+    description: "戻り値:なし\n特定のアクションに2つの新しいキーを割り当てます。他のアクションがそのキーを使っている場合、元のアクションからキーが放棄されます。",
+  },
+  {
+    syntax: "key.GetKeyAct({key})",
+    insertText: "key.GetKeyAct()",
+    description: "戻り値:string\n指定したキーに割り当てられたアクションを返します。キーが何にも割り当てられていない場合は'None'を返します。",
+  },
+  {
+    syntax: "key.GetActKey({act})",
+    insertText: "key.GetActKey()",
+    description: "戻り値:string\n指定したアクションに割り当てられた最初のキーを返します。キーが割り当てられていない場合は'None'を返します。",
+  },
+  {
+    syntax: "key.GetActKey2({act})",
+    insertText: "key.GetActKey2()",
+    description: "戻り値:string\n指定したアクションに割り当てられた2番目のキーを返します。2番目のキーが割り当てられていない場合は'None'を返します。",
+  },
+  {
+    syntax: "key.GetActLabel({act})",
+    insertText: "key.GetActLabel()",
+    description: "戻り値:string\n指定したアクションに割り当てられた最初のキーを表すユーザー向けラベルを返します。現在の実装ではキーの最初の文字を返します。",
+  },
+  {
+    syntax: "key.ResetBinds()",
+    insertText: "key.ResetBinds()",
+    description: "戻り値:なし\nすべてのアクションをデフォルトのキー割り当てにリセットします。",
+  },
+  {
+    syntax: "loc.Leave()",
+    insertText: "loc.Leave()",
+    description: "戻り値:なし\nプレイヤーが手動で退出したかのようにランを放棄します。",
+  },
+  {
+    syntax: "loc.Pause()",
+    insertText: "loc.Pause()",
+    description: "戻り値:なし\nプレイヤーがポーズボタンを押したかのようにランを一時停止します。",
+  },
+  {
+    syntax: "math.Abs({num})",
+    insertText: "math.Abs()",
+    description: "戻り値:number\n指定した数の絶対値を返します。",
+  },
+  {
+    syntax: "math.Acos({num})",
+    insertText: "math.Acos()",
+    description: "戻り値:number\n数のアークコサインをラジアンで返します。入力範囲は-1から1で、範囲外の場合は'NaN'を返します。",
+  },
+  {
+    syntax: "math.Asin({num})",
+    insertText: "math.Asin()",
+    description: "戻り値:number\n数のアークサインをラジアンで返します。入力範囲は-1から1で、範囲外の場合は'NaN'を返します。",
+  },
+  {
+    syntax: "math.Atan({num})",
+    insertText: "math.Atan()",
+    description: "戻り値:number\n数のアークタンジェントをラジアンで返します。",
+  },
+  {
+    syntax: "math.Atan2({y}, {x})",
+    insertText: "math.Atan2()",
+    description: "戻り値:number\nx軸と原点から点(x,y)への線との角度をラジアンで返します。",
+  },
+  {
+    syntax: "math.BigNumber()",
+    insertText: "math.BigNumber()",
+    description: "戻り値:BigNumber\n新しいBigNumberオブジェクトをデフォルトで作成します。",
+  },
+  {
+    syntax: "math.BigNumber({number})",
+    insertText: "math.BigNumber()",
+    description: "戻り値:BigNumber\n浮動小数点数または整数から新しいBigNumberオブジェクトを作成します。",
+  },
+  {
+    syntax: "math.BigNumber({str})",
+    insertText: "math.BigNumber()",
+    description: "戻り値:BigNumber\n文字列を解析して新しいBigNumberオブジェクトを作成します。",
+  },
+  {
+    syntax: "math.Ceil({num})",
+    insertText: "math.Ceil()",
+    description: "戻り値:number\n数を切り上げて、それより大きい最初の整数を返します。",
+  },
+  {
+    syntax: "math.CeilToInt({num})",
+    insertText: "math.CeilToInt()",
+    description: "戻り値:integer\n数を切り上げて、それより大きい最初の整数を返します。",
+  },
+  {
+    syntax: "math.Clamp({num}, {min}, {max})",
+    insertText: "math.Clamp()",
+    description: "戻り値:number\n数を'min'と'max'の範囲内に制限します。既に範囲内にある場合は変更せず返します。",
+  },
+  {
+    syntax: "math.Cos({num})",
+    insertText: "math.Cos()",
+    description: "戻り値:number\n指定したラジアン角度のコサインを返します。",
+  },
+  {
+    syntax: "math.e",
+    insertText: "math.e",
+    description: "戻り値:float\nオイラー数とも呼ばれる定数e（約2.71828）を返します。",
+  },
+  {
+    syntax: "math.Exp({num})",
+    insertText: "math.Exp()",
+    description: "戻り値:number\neを指定したべき乗に上げた値を返します。",
+  },
+  {
+    syntax: "math.Floor({num})",
+    insertText: "math.Floor()",
+    description: "戻り値:number\n数を切り捨てて、それより小さい最初の整数を返します。",
+  },
+  {
+    syntax: "math.FloorToInt({num})",
+    insertText: "math.FloorToInt()",
+    description: "戻り値:integer\n数を切り捨てて、それより小さい最初の整数を返します。",
+  },
+  {
+    syntax: "math.Lerp({a}, {b}, {t})",
+    insertText: "math.Lerp()",
+    description: "戻り値:number\n値aからbへ時間（パーセンテージ）tで線形補間を行います。",
+  },
+  {
+    syntax: "math.Log({num}, {base})",
+    insertText: "math.Log()",
+    description: "戻り値:number\n指定した底での数の対数を返します。",
+  },
+  {
+    syntax: "math.Max({num1}, {num2})",
+    insertText: "math.Max()",
+    description: "戻り値:number\n2つの数のうち大きい方を返します。",
+  },
+  {
+    syntax: "math.Min({num1}, {num2})",
+    insertText: "math.Min()",
+    description: "戻り値:number\n2つの数のうち小さい方を返します。",
+  },
+  {
+    syntax: "math.pi",
+    insertText: "math.pi",
+    description: "戻り値:float\n円周率π（約3.1415926）を返します。",
+  },
+  {
+    syntax: "math.Pow({num}, {p})",
+    insertText: "math.Pow()",
+    description: "戻り値:number\n数を指定したべき乗に上げた値を返します。",
+  },
+  {
+    syntax: "math.Round({num})",
+    insertText: "math.Round()",
+    description: "戻り値:number\n数を最も近い整数に丸めます。",
+  },
+  {
+    syntax: "math.RoundToInt({num})",
+    insertText: "math.RoundToInt()",
+    description: "戻り値:integer\n数を最も近い整数に丸めます。",
+  },
+  {
+    syntax: "math.Sign({num})",
+    insertText: "math.Sign()",
+    description: "戻り値:number\n指定した数が負の場合は-1、それ以外の場合は1を返します。",
+  },
+  {
+    syntax: "math.Sin({num})",
+    insertText: "math.Sin(})",
+    description: "戻り値:number\n指定したラジアン角度のサインを返します。",
+  },
+  {
+    syntax: "math.Sqrt({num})",
+    insertText: "math.Sqrt()",
+    description: "戻り値:number\n数の平方根を返します。",
+  },
+  {
+    syntax: "math.Tan({num})",
+    insertText: "math.Tan()",
+    description: "戻り値:number\n指定したラジアン角度のタンジェントを返します。",
+  },
+  {
+    syntax: "math.ToDeg({num})",
+    insertText: "math.ToDeg()",
+    description: "戻り値:number\nラジアンの数を度に変換します。",
+  },
+  {
+    syntax: "math.ToRad({num})",
+    insertText: "math.ToRad()",
+    description: "戻り値:number\n度の数をラジアンに変換します。",
+  },
+  {
+    syntax: "?music",
+    insertText: "?music",
+    description: "戻り値:string\n現在再生中の音楽のIDを返します。",
+  },
+  {
+    syntax: "music.Play({str})",
+    insertText: "music.Play()",
+    description: "戻り値:なし\n指定した音声IDで音楽を再生します。同時に再生できる音楽は1つだけです。",
+  },
+  {
+    syntax: "music.Stop()",
+    insertText: "music.Stop()",
+    description: "戻り値:なし\nすべての音楽を停止します。",
+  },
+  {
+    syntax: "player.ShowScaredFace({num})",
+    insertText: "player.ShowScaredFace()",
+    description: "戻り値:なし\nビッグヘッドが有効な場合、指定した時間だけプレイヤーの表情を怖がった顔に変更します。",
+  },
+  {
+    syntax: "screen.FromWorldX({int})",
+    insertText: "screen.FromWorldX()",
+    description: "戻り値:integer\nX軸の値をワールドスペースからスクリーンスペースに変換します。",
+  },
+  {
+    syntax: "screen.FromWorldZ({int})",
+    insertText: "screen.FromWorldZ()",
+    description: "戻り値:integer\nワールドスペースのZ軸の値をスクリーンスペースのY軸に変換します。",
+  },
+  {
+    syntax: "screen.ToWorldX({int})",
+    insertText: "screen.ToWorldX()",
+    description: "戻り値:integer\nX軸の値をスクリーンスペースからワールドスペースに変換します。",
+  },
+  {
+    syntax: "screen.ToWorldZ({int})",
+    insertText: "screen.ToWorldZ()",
+    description: "戻り値:integer\nスクリーンスペースのY軸の値をワールドスペースのZ軸に変換します。",
+  },
+  {
+    syntax: "screen.Next()",
+    insertText: "screen.Next()",
+    description: "戻り値:なし\n複数画面の場所で、カメラをプレイヤーに対して1画面前方に移動します。",
+  },
+  {
+    syntax: "screen.Previous()",
+    insertText: "screen.Previous()",
+    description: "戻り値:なし\n複数画面の場所で、カメラをプレイヤーに対して1画面後方に移動します。",
+  },
+  {
+    syntax: "screen.ResetOffset()",
+    insertText: "screen.ResetOffset()",
+    description: "戻り値:なし\nカメラをプレイヤーに追従する状態にリセットし、screen.Next()やscreen.Previous()による変更を解除します。",
+  },
+  {
+    syntax: "storage.Delete({string})",
+    insertText: "storage.Delete()",
+    description: "戻り値:なし\n指定したキーに存在する値を削除します。",
+  },
+  {
+    syntax: "storage.Get({string})",
+    insertText: "storage.Get()",
+    description: "戻り値:value\n指定したキーから永続的な値を返します。",
+  },
+  {
+    syntax: "storage.Get({string}, {value})",
+    insertText: "storage.Get()",
+    description: "戻り値:value\n指定したキーから永続的な値を返します。見つからない場合は2番目のパラメータをデフォルト値として返します。",
+  },
+  {
+    syntax: "storage.Has({string})",
+    insertText: "storage.Has()",
+    description: "戻り値:boolean\n指定したキーが永続ストレージに存在する場合は真、そうでない場合は偽を返します。",
+  },
+  {
+    syntax: "storage.Incr({string})",
+    insertText: "storage.Incr()",
+    description: "戻り値:integer\n指定したキーに格納された値を1増加させ、新しい値を返します。",
+  },
+  {
+    syntax: "storage.Keys()",
+    insertText: "storage.Keys()",
+    description: "戻り値:array\n現在のコンテキストで利用可能なすべてのストレージキーを含む文字列の配列を取得します。",
+  },
+  {
+    syntax: "storage.Incr({string}, {integer})",
+    insertText: "storage.Incr()",
+    description: "戻り値:integer\n指定したキーに格納された値を指定した量だけ増加させ、新しい値を返します。",
+  },
+  {
+    syntax: "storage.Set({string}, {value})",
+    insertText: "storage.Set()",
+    description: "戻り値:なし\n指定したキーに値を永続ストレージに保存します。",
+  },
+  {
+    syntax: "string.Break({string}, {integer})",
+    insertText: "string.Break()",
+    description: "戻り値:array\n文字列を指定した最大幅で複数の文字列に分割します。",
+  },
+  {
+    syntax: "string.Capitalize({str})",
+    insertText: "string.Capitalize()",
+    description: "戻り値:string\n文字列の最初の文字を大文字に変更します。",
+  },
+  {
+    syntax: "string.Equals({str1}, {str2})",
+    insertText: "string.Equals()",
+    description: "戻り値:boolean\n2つの文字列パラメータを受け取り、完全に同じ場合は真を、そうでない場合は偽を返します。大文字小文字を区別します。",
+  },
+  {
+    syntax: "string.Format({str1}, {...})",
+    insertText: "string.Format()",
+    description: "戻り値:string\nフォーマットテンプレートを他のパラメータの値で置き換え、最終的な合成文字列を返します。多くのフォーマットオプションをサポートする強力な関数です。",
+  },
+  {
+    syntax: "string.IndexOf({str}, {criteria})",
+    insertText: "string.IndexOf()",
+    description: "戻り値:integer\n文字列変数と基準文字列を受け取り、文字列内で基準の位置を見つけます。見つからない場合は-1を返します。",
+  },
+  {
+    syntax: "string.IndexOf({str}, {criteria}, {startAt})",
+    insertText: "string.IndexOf()",
+    description: "戻り値:integer\n文字列変数、基準文字列、開始インデックスを受け取り、開始位置から基準の位置を見つけます。見つからない場合は-1を返します。",
+  },
+  {
+    syntax: "string.Join({s}, {[]})",
+    insertText: "string.Join()",
+    description: "戻り値:string\n文字列の配列をセパレータsで結合し、単一の文字列にします。",
+  },
+  {
+    syntax: "string.Join({s}, {[]}, {int})",
+    insertText: "string.Join()",
+    description: "戻り値:string\n文字列の配列をセパレータsで結合し、開始インデックスから結合します。",
+  },
+  {
+    syntax: "string.Join({s}, {[]}, {int}, {int})",
+    insertText: "string.Join()",
+    description: "戻り値:string\n文字列の配列をセパレータsで結合し、開始インデックスと結合する要素数を指定します。",
+  },
+  {
+    syntax: "string.Size({str})",
+    insertText: "string.Size()",
+    description: "戻り値:integer\n文字列変数を受け取り、その長さをグリフ数で計算します。",
+  },
+  {
+    syntax: "string.Split({str})",
+    insertText: "string.Split()",
+    description: "戻り値:array\n文字列を受け取り、スペースがあるところで文字列の配列に分割します。",
+  },
+  {
+    syntax: "string.Split({str}, {s…})",
+    insertText: "string.Split()",
+    description: "戻り値:array\n文字列とセパレータを受け取り、指定されたセパレータで文字列の配列に分割します。",
+  },
+  {
+    syntax: "string.Split({str}, {s…}, {bool})",
+    insertText: "string.Split()",
+    description: "戻り値:array\n文字列とセパレータを受け取り、指定されたセパレータで文字列の配列に分割し、空のエントリを破棄するかどうかを指定します。",
+  },
+  {
+    syntax: "string.Sub({str}, {startAt})",
+    insertText: "string.Sub()",
+    description: "戻り値:string\n文字列変数と開始インデックスを受け取り、その位置から前方に文字列を分割します。",
+  },
+  {
+    syntax: "string.Sub({str}, {startAt}, {length})",
+    insertText: "string.Sub()",
+    description: "戻り値:string\n文字列変数、開始インデックス、長さを受け取り、開始位置から指定した長さで文字列を分割します。",
+  },
+  {
+    syntax: "string.ToLower({str})",
+    insertText: "string.ToLower()",
+    description: "戻り値:string\n文字列のすべての文字を小文字に変更します。",
+  },
+  {
+    syntax: "string.ToUpper({str})",
+    insertText: "string.ToUpper()",
+    description: "戻り値:string\n文字列のすべての文字を大文字に変更します。",
+  },
+  {
+    syntax: "sys.cacheRemoteFiles",
+    insertText: "sys.cacheRemoteFiles",
+    description: "戻り値:boolean\nリモートでインポートされたファイルをラン間でキャッシュするかどうかを示します。デフォルトはtrue。falseに設定すると、場所画面からプレイ開始時にスクリプトが再ダウンロードされます。",
+  },
+  {
+    syntax: "sys.fileUrl",
+    insertText: "sys.fileUrl",
+    description: "戻り値:string\nスクリプトをインポートする際の現在のファイルパスを取得します（読み取り専用）。デフォルト値はデバイスに依存します。",
+  },
+  {
+    syntax: "sys.SetFileUrl({str})",
+    insertText: "sys.SetFileUrl()",
+    description: "戻り値:なし\n'import'または'new'コマンドで使用されるインポートスクリプトの起源を変更します。Mind Stoneでのみ呼び出し可能で、リモートURLや'local'、'remote'を受け入れます。",
+  },
+  {
+    syntax: "sys.MindConnect()",
+    insertText: "sys.MindConnect()",
+    description: "戻り値:なし\n実験的機能。Mind Stoneにこの行だけがある場合、他のプログラム（例: Pythonスクリプト）からの接続を待つインターフェースを有効にします。",
+  },
+  {
+    syntax: "sys.isMobile",
+    insertText: "sys.isMobile",
+    description: "戻り値:bool\nユーザーがAndroidまたはiOSを使用している場合に真を返します。",
+  },
+  {
+    syntax: "sys.isPC",
+    insertText: "sys.isPC",
+    description: "戻り値:bool\nユーザーがWin/Mac/Linuxを使用している場合に真を返します。",
+  },
+  {
+    syntax: "sys.os",
+    insertText: "sys.os",
+    description: "戻り値:string\nユーザーのオペレーティングシステムを返します（例: 'Android', 'iOS', 'Linux', 'OSX', 'Windows'）。",
+  },
+  {
+    syntax: "te.language",
+    insertText: "te.language",
+    description: "戻り値:string\nプレイヤーが設定で選択した言語のコードを返します。可能な値: EN, PT-BR, ZH-CN, ZH-TW, FR, DE, RU, ES-LA, ES-EU, JP, KR, TK。",
+  },
+  {
+    syntax: "te.xt({str})",
+    insertText: "te.xt()",
+    description: "戻り値:string\n指定した英語テキストをプレイヤーの選択言語に翻訳します。翻訳が見つからない場合は入力テキストを返します。",
+  },
+  {
+    syntax: "te.GetTID({str})",
+    insertText: "te.GetTID()",
+    description: "戻り値:string\n指定したテキストのテキスト識別子（TID）を返します。入力テキストはプレイヤーの選択言語である必要があります。",
+  },
+  {
+    syntax: "te.ToEnglish({str})",
+    insertText: "te.GetTID()",
+    description: "戻り値:string\n指定したテキストをプレイヤーの選択言語から元の英語テキストに翻訳します。翻訳が見つからない場合は入力テキストを返します。",
+  },
+  {
+    syntax: "time.FormatCasual({int})",
+    insertText: "time.FormatCasual()",
+    description: "戻り値:string\nフレーム数を人間が読みやすい文字列形式（例: '1m 23s'）に変換します。",
+  },
+  {
+    syntax: "time.FormatCasual({int}, {bool})",
+    insertText: "time.FormatCasual()",
+    description: "戻り値:string\nフレーム数を人間が読みやすい文字列形式（例: '1m 23s'）に変換します。2番目のパラメータ（bool）はオプションで、trueの場合は精度が最大になります。",
+  },
+  {
+    syntax: "time.FormatDigital({int})",
+    insertText: "time.FormatDigital()",
+    description: "戻り値:string\nフレーム数を人間が読みやすい文字列形式（例: '1:23'）に変換します。",
+  },
+  {
+    syntax: "time.FormatDigital({int}, {bool})",
+    insertText: "time.FormatDigital()",
+    description: "戻り値:string\nフレーム数を人間が読みやすい文字列形式（例: '1:23'）に変換します。2番目のパラメータ（bool）はオプションで、trueの場合は精度が最大になります。",
+  },
+  {
+    syntax: "ui.OpenInv()",
+    insertText: "ui.OpenInv()",
+    description: "戻り値:なし\nインベントリ画面を開きます。",
+  },
+  {
+    syntax: "ui.OpenMind()",
+    insertText: "ui.OpenMind()",
+    description: "戻り値:なし\nMind Stone画面を開きます。",
+  },
+  {
+    syntax: "ui.ShowBanner({str})",
+    insertText: "ui.ShowBanner()",
+    description: "戻り値:なし\n最大2つのメッセージを含むアニメーションバナーを表示します。ui.ShowBanner()が呼ばれるたびにバナーのアニメーションがリスタートします。",
+  },
+  {
+    syntax: "ui.ShowBanner({str}, {str})",
+    insertText: "ui.ShowBanner()",
+    description: "戻り値:なし\n2つのメッセージを含むアニメーションバナーを表示します。ui.ShowBanner()が呼ばれるたびにバナーのアニメーションがリスタートします。",
+  },
+  {
+    syntax: "Type({var})",
+    insertText: "Type()",
+    description: "戻り値:string\n変数の型を評価し、文字列表現を返します。可能な型: 'string', 'int', 'bool', 'function', 'object', 'null'。",
+  },
+  {
+    syntax: "a = []",
+    insertText: "a = []",
+    description: "戻り値:なし\n新しい配列を初期化します。",
+  },
+  {
+    syntax: "a[{integer}]",
+    insertText: "a[]",
+    description: "戻り値:any\n指定した位置の値を読み取ります。",
+  },
+  {
+    syntax: "a.Add({value})",
+    insertText: "a.Add()",
+    description: "戻り値:なし\n配列の末尾に新しい値またはオブジェクトを追加します。",
+  },
+  {
+    syntax: "a.Clear()",
+    insertText: "a.Clear()",
+    description: "戻り値:なし\n配列からすべての要素を削除し、空にします。配列を再宣言するよりも効率的です。",
+  },
+  {
+    syntax: "a.Contains({value})",
+    insertText: "a.Contains()",
+    description: "戻り値:bool\n指定した値が配列内にあるかを判定します。見つかれば真、そうでなければ偽を返します。",
+  },
+  {
+    syntax: "a.Count()",
+    insertText: "a.Count()",
+    description: "戻り値:int\n配列内の要素数を返します。",
+  },
+  {
+    syntax: "a.Emplace({integer}, {value})",
+    insertText: "a.Emplace()",
+    description: "戻り値:なし\n指定した位置の値を新しい値で置き換えます。",
+  },
+  {
+    syntax: "a.IndexOf({value})",
+    insertText: "a.IndexOf()",
+    description: "戻り値:int\n配列内で指定した値を探し、最初に見つかった位置を示す整数を返します。見つからない場合は-1を返します。",
+  },
+  {
+    syntax: "a.Insert()",
+    insertText: "a.Insert()",
+    description: "戻り値:なし\n配列の指定した位置に新しい値またはオブジェクトを追加します。右側の要素は次の位置にシフトします。",
+  },
+  {
+    syntax: "a.RemoveAt({integer})",
+    insertText: "a.RemoveAt()",
+    description: "戻り値:なし\n配列から指定した位置の要素を削除します。ゼロベースで、右側の要素は前の位置にシフトします。",
+  },
+  {
+    syntax: "a.Sort()",
+    insertText: "a.Sort()",
+    description: "戻り値:なし\n配列の要素を昇順に整理します。異なる型のオブジェクトが含まれている場合でもソートされますが、期待される結果は保証されません。",
+  },
+  {
+    syntax: "ui.root",
+    insertText: "ui.root",
+    description: "戻り値:Panel\nUIツリー全体が構築されるベースUIオブジェクトです。",
+  },
+  {
+    syntax: "ui.AddAnim({string})",
+    insertText: "ui.AddAnim()",
+    description: "戻り値:Anim\nルートパネルにAnimオブジェクトを追加します。アニメーションスプライトシートをパラメータとして受け取ります。",
+  },
+  {
+    syntax: "ui.AddButton()",
+    insertText: "ui.AddButton()",
+    description: "戻り値:Button\nルートパネルにButtonオブジェクトを追加します。",
+  },
+  {
+    syntax: "ui.AddPanel()",
+    insertText: "ui.AddPanel()",
+    description: "戻り値:Panel\nルートパネルにPanelオブジェクトを追加します。パネルは他の要素のコンテナとして重要なオブジェクト型です。",
+  },
+  {
+    syntax: "ui.AddStyle()",
+    insertText: "ui.AddStyle()",
+    description: "戻り値:int\nパネルやボタンなどの矩形コンポーネントの描画に使用できる新しいスタイルを追加し、新しいスタイルのID番号を返します。同一スタイルの複数追加を防ぎます。",
+  },
+  {
+    syntax: "ui.AddText()",
+    insertText: "ui.AddText()",
+    description: "戻り値:Text\nルートパネルにTextオブジェクトを追加します。",
+  },
+  {
+    syntax: "ui.AddText({string})",
+    insertText: "ui.AddText()",
+    description: "戻り値:Text\nルートパネルに指定した文字列でTextオブジェクトを追加します。",
+  },
+  {
+    syntax: "ui.Clear()",
+    insertText: "ui.Clear()",
+    description: "戻り値:なし\nメインコンテナからすべてのUI要素を削除します。",
+  },
+  {
+    syntax: "component.x",
+    insertText: "component.x",
+    description: "戻り値:integer\nコンポーネントのドック位置に対するX位置を示します。",
+  },
+  {
+    syntax: "component.y",
+    insertText: "component.y",
+    description: "戻り値:integer\nコンポーネントのドック位置に対するY位置を示します。",
+  },
+  {
+    syntax: "component.w",
+    insertText: "component.w",
+    description: "戻り値:integer\nコンポーネントの幅を示します。デフォルト値はオブジェクト型によって異なります。",
+  },
+  {
+    syntax: "component.h",
+    insertText: "component.h",
+    description: "戻り値:integer\nコンポーネントの高さを示します。デフォルト値は5です。",
+  },
+  {
+    syntax: "component.absoluteX",
+    insertText: "component.absoluteX",
+    description: "戻り値:integer\n画面に対するコンポーネントの絶対X位置を示します（読み取り専用）。",
+  },
+  {
+    syntax: "component.absoluteY",
+    insertText: "component.absoluteY",
+    description: "戻り値:integer\n画面に対するコンポーネントの絶対Y位置を示します（読み取り専用）。",
+  },
+  {
+    syntax: "component.anchor",
+    insertText: "component.anchor",
+    description: "戻り値:string\nコンポーネントの内部ピボットを表す自動レイアウトプロパティです。デフォルトは'center_center'。可能な値: top_left, top_center, top_right, center_left, center_center, center_right, bottom_left, bottom_center, bottom_right。",
+  },
+  {
+    syntax: "component.dock",
+    insertText: "component.dock",
+    description: "戻り値:string\nコンポーネントの外部ピボットまたは親内の位置を表す自動レイアウトプロパティです。アンカーと同じ値を使用するのが一般的です。",
+  },
+  {
+    syntax: "component.ax",
+    insertText: "component.ax",
+    description: "戻り値:string\nアンカーのX部分を示します。可能な値: left, center, right。",
+  },
+  {
+    syntax: "component.ay",
+    insertText: "component.ay",
+    description: "戻り値:string\nアンカーのY部分を示します。可能な値: top, center, bottom。",
+  },
+  {
+    syntax: "component.dx",
+    insertText: "component.dx",
+    description: "戻り値:string\nドックのX部分を示します。可能な値: left, center, right。",
+  },
+  {
+    syntax: "component.dy",
+    insertText: "component.dy",
+    description: "戻り値:string\nドックのY部分を示します。可能な値: top, center, bottom。",
+  },
+  {
+    syntax: "component.parent",
+    insertText: "component.parent",
+    description: "戻り値:Panel\nコンポーネントの親パネルへの参照を示します（読み取り専用）。panel.Add(component)が呼ばれると親が変更されます。",
+  },
+  {
+    syntax: "component.visible",
+    insertText: "component.visible",
+    description: "戻り値:bool/string\nコンポーネントの可視性を示します。デフォルト値は'inherit'。可能な値: true（常に表示）、false（常に非表示）、inherit（親の状態に従う）。",
+  },
+  {
+    syntax: "component.Recycle()",
+    insertText: "component.Recycle()",
+    description: "戻り値:なし\nコンポーネントを親パネルから削除し、将来のui.Add_()呼び出しで再利用します。リサイクルされた要素への変数参照はnullにするか再割り当てが必要です。",
+  },
+  {
+    syntax: "panel.children",
+    insertText: "panel.children",
+    description: "戻り値:Component[]\npanel.Add()でパネルに追加されたすべての子コンポーネントを含む配列。",
+  },
+  {
+    syntax: "panel.clip",
+    insertText: "panel.clip",
+    description: "戻り値:bool\nパネルの境界を使用して子コンポーネントの描画を制限するかどうかを示します。trueの場合、パネルの境界外の部分は描画されません。",
+  },
+  {
+    syntax: "panel.color",
+    insertText: "panel.color",
+    description: "戻り値:string\nパネルの色をRGB16進数形式で示します。",
+  },
+  {
+    syntax: "panel.style",
+    insertText: "panel.style",
+    description: "戻り値:int\nパネルの現在のスタイルのID番号を示します。デフォルト値は1。可能な値は-8から8で、ui.AddStyle()で追加スタイルを定義できます。",
+  },
+  {
+    syntax: "panel.Add({Component})",
+    insertText: "panel.Add()",
+    description: "戻り値:なし\nコンポーネントをパネルに追加します。コンポーネントはパネルの子となり、パネルはその親となります。追加順序は描画順に影響します。",
+  },
+  {
+    syntax: "panel.Add({Component}, {int})",
+    insertText: "panel.Add()",
+    description: "戻り値:なし\nコンポーネントをパネルの指定したソート位置に追加します。整数パラメータがない場合は最後の子として追加されます。",
+  },
+  {
+    syntax: "panel.Clear()",
+    insertText: "panel.Clear()",
+    description: "戻り値:なし\nパネルからすべてのUI要素を削除します。削除されたコンポーネントはUIシステムでリサイクルされ、将来のui.Add_()呼び出しで再利用されます。",
+  },
+  {
+    syntax: "panel.Remove({Component})",
+    insertText: "panel.Remove()",
+    description: "戻り値:なし\nパネルから特定のコンポーネントを削除します。削除されたコンポーネントはUIシステムでリサイクルされます。",
+  },
+  {
+    syntax: "panel.Remove({int})",
+    insertText: "panel.Remove()",
+    description: "戻り値:なし\nパネルの指定したインデックス番号のコンポーネントを削除します。削除されたコンポーネントはUIシステムでリサイクルされます。",
+  },
+  {
+    syntax: "text.align",
+    insertText: "text.align",
+    description: "戻り値:string\nボックス内のテキストの配置/調整を示します。デフォルト値は'left'。可能な値: left, center, right。",
+  },
+  {
+    syntax: "text.color",
+    insertText: "text.color",
+    description: "戻り値:string\nテキストの色をRGB16進数形式で示します。",
+  },
+  {
+    syntax: "text.lines",
+    insertText: "text.lines",
+    description: "戻り値:string[]\nテキストボックスが内容をフォーマットした後の分割されたテキスト行の文字列配列を示します。色メタデータは除外されます。",
+  },
+  {
+    syntax: "text.text",
+    insertText: "text.text",
+    description: "戻り値:string\nテキストボックスの完全な内容を示します。[color=#rrggbb][/color]メタデータで部分的に色付け可能です。",
+  },
+  {
+    syntax: "button.text",
+    insertText: "button.text",
+    description: "戻り値:string\nボタン内に表示されるテキストを示します。",
+  },
+  {
+    syntax: "button.tcolor",
+    insertText: "button.tcolor",
+    description: "戻り値:string\nボタン内のテキストの色をRGB16進数形式で示します。",
+  },
+  {
+    syntax: "button.bcolor",
+    insertText: "button.bcolor",
+    description: "戻り値:string\nボタンの境界線の色をRGB16進数形式で示します。",
+  },
+  {
+    syntax: "button.hcolor",
+    insertText: "button.hcolor",
+    description: "戻り値:string\nボタンが押されたときのハイライト色をRGB16進数形式で示します。",
+  },
+  {
+    syntax: "button.sound",
+    insertText: "button.sound",
+    description: "戻り値:string\nボタンが押されたときに再生される効果音を示します。デフォルトは'confirm'。",
+  },
+  {
+    syntax: "button.style",
+    insertText: "button.sound",
+    description: "戻り値:int\nボタンの現在のスタイルのID番号を示します。デフォルト値は1。可能な値は-8から8で、ui.AddStyle()で追加可能です。",
+  },
+  {
+    syntax: "button.SetPressed({f})",
+    insertText: "button.SetPressed()",
+    description: "戻り値:なし\nボタンが押されたときに呼び出される関数を割り当てます。関数は任意の数のパラメータを持つことができ、最初の引数はボタン自体への参照になります。",
+  },
+  {
+    syntax: "button.SetDown({f})",
+    insertText: "button.SetDown()",
+    description: "戻り値:なし\nボタンの押下が始まったとき（最初のユーザー接触）に呼び出される関数を割り当てます。",
+  },
+  {
+    syntax: "button.SetUp({f})",
+    insertText: "button.SetUp()",
+    description: "戻り値:なし\nボタンの押下がボタン上で終了したとき（最後のユーザー接触）に呼び出される関数を割り当てます。",
+  },
+  {
+    syntax: "anim.color",
+    insertText: "anim.color",
+    description: "戻り値:string\nアニメーションの色をRGB16進数形式で示します。",
+  },
+  {
+    syntax: "anim.duration",
+    insertText: "anim.duration",
+    description: "戻り値:int\nアニメーションの時間長さをフレーム単位で示します。",
+  },
+  {
+    syntax: "anim.flipX",
+    insertText: "anim.flipX",
+    description: "戻り値:bool\n真の場合、アートをピボット上で水平に反転します。",
+  },
+  {
+    syntax: "anim.flipY",
+    insertText: "anim.flipY",
+    description: "戻り値:bool\n真の場合、アートをピボット上で垂直に反転します。",
+  },
+  {
+    syntax: "anim.frame",
+    insertText: "anim.frame",
+    description: "戻り値:int\n現在描画中のアニメーションフレームを示します。特定のフレームに設定するために変更可能です。",
+  },
+  {
+    syntax: "anim.gamePause",
+    insertText: "anim.gamePause",
+    description: "戻り値:bool\n真の場合、プレイヤーがゲームを一時停止するとアニメーションの再生が自動的に停止し、再開時に再生が再開します。",
+  },
+  {
+    syntax: "anim.loop",
+    insertText: "anim.loop",
+    description: "戻り値:bool\n真の場合、アニメーションが終了すると最初から再開します。",
+  },
+  {
+    syntax: "anim.playing",
+    insertText: "anim.playing",
+    description: "戻り値:bool\nアニメーションが現在再生中かどうかを示します（読み取り専用）。",
+  },
+  {
+    syntax: "anim.paused",
+    insertText: "anim.paused",
+    description: "戻り値:bool\nアニメーションが再生中だがanim.Pause()で一時停止されているかどうかを示します（読み取り専用）。",
+  },
+  {
+    syntax: "anim.pivotX",
+    insertText: "anim.pivotX",
+    description: "戻り値:int\nASCIIアートが位置に対してどこに描画されるかを微調整するための追加のピボットオフセットを示します。",
+  },
+  {
+    syntax: "anim.pivotY",
+    insertText: "anim.pivotY",
+    description: "戻り値:int\nASCIIアートが位置に対してどこに描画されるかを微調整するための追加のピボットオフセットを示します。",
+  },
+  {
+    syntax: "anim.playOnStart",
+    insertText: "anim.playOnStart",
+    description: "戻り値:bool\n真の場合、アニメーションが可能な限り早く再生を開始します。",
+  },
+  {
+    syntax: "anim.AddLayer({string})",
+    insertText: "anim.AddLayer()",
+    description: "戻り値:Anim\nこのアニメーションの上に新しいASCIIスプライトを追加します。再生中はすべてのレイヤーが同期します。",
+  },
+  {
+    syntax: "anim.Load({string})",
+    insertText: "anim.Load()",
+    description: "戻り値:なし\n新しいASCIIスプライトシートを割り当てます。",
+  },
+  {
+    syntax: "anim.Pause()",
+    insertText: "anim.Pause()",
+    description: "戻り値:なし\n現在のフレームでアニメーションの再生を一時停止します。anim.Play()で再開できます。",
+  },
+  {
+    syntax: "anim.Play()",
+    insertText: "anim.Play()",
+    description: "戻り値:なし\nアニメーションの再生を開始するか、一時停止していた再生を再開します。",
+  },
+  {
+    syntax: "anim.Stop()",
+    insertText: "anim.Stop()",
+    description: "戻り値:なし\n再生を停止し、アニメーションを最初のフレームに戻します。",
+  },
+  {
+    syntax: "canvas.blend",
+    insertText: "canvas.blend",
+    description: "戻り値:string\nキャンバスが背後の要素と合成されるときのブレンドモードを示します。可能な値: Opaque, Multiply, Divide, Add, Subtract。デフォルトは'opaque'。",
+  },
+  {
+    syntax: "canvas.Get({int}, {int})",
+    insertText: "canvas.Get()",
+    description: "戻り値:string\nキャンバスの特定の位置(x, y)のグリフを返します。",
+  },
+  {
+    syntax: "canvas.Set({str})",
+    insertText: "canvas.Set()",
+    description: "戻り値:なし\nキャンバス全体を指定したグリフで埋めます。",
+  },
+  {
+    syntax: "canvas.Set({int}, {int}, {str})",
+    insertText: "canvas.Set()",
+    description: "戻り値:なし\nキャンバスの特定の位置(x, y)を指定したグリフに変更します。",
+  },
+  {
+    syntax: "canvas.Set({int}, {int}, {fg}, {str})",
+    insertText: "canvas.Set()",
+    description: "戻り値:なし\nキャンバスの特定の位置(x, y)を指定した前景色(fg)とグリフに変更します。",
+  },
+  {
+    syntax: "canvas.Set({int}, {int}, {fg}, {bg}, {str})",
+    insertText: "canvas.Set()",
+    description: "戻り値:なし\nキャンバスの特定の位置(x, y)を指定した前景色(fg)、背景色(bg)、グリフに変更します。",
+  },
+  {
+    syntax: "canvas.SetFG({color})",
+    insertText: "canvas.SetFG()",
+    description: "戻り値:なし\nキャンバス全体の前景色を設定します。",
+  },
+  {
+    syntax: "canvas.SetFG({int}, {int}, {color})",
+    insertText: "canvas.SetFG()",
+    description: "戻り値:なし\nキャンバスの特定の位置(x, y)の前景色を変更します。",
+  },
+  {
+    syntax: "canvas.SetBG({color})",
+    insertText: "canvas.SetBG()",
+    description: "戻り値:なし\nキャンバス全体の背景色を設定します。",
+  },
+  {
+    syntax: "canvas.SetBG({int}, {int}, {color})",
+    insertText: "canvas.SetBG()",
+    description: "戻り値:なし\nキャンバスの特定の位置(x, y)の背景色を変更します。",
+  }
+];
+
+
+    const autocompleteBox = document.getElementById('autocomplete');
+    let selectedIndex = 0;
+
+    function saveHistory() {
+      if (history.length === 0 || history[history.length - 1] !== editor.value) {
+        history.push(editor.value);
+        redoStack.length = 0;
+      }
+    }
+
+    function undo() {
+      if (history.length > 1) {
+        redoStack.push(history.pop());
+        editor.value = history[history.length - 1];
+      }
+    }
+
+    function redo() {
+      if (redoStack.length > 0) {
+        const state = redoStack.pop();
+        history.push(state);
+        editor.value = state;
+      }
+    }
+
+function saveFile() {
+  const defaultName = "code";
+  const filenameInput = prompt("保存するファイル名を入力してください（拡張子は省略可）:", defaultName);
+  if (!filenameInput) return; // キャンセル時は中止
+
+  // 拡張子が含まれているか確認（例：.txt, .js など）
+  const hasExtension = /\.[^\/\\]+$/.test(filenameInput);
+  const filename = hasExtension ? filenameInput : `${filenameInput}.txt`;
+
+  const blob = new Blob([editor.value], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+
+
+    function loadFile(e) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        editor.value = reader.result;
+        saveHistory();
+      };
+      reader.readAsText(e.target.files[0]);
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+    }
+
+    function changeFontSize(delta) {
+      fontSize = Math.max(12, Math.min(40, fontSize + delta));
+      editor.style.fontSize = fontSize + 'px';
+      fontSizeDisplay.textContent = fontSize;
+    }
+
+    function setCols(value) {
+      if (value === "free") {
+        editor.removeAttribute("cols");
+        editor.style.width = "100%";
+      } else {
+        editor.setAttribute("cols", value - 3);
+        editor.style.width = "auto";
+      }
+    }
+
+    editor.addEventListener('input', () => {
+      saveHistory();
+      showAutocomplete();
+    });
+
+    editor.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        editor.setRangeText('  ', start, end, 'end');
+        saveHistory();
+      }
+
+      if (autocompleteBox.style.display === 'block') {
+        const items = autocompleteBox.querySelectorAll('.autocomplete-item');
+        if (e.key === 'ArrowDown') {
+          selectedIndex = (selectedIndex + 1) % items.length;
+          updateSelection(items);
+          e.preventDefault();
+        } else if (e.key === 'ArrowUp') {
+          selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+          updateSelection(items);
+          e.preventDefault();
+        } else if (e.key === 'Enter') {
+          const word = getWordBeforeCaret();
+          if (word && items[selectedIndex]) {
+            const selectedWord = items[selectedIndex].dataset.word;
+            insertAutocomplete(selectedWord, word);
+            e.preventDefault();
+          }
+        } else if (e.key === 'Escape') {
+          autocompleteBox.style.display = 'none';
+        }
+      }
+    });
+
+    function updateSelection(items) {
+      items.forEach((item, i) => {
+        item.classList.toggle('selected', i === selectedIndex);
+      });
+    }
+
+    function getWordBeforeCaret() {
+      const pos = editor.selectionStart;
+      const before = editor.value.slice(0, pos);
+      const match = before.match(/[\w_]+$/);
+      return match ? match[0] : '';
+    }
+
+    function insertAutocomplete(selected, partial) {
+      const pos = editor.selectionStart;
+      const start = pos - partial.length;
+      editor.setRangeText(selected, start, pos, 'end');
+      autocompleteBox.style.display = 'none';
+      editor.focus();
+    }
+
+// showAutocomplete() 内の修正
+function showAutocomplete() {
+  const word = getWordBeforeCaret();
+  if (!word) {
+    autocompleteBox.style.display = 'none';
+    return;
+  }
+
+  const matches = keywords.filter(k => k.insertText.startsWith(word));
+  if (matches.length === 0) {
+    autocompleteBox.style.display = 'none';
+    return;
+  }
+
+  autocompleteBox.innerHTML = '';
+  matches.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'autocomplete-item';
+    if (i === 0) div.classList.add('selected');
+    div.dataset.word = item.insertText;
+    div.innerHTML = `${item.syntax}<small>${item.description}</small>`;
+    div.addEventListener('click', () => {
+      insertAutocomplete(item.insertText, word);
+    });
+    autocompleteBox.appendChild(div);
+  });
+  selectedIndex = 0;
+
+  const rect = editor.getBoundingClientRect();
+  autocompleteBox.style.left = rect.right + 10 + 'px';
+  autocompleteBox.style.top = rect.top + window.scrollY + 'px';
+  autocompleteBox.style.display = 'block';
+}
+
+
+  function adjustEditorHeight() {
+    const toolbar = document.querySelector('.toolbar');
+    const autocomplete = document.getElementById('autocomplete');
+    const windowHeight = window.innerHeight;
+    const toolbarHeight = toolbar.offsetHeight;
+    const buffer = 10; // 少し余裕をもたせる
+    const editorHeight = windowHeight - toolbarHeight - buffer;
+    editor.style.height = editorHeight + 'px';
+  }
+
+  window.addEventListener('resize', adjustEditorHeight);
+  window.addEventListener('load', adjustEditorHeight);
+    saveHistory();
+  </script>
+</body>
+</html>
