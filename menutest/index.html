@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ハンバーガーメニュー</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 0; }
+    .header {
+      background-color: #333; color: white;
+      display: flex; align-items: center;
+      padding: 10px 16px;
+    }
+    .menu-button {
+      font-size: 24px; cursor: pointer;
+      background: none; border: none; color: white;
+    }
+    .menu-container {
+      display: none;
+      background-color: #444;
+      color: white;
+      padding: 10px;
+    }
+    .menu-container.show {
+      display: block;
+    }
+    .menu-container a {
+      display: block;
+      color: white;
+      text-decoration: none;
+      padding: 8px;
+    }
+    .menu-container a:hover {
+      background-color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <button class="menu-button" onclick="toggleMenu()">☰</button>
+    <h1 style="margin-left: 10px; font-size: 20px;">サイトタイトル</h1>
+  </div>
+
+  <div id="menu" class="menu-container">
+    <div id="menu-content">読み込み中...</div>
+  </div>
+
+  <script>
+    // メニューの表示切替
+    function toggleMenu() {
+      document.getElementById("menu").classList.toggle("show");
+    }
+
+    // 外部HTMLの読み込み
+    async function loadMenu() {
+      try {
+        const res = await fetch('menu.html');
+        if (!res.ok) throw new Error('読み込み失敗');
+        const html = await res.text();
+        document.getElementById("menu-content").innerHTML = html;
+      } catch (e) {
+        document.getElementById("menu-content").innerHTML = 'メニューを読み込めませんでした。';
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadMenu);
+  </script>
+</body>
+</html>
+s
