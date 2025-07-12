@@ -1,0 +1,43 @@
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.header {
+  background-color: #333;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+}
+
+.menu-button {
+  font-size: 24px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: white;
+}
+
+.menu-container {
+  display: none;
+  background-color: #444;
+  color: white;
+  padding: 10px;
+}
+
+.menu-container.show {
+  display: block;
+}
+
+.menu-container a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  padding: 8px;
+}
+
+.menu-container a:hover {
+  background-color: #666;
+}
