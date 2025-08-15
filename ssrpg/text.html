@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>title</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+
+  /* 基本設定 */
+  body {
+    font-family: sans-serif;
+    padding: 20px;
+    background: #f0f0f0;
+  }
+/* コードブロック */
+.code-container {
+  position: relative;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 6px;
+  padding: 1em;
+  overflow-x: auto;
+  margin-bottom: 1em;
+  font-family: monospace;
+  white-space: pre;
+  width: 42ch;
+  box-sizing: content-box;
+  line-height: 0.6;
+}
+
+/* ヘッダー */
+.code-header {
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  color: #ccc;
+}
+
+/* コピー用ボタン */
+.copy-btn {
+  position: absolute;
+  top: 0.5em;
+  right: 0.5em;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 3px;
+  z-index: 2;
+}
+
+/* 差分行 */
+.diff-line {
+  display: flex;
+}
+
+/* 自動追加される行番号 */
+.diff-line::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 3ch;
+  text-align: right;
+  margin-right: 1ch;
+  opacity: 0.6;
+  user-select: none;
+}
+
+/* カウンター初期化 */
+.code-container code {
+  counter-reset: line;
+}
+
+/* 差分マーク */
+.diff-line.added {
+  background-color: #144212;
+  color: #c7f0c7;
+  
+}
+.diff-line.removed {
+  background-color: #601212;
+  color: #f9bcbc;
+}
+/*
+.diff-line.added::after {
+  content: "+";
+  color: #6fbf73;
+  margin-left: 0.5ch;
+}
+.diff-line.removed::after {
+  content: "-";
+  color: #f48771;
+  margin-left: 0.5ch;
+}*/
+
+  
+  /* ヘッダーとメニュー */
+  .header {
+    display: flex;
+    align-items: center;
+  }
+  .menu-button {
+    font-size: 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* 目次 */
+  #toc {
+    background: #f8f8f8;
+    padding: 1em;
+    border: 1px solid #ccc;
+    margin-bottom: 2em;
+  }
+  #toc ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  #toc li {
+    margin: 0.5em 0;
+  }
+  #toc a {
+    text-decoration: none;
+    color: #007acc;
+  }
+
+
+
+  /* 見出し風 Summary（details/summary） */
+  details.answer-block summary {
+    background: #aaa;
+    color: #000;
+    padding: 0.6em 1em;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.3s ease;
+  }
+
+  /* ▼マークの位置と回転アニメーション */
+  details.answer-block summary::before {
+    content: "";
+    display: inline-block;
+    margin-right: 0.5em;
+    transition: transform 0.3s ease;
+  }
+  details.answer-block[open] summary::before {
+    transform: rotate(90deg);
+  }
+
+  /* コンテンツ部分の開閉アニメーション */
+  details.answer-block .answer-content {
+    overflow: hidden;
+    max-height: 0;
+    padding: 0 1em;
+    background: #f8f8f8;
+    border-left: 4px solid #aaa;
+    border-radius: 0 0 8px 8px;
+    transition: max-height 0.4s ease, padding 0.4s ease;
+  }
+  details.answer-block[open] .answer-content {
+    max-height: 500px; /* 十分大きめにしておく */
+    padding: 1em;
+  }
+  
+  
+  button a {
+  display: inline-block;
+  text-decoration: none;
+  color: white;
+  background-color: #0078d4; /* ボタンの青色 */
+  padding: 8px 16px;
+  border-radius: 6px;
+<!--  font-size: 14px;-->
+  font-weight: bold;
+}
+
+button {
+  border: none;
+  background: none; /* ボタン本体の背景は消す */
+  padding: 0;       /* デフォルト余白を削除 */
+}
+</style>
+
+</head>
+<body>
+<!--
+  <div class="header">
+    <button class="menu-button" onclick="toggleMenu()">☰</button>
+    <h1 style="margin-left: 10px; font-size: 20px;">サイトタイトル</h1>
+  </div>
+
+  <div id="menu" class="menu-container">
+    <div id="menu-content">読み込み中...</div>
+  </div>
+
+  <div id="banner"></div>
+-->
+  <!-- 目次 -->
+  <nav id="toc">
+    <h2 id="top">目次</h2>
+<ul>
+	<li><a href="#chapter1">🟦 第1章：Hello World</a></li>
+		<ul>
+			<li><a href="#chapter1-1">&nbsp;&nbsp;🔹 1-1. 画面表示と座標</a></li>
+			<li><a href="#chapter1-2">&nbsp;&nbsp;🔹 1-2. コメント</a></li>
+			<li><a href="#chapter1-3">&nbsp;&nbsp;🔹 1-A. 練習問題</a></li>
+			<li><a href="#chapter1-4">&nbsp;&nbsp;🔹 1-コラム：運用保守のためのコメント活用</a></li>
+			<li><a href="#chapter1-5">&nbsp;&nbsp;&nbsp;✅ まとめ</a></li>
+		</ul>
+	<li><a href="#chapter2">🟦 第2章：変数</a></li>
+		<ul>
+			<li><a href="#chapter2-1">&nbsp;&nbsp;🔹2-1.変数のイメージ</a></li>
+			<li><a href="#chapter2-2">&nbsp;&nbsp;🔹2-2.変数の定義・呼び出し</a></li>
+			<li><a href="#chapter2-3">&nbsp;&nbsp;🔹2-3.変数の型</a></li>
+			<li><a href="#chapter2-4">&nbsp;&nbsp;🔹2-4.型変換（発展）</a></li>
+			<li><a href="#chapter2-5">&nbsp;&nbsp;🔹2-A.練習問題</a></li>
+			<li><a href="#chapter2-6">&nbsp;&nbsp;&nbsp;✅ まとめ</a></li>
+		</ul>
+	<li><a href="#chapter3">🟦 第3章：制御文</a></li>
+		<ul>
+			<li><a href="#chapter3-1">&nbsp;&nbsp;🔹3-1.if文(if,else,else if)</a></li>
+			<li><a href="#chapter3-2">&nbsp;&nbsp;🔹3-2.for文のイメージ</a></li>
+			<li><a href="#chapter3-3">&nbsp;&nbsp;🔹3-3.for文のネスト</a></li>
+			<li><a href="#chapter3-4">&nbsp;&nbsp;🔹3-4.for文で図形を描画（ピラミッド,ひし形）</a></li>
+			<li><a href="#chapter3-5">&nbsp;&nbsp;🔹3-5.breakとcontinue</a></li>
+			<li><a href="#chapter3-6">&nbsp;&nbsp;🔹3-A.練習問題</a></li>
+			<li><a href="#chapter3-7">&nbsp;&nbsp;&nbsp;✅ まとめ</a></li>
+		</ul>
+	<li><a href="#chapter4">🟦 第4章：配列</a></li>
+		<ul>
+			<li><a href="#chapter4-1">&nbsp;&nbsp;🔹4-1.配列のイメージ</a></li>
+			<li><a href="#chapter4-2">&nbsp;&nbsp;🔹4-2.配列の操作まとめ</a></li>
+			<!--
+			<li><a href="#chapter4-3">&nbsp;&nbsp;🔹4-3.配列の長さ</a></li>
+			-->
+			<li><a href="#chapter4-4">&nbsp;&nbsp;🔹4-3.配列とfor文</a></li>
+			<li><a href="#chapter4-5">&nbsp;&nbsp;🔹4-4.配列のエラーまとめ</a></li>
+			<li><a href="#chapter4-6">&nbsp;&nbsp;🔹4-A.練習問題</a></li>
+			<li><a href="#chapter4-7">&nbsp;&nbsp;&nbsp;✅ まとめ</a></li>
+		</ul>
+	<li><a href="#chapter5">🟦 第5章：関数</a></li>
+		<ul>
+			<li><a href="#chapter5-1">&nbsp;&nbsp;🔹5-1.関数のイメージ</a></li>
+			<li><a href="#chapter5-2">&nbsp;&nbsp;🔹5-2.戻り値と引数</a></li>
+			<li><a href="#chapter5-3">&nbsp;&nbsp;🔹5-3.関数の定義</a></li>
+			<li><a href="#chapter5-4">&nbsp;&nbsp;🔹5-4.関数の呼び出し</a></li>
+			<li><a href="#chapter5-5">&nbsp;&nbsp;🔹5-5.いろいろな関数</a></li>
+			<li><a href="#chapter5-6">&nbsp;&nbsp;🔹5-A.練習問題</a></li>
+			<li><a href="#chapter5-7">&nbsp;&nbsp;&nbsp;✅ まとめ</a></li>
+		</ul>
+	<li>※実践の章につきましては作成中です</li>
+	<li><a href="#chapter6">🟦 第6章：実践</a></li>
+		<ul>
+			<li><a href="#chapter6-1">&nbsp;&nbsp;🔹6-1.簡単な周回用script</a></li>
+			<li><a href="#chapter6-2">&nbsp;&nbsp;🔹6-2.簡単なパズル</a></li>
+			<li><a href="#chapter6-3">&nbsp;&nbsp;🔹6-3.ログを取得する関数</a></li>
+			<li><a href="#chapter6-4">&nbsp;&nbsp;🔹6-4.state,timeを取得する関数</a></li>
+			<li><a href="#chapter6-5">&nbsp;&nbsp;🔹6-5.迷路</a></li>
+			<li><a href="#chapter6-6">&nbsp;&nbsp;&nbsp;✅ まとめ</a></li>
+		</ul>
+<!--
+	<li><a href="#chapter7">🟦 第7章：困る人が多い場所</a></li>
+		<ul>
+			<li><a href="#chapter7-1">&nbsp;&nbsp;🔹7-1.varの宣言,型</a></li>
+			<li><a href="#chapter7-2">&nbsp;&nbsp;🔹7-2.1次元配列と多次元配列</a></li>
+			<li><a href="#chapter7-3">&nbsp;&nbsp;🔹7-3.配列とfor文</a></li>
+			<li><a href="#chapter7-4">&nbsp;&nbsp;🔹7-4.関数のまとめ</a></li>
+			<li><a href="#chapter7-5">&nbsp;&nbsp;🔹7-5.よく見るエラー</a></li>
+		</ul>
+-->
+</ul>
+  </nav>
+
+<!--█████████████████████████████████████████████████████████-->
+  <!-- 本文：章構成とコードブロック例 -->
+  <h2 id="chapter1">🟦 第1章：Hello World</h2>
+  <h3 id="chapter1-1">🔹 1-1. 画面表示と座標</h3>
+<p>プログラミングの学習では、最初に「Hello, World!」という文字を画面に表示するのが定番です。</br>
+これは、プログラムがちゃんと動くかどうかを確かめる最もシンプルな方法です。</br>
+Stone Story RPG（以下SS）でも、文字を表示することで「プログラムが動く」ことを体感しましょう。</p>
+  <div class="options">
+    <label><input type="checkbox" id="includeSingleComment" checked> 行コメントをコピー(ON)</label><br>
+    <label><input type="checkbox" id="includeMultiComment" checked> ブロックコメントをコピー(ON)</label>
+  </div>
+  <div class="code-container">
+    <div class="code-header">■ 基本の表示文法</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">> Hello, World!</span>
+    </code>
+  </div>
+<p>このように書くだけで、「Hello, World!」という文字が画面の左上（座標 0,0）に表示されます。<br>
+もっと自由に表示位置を変えるには、座標を指定します。</p>
+  <div class="code-container">
+    <div class="code-header">■ 座標を指定して表示する</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">>`10,5,Hello, World!</span>
+    </code>
+  </div>
+<p>この例では、X=10, Y=5 の位置に「Hello, World!」と表示されます。
+<br>変数を使うと、より柔軟に表示位置を制御できます。
+<br>※変数で指定する場合、@で囲います。</p>
+  <div class="code-container">
+    <div class="code-header">■ 変数を使って位置を指定する</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var x = 12</span>
+      <span class="diff-line neutral">var y = 7</span>
+      <span class="diff-line neutral">>`@x@,@y@,Hello from variable!</span>
+    </code>
+  </div>
+<p>このように書くと、x=12, y=7 の位置にメッセージが表示されます。</p>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter1-2">🔹 1-2. コメント</h3>
+<p>プログラムの中には、「これは実行されないけど、説明として書いておきたいこと」があります。
+<br>それをコメントと呼びます。</p>
+
+  <div class="code-container">
+    <div class="code-header">■ 一行コメント</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">// これは一行コメントです</span>
+      <span class="diff-line neutral">> Hello</span>
+    </code>
+  </div>
+<p>// 以降は、プログラムとして実行されず、ただのメモとして扱われます。</p>
+<br>
+  <div class="code-container">
+    <div class="code-header">■ 複数行コメント（ブロックコメント） </div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">/*</span>
+      <span class="diff-line neutral">この部分は</span>
+      <span class="diff-line neutral">すべてコメントとして無視されます</span>
+      <span class="diff-line neutral">*/</span>
+      <span class="diff-line neutral">> Hello</span>
+    </code>
+  </div>
+<p>/* */ で囲まれた部分も、コメントとして扱われます。
+<br>また、処理をスキップさせるために使われることもあります。</p>
+<br>
+  <div class="code-container">
+    <div class="code-header">■ 複数行コメント（ブロックコメント） </div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">/*</span>
+      <span class="diff-line neutral">>`1,2,コメントになった処理</span>
+      <span class="diff-line neutral">*/</span>
+      <span class="diff-line neutral">>`1,3,Hello</span>
+    </code>
+  </div>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter1-3">🔹 1-A. 練習問題</h3>
+<p>以下の練習でチェック！</p>
+<ol>
+  <li>10,10 の位置に「stone story」と表示してみましょう。</li>
+<details class="answer-block">
+  <summary>1.回答例を表示</summary>
+  <div class="answer-content">
+    <div class="code-container">
+      <div class="code-header">■ 練習問題1の回答例</div>
+      <button class="copy-btn">コピー</button>
+      <code>
+        <span class="diff-line neutral">>`10,10,stone story</span>
+      </code>
+    </div>
+  </div>
+</details>
+  <li>一行コメントで今日の日付を書いて、表示結果に影響がないことを確認してみましょう。</li>
+<details class="answer-block">
+  <summary>2.回答例を表示</summary>
+  <div class="answer-content">
+  <div class="code-container">
+    <div class="code-header">■ 練習問題2の回答例</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">// 2025/08/11</span>
+      <span class="diff-line neutral">>`10,10,stone story</span>
+    </code>
+  </div>
+  </div>
+</details>
+  <li>上記1の表示処理をブロックコメントで囲って、表示されなくなることを確認してみましょう。</li>
+	<details class="answer-block">
+	  <summary>3.回答例を表示</summary>
+	  <div class="answer-content">
+	  <div class="code-container">
+	    <div class="code-header">■ 練習問題3の回答例</div>
+	    <button class="copy-btn">コピー</button>
+	    <code>
+	      <span class="diff-line neutral">/*</span>
+	      <span class="diff-line neutral">>`10,10,stone story</span>
+	      <span class="diff-line neutral">*/</span>
+	    </code>
+	  </div>
+	  </div>
+	</details>
+</ol>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter1-4">🔹 1-コラム：運用保守のためのコメント活用</h3>
+<p>実際の開発では、あとでプログラムを修正した人が「どこを」「いつ」「何のために」変更したかをわかりやすくするために、履歴コメントを活用することがあります。
+</p> 
+  <div class="code-container">
+    <div class="code-header">■ 履歴コメント</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">>`5,4,もともとの表示内容</span>
+      <span class="diff-line added">//▼ ryuuboku Add 20**/**/**</span>
+      <span class="diff-line added">>`5,5,追加された表示内容</span>
+      <span class="diff-line added">//▲ ryuuboku Add 20**/**/**</span>
+      <span class="diff-line removed">//▼ ryuuboku Del 20**/**/**</span>
+      <span class="diff-line removed">//>`5,5,削除された表示内容</span>
+      <span class="diff-line removed">//完全に削除するのは避け、</span>
+      <span class="diff-line removed">//コメント化に留めます。</span>
+      <span class="diff-line removed">//▲ ryuuboku Del 20**/**/** </span>
+    </code>
+  </div>
+<p>このように、名前や日付、処理の目的を簡単に書いておくことで、後から見ても安心です。Add,Del(delete),Mod(modify)などが使われます。
+</p>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter1-5">✅ まとめ</h3>
+<table border>
+<tr>
+	<th>内容</th>
+	<th>書き方例</th>
+</tr>
+<tr>
+	<td>文字を表示する</td>
+	<td>> Hello</td>
+</tr>
+<tr>
+	<td>座標を指定</td>
+	<td>>`10,5,Hello</td>
+</tr>
+<tr>
+	<td>変数で表示</td>
+	<td>>`@x@,@y@,Message</td>
+</tr>
+<tr>
+	<td>一行コメント</td>
+	<td>// コメント</td>
+</tr>
+<tr>
+	<td>複数行コメント</td>
+	<td>/* 複数行コメント */</td>
+</tr>
+<tr>
+	<td>保守コメント(履歴コメント)</td>
+	<td>//▼ Add, //▲ Add など</td>
+</tr>
+</table>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h2 id="chapter2">🟦 第2章：変数</h2>
+<h3 id="chapter2-1">🔹 2-1. 変数のイメージ</h3>
+<p>プログラムの中では、「あとで使うためのデータ」を名前をつけてしまっておくことがよくあります。
+<br>この「名前のついたデータ」を**変数（へんすう / variable）**といいます。</p>
+<br>■ 変数は「入れ物」
+<br>変数は、数や文字などの値を入れておく箱（入れ物）のようなものです。
+<br>既にある変数の例
+<br>例えば、hpという変数には「現在のHP」が入っています。
+<br>@ @ で囲むと中身を表示させることができます、
+  <div class="code-container">
+    <div class="code-header">■ 既にある変数の表示</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">>`5,3,@hp@</span>
+    </code>
+  </div>
+<br>■ 自分で変数を作る
+<br>たとえば：
+<br>var 名前 = 値
+<br>という形で、値を箱にしまっておけます。
+  <div class="code-container">
+    <div class="code-header">■ 画面表示と変数</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var x = 10</span>
+      <span class="diff-line neutral">var y = 5</span>
+      <span class="diff-line neutral">>xは@x@,yは@y@</span>
+    </code>
+  </div>
+<br>このようにして、xとyという変数に値を入れ、それを画面表示に使うことができます。
+<br><br>
+<button><a href="#top">Topへ戻る</a></button>
+<br><br>
+  <h3 id="chapter2-2">🔹 2-2. 変数の定義・呼び出し</h3>
+<p>■ 定義のしかた
+<br>変数を使うには、まず**定義（宣言）**が必要です。
+<br>Stone Script では、var を使って変数を定義します。通常、
+<br>var message = "Hello"
+<br>このように、文字列 "Hello" を message という名前で保存できます。
+</p> 
+<p>■ 呼び出しのしかた（使い方）
+<br>変数に入れた値を表示するときは、@変数名@ で呼び出します。</p>
+  <div class="code-container">
+    <div class="code-header">■ 変数の定義と呼び出し</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var message = "Hello"</span>
+      <span class="diff-line neutral">> @message@</span>
+    </code>
+  </div>
+<p>結果：Hello が表示されます。
+</p><br>
+<button><a href="#top">Topへ戻る</a></button>
+<br> 
+<h3 id="chapter2-3">🔹 2-3. 変数の型（データの種類）</h3>
+<p>変数には、いくつかの種類（型）があります。</p>
+<table border>
+<tr>
+	<th>型</th>
+	<th>説明</th>
+	<th>例</th>
+</tr>
+<tr>
+	<td>数値</td>
+	<td>数として扱われる</td>
+	<td>10, 3.14</td>
+<tr>
+</tr>
+	<td>文字列</td>
+	<td>文字として扱われる</td>
+	<td>"abc", "石"</td>
+</tr>
+</tr>
+	<td>真偽値</td>
+	<td>条件に使うYes/Noのような値</td>
+	<td>true, false</td>
+</tr>
+
+</table>
+<br>例えば、真偽型の変数に数字を入れようとするのはNGです。
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter2-4">🔹 2-4. 型変換(発展)</h3>
+<p>Stone Script では、必要に応じて文字列と数値を相互に変換することができます。</p>
+  <div class="code-container">
+    <div class="code-header">■ 文字列と数値の変換</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var n = 10</span>
+      <span class="diff-line neutral">var s = "" + n</span>
+      <span class="diff-line neutral">// 数値 → 文字列に変換</span>
+      <span class="diff-line neutral">> @s+5@</span>
+      <span class="diff-line neutral">// 表示結果: 105</span>
+    </code>
+  </div>
+<br>上記のように、空の文字列 "" に数値を足すことで文字列に変わります。
+<br>また、同じ2+3であっても、数字の場合は「5」文字列の場合は「23」となります。
+<br>文字列での足し算の例）おはよう ＋ ございます → おはようございます
+<br>そのため、数値での計算結果が異常な場合は型変換を試してみましょう。
+</p>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+
+<h3 id="chapter2-5">🔹 2-A. 練習問題</h3>
+<p>以下の練習でチェック！</p>
+<ol>
+  <li>あなたの名前を変数 name に入れて、画面に表示してみましょう。</li>
+	<details class="answer-block">
+	  <summary>1.回答例を表示</summary>
+	  <div class="answer-content">
+	  <div class="code-container">
+	    <div class="code-header">■ 練習問題1の回答例</div>
+	    <button class="copy-btn">コピー</button>
+	    <code>
+	      <span class="diff-line neutral">var name=your_name</span>
+	      <span class="diff-line neutral">>@name@</span>
+	    </code>
+	  </div>
+	  </div>
+	</details>
+  <li>数値変数 x=8, y=3 を使って、その位置に「OK」と表示しましょう。</li>
+<details class="answer-block">
+  <summary>2.回答例を表示</summary>
+  <div class="answer-content">
+    <div class="code-container">
+      <div class="code-header">■ 練習問題2の回答例</div>
+      <button class="copy-btn">コピー</button>
+      <code>
+        <span class="diff-line neutral">var x=8</span>
+        <span class="diff-line neutral">var y=3</span>
+        <span class="diff-line neutral">>`@x@,@y@,OK</span>
+      </code>
+    </div>
+  </div>
+</details>
+</ol>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter2-6">✅ まとめ</h3>
+<table border>
+<tr>
+<th>概念</th>
+<th>書き方</th>
+</tr>
+<tr>
+<td>変数の定義</td>
+<td>var x = 10</td>
+</tr>
+<tr>
+<td>値の呼び出し</td>
+<td>@x@ など</td>
+</tr>
+<tr>
+<td>文字列型</td>
+<td>"text"</td>
+</tr>
+<tr>
+<td>数値型</td>
+<td>10, 3.14</td>
+</table>
+<br>この章では、値を保存し、再利用するためのしくみ＝変数を学びました。
+<br>次の章「制御文」では、この変数を使って、条件分岐や繰り返し処理を行っていきます。
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h2 id="chapter3">🟦 第3章：制御文</h2>
+<h3 id="chapter3-1">🔹 3-1. if文（if, else, else if）</h3>
+<p>■ 条件によって動きを変える「if文」
+<br>if文は、ある条件が正しい（true）なら、特定の処理を行うという命令です。
+<br>日本語では例えば、「明日、晴れならピクニックに行こう」が当てはまります。
+<br>stone scriptでは以下のように記載します。
+<br>例文はxが3より大きいかどうかで分岐しています。
+<br>※行頭のスペースの数で、if文の中か外かを判断します。</p>
+  <div class="code-container">
+    <div class="code-header">■ if文</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var x=5</span>
+      <span class="diff-line neutral">?x>3</span>
+      <span class="diff-line neutral">  >`3,1,xは3より大きい</span>
+      <span class="diff-line neutral">>`3,2,この処理は常に表示</span>
+    </code>
+  </div>
+<br>■ そうでなければ「if～else」
+<br>もしそうでなければ が追加されます。
+<br>日本語では例えば、「明日、晴れならピクニック、そうでなければ図書館に行こう」が当てはまります。
+<br>stone scriptでは以下のように記載します。
+<br>例文はscoreが80以上/80未満で分岐しています。
+  <div class="code-container">
+    <div class="code-header">■ if～else</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var score = 80</span>
+      <span class="diff-line neutral">?score >=80</span>
+      <span class="diff-line neutral">  >合格</span>
+      <span class="diff-line neutral">:</span>
+      <span class="diff-line neutral">  >不合格</span>
+    </code>
+  </div>
+<br>■ else if（条件をさらに追加）
+<br>日本語では例えば、「明日、晴れならピクニック、雨なら家でごろごろしよう」が当てはまります。
+<br>stone scriptでは以下のように記載します。
+<br>例文では、scoreが(if)90以上,(else if)60以上,(else)それ以外 の3パターンで分岐しています。
+  <div class="code-container">
+    <div class="code-header">■ else if</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var score = 75</span>
+      <span class="diff-line neutral">?score >=90</span>
+      <span class="diff-line neutral">  >優秀</span>
+      <span class="diff-line neutral">:?score>=60</span>
+      <span class="diff-line neutral">  >合格</span>
+      <span class="diff-line neutral">:</span>
+      <span class="diff-line neutral">  >不合格</span>
+    </code>
+  </div>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter3-2">🔹 3-2. for文のイメージ</h3>
+<p>■ 繰り返し処理をする「for文」
+<br>1～10までの数字を縦に表示させたい場合、以下のような書き方になります。
+<br>しかし、もう少し簡略化したいものです。</p>
+  <div class="code-container">
+    <div class="code-header">■ 1～10までの数字を縦に表示</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">>`5,1,1</span>
+      <span class="diff-line neutral">>`5,2,2</span>
+      <span class="diff-line neutral">>`5,3,3</span>
+      <span class="diff-line neutral">>`5,4,4</span>
+      <span class="diff-line neutral">>`5,5,5</span>
+      <span class="diff-line neutral">>`5,6,6</span>
+      <span class="diff-line neutral">>`5,7,7</span>
+      <span class="diff-line neutral">>`5,8,8</span>
+      <span class="diff-line neutral">>`5,9,9</span>
+      <span class="diff-line neutral">>`5,10,10</span>
+    </code>
+  </div>
+<br>何かを何回も繰り返したいときは、for文を使います。
+  <div class="code-container">
+    <div class="code-header">■ 1～10までの数字を縦に表示</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">for i = 1..10</span>
+      <span class="diff-line neutral">  >`5,@i@,@i@</span>
+    </code>
+  </div>
+<br>これは、1から10まで、合計10回くり返して表示されます。
+<br>i=1→>`5,1,1　i=2→>`5,2,2……
+<br>※1フレームごとにfor文の内容が実行されます。
+<br>
+<br>このiはカウンタと呼ばれます。for i=a..bと記載すると、iはaからbに1ずつ増減します。
+<br>このiはvarを使って宣言する必要はないですが、読み取り専用の変数のように扱うことができます。
+<br>
+<br>例えば、
+<br>for i=5..3 と記載すると
+<br>i=5→i=4→i=3 と進み
+<br>for i=3..5 と記載すると
+<br>i=3→i=4→i=5 と進みます。
+<br>しかし、i=3のようにiに値を入れることはできません。
+<br>
+<br>始点・終点は変数を使って制御することもできます。
+  <div class="code-container">
+    <div class="code-header">■ 変数を使って制御</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var max = 3</span>
+      <span class="diff-line neutral">for i = 0 .. max</span>
+      <span class="diff-line neutral">  >`3,@i@,iは @i@ です</span>
+    </code>
+  </div>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter3-3">🔹 3-3. for文のネスト（入れ子）</h3>
+<p>for文の中にfor文を入れてしまうことがあります。これをfor文のネストと呼びます。
+<br>注意点として、処理内容によっては負荷がかかってしまうことが挙げられます。
+<br>■ 2重ループ（例：表を作る）</p>
+  <div class="code-container">
+    <div class="code-header">■ 2重ループ（四角形）</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">for y = 0 .. 2</span>
+      <span class="diff-line neutral">  for x = 0 .. 4</span>
+      <span class="diff-line neutral">    >`@x@,@y@,■</span>
+    </code>
+  </div>
+<br>このコードは、5列×3行の「■」のブロックを表示します。
+<br><br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter3-4">🔹 3-4. for文で図形を描画（ピラミッド・ひし形）</h3>
+<p>■ ピラミッド（左上から下に広がる）
+<br>この辺りは「なぜそう動くのか」が理解できれば十分。
+<br>y=0でx=0の場合、x=1の場合……と考えていくとわかりやすいです。</p>
+  <div class="code-container">
+    <div class="code-header">【ここに表題】</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">for y = 0 .. 4</span>
+      <span class="diff-line neutral">  for x = 0 .. y</span>
+      <span class="diff-line neutral">    >`@x@,@y@,▲</span>
+    </code>
+  </div>
+<br>
+<br>結果：
+<div class="code-container">
+    <div class="code-header">■ 結果</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">▲    </span>
+      <span class="diff-line neutral">▲▲   </span>
+      <span class="diff-line neutral">▲▲▲  </span>
+      <span class="diff-line neutral">▲▲▲▲ </span>
+      <span class="diff-line neutral">▲▲▲▲▲</span>
+    </code>
+  </div>
+<br> 
+<br>
+<br>■ ピラミッド（中央揃え）
+<br>この辺りは「なぜそう動くのか」が理解できれば十分です。
+  <div class="code-container">
+    <div class="code-header">■ 中央揃えのピラミッド</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var h = 5</span>
+      <span class="diff-line neutral">for y = 0 .. h - 1</span>
+      <span class="diff-line neutral">  var s = h - y - 1</span>
+      <span class="diff-line neutral">  for x = 0 .. y * 2</span>
+      <span class="diff-line neutral">    >`@s+x@,@y@,▲</span>
+    </code>
+  </div>
+<br>結果：
+<div class="code-container">
+    <div class="code-header">■ 結果</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">        ▲    </span>
+      <span class="diff-line neutral">      ▲▲▲   </span>
+      <span class="diff-line neutral">    ▲▲▲▲▲  </span>
+      <span class="diff-line neutral">  ▲▲▲▲▲▲▲ </span>
+      <span class="diff-line neutral">▲▲▲▲▲▲▲▲▲</span>
+    </code>
+  </div>
+<br>中央にそろえて▲が積まれます。
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter3-5">🔹 3-5. breakとcontinue</h3>
+<p>breakは途中でループを中断し、continueはその回だけループをスキップします。</p>
+  <div class="code-container">
+    <div class="code-header">■ break（途中でやめる）</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">for i = 0 .. 10</span>
+      <span class="diff-line neutral">  ?i =5</span>
+      <span class="diff-line neutral">    break</span>
+      <span class="diff-line neutral">  >`3,@i@,@i@</span>
+      <span class="diff-line neutral">//iが5以降は画面表示されない</span>
+    </code>
+  </div>
+<br>上記の例では i が5になったところで、ループを終了します。
+<br>
+  <div class="code-container">
+    <div class="code-header">■ continue（その回だけスキップ）</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">for i = 0 .. 5</span>
+      <span class="diff-line neutral">  ?i = 2</span>
+      <span class="diff-line neutral">    continue</span>
+      <span class="diff-line neutral">  >`3,@i@,@i@</span>
+      <span class="deff-line neutral">//i=2だけ処理がスキップされる
+    </code>
+  </div>
+<br>上記の例では i が2のときはスキップされます。
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter3-6">🔹 3-A. 練習問題</h3>
+<p>以下の練習でチェック！</p>
+<ol>
+  <li>xが7以上なら「Lucky!」、そうでなければ「Try again!」と表示するコードを書いてみましょう。</li>
+<details class="answer-block">
+  <summary>1.回答例を表示</summary>
+  <div class="answer-content">
+    <div class="code-container">
+      <div class="code-header">■ 練習問題1の回答例</div>
+      <button class="copy-btn">コピー</button>
+      <code>
+        <span class="diff-line neutral">var x=9</span>
+        <span class="diff-line neutral">?x>=7</span>
+        <span class="diff-line neutral">  >Lucky!</span>
+        <span class="diff-line neutral">:</span>
+        <span class="diff-line neutral">  >Try again!</span>
+      </code>
+    </div>
+  </div>
+</details>
+  <li>1〜5の数字をfor文で順番に横に表示してください。</li>
+<details class="answer-block">
+  <summary>2.回答例を表示</summary>
+  <div class="answer-content">
+  <div class="code-container">
+    <div class="code-header">■ 練習問題2の回答例</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">for i=1..5</span>
+      <span class="diff-line neutral">  >`@i@,3,@i@</span>
+    </code>
+  </div>
+  </div>
+</details>
+  <li>変数numberが3の倍数のときだけ「Fizz」と表示し、それ以外は数字を表示してみましょう。
+  <br>※aをbで割った余りはa%bで表現できます。</li>
+	<details class="answer-block">
+	  <summary>3.回答例を表示</summary>
+	  <div class="answer-content">
+	  <div class="code-container">
+	    <div class="code-header">■ 練習問題3の回答例</div>
+	    <button class="copy-btn">コピー</button>
+	    <code>
+	      <span class="diff-line neutral">var number=6</span>
+	      <span class="diff-line neutral">?number%3=0</span>
+	      <span class="diff-line neutral">  >Fizz</span>
+          <span class="diff-line neutral">:</span>
+          <span class="diff-line neutral">  >@number@</span>
+	    </code>
+	  </div>
+	  </div>
+	</details>
+  <li>中央揃えのピラミッド図形を、上下逆さまにし、自分で高さを変更できるようにして描いてみましょう。</li>
+	<details class="answer-block">
+	  <summary>4.回答例を表示</summary>
+	  <div class="answer-content">
+	  <div class="code-container">
+	    <div class="code-header">■ 練習問題4の回答例</div>
+	    <button class="copy-btn">コピー</button>
+	    <code>
+	      <span class="diff-line neutral">var h = 5</span>
+	      <span class="diff-line neutral">for y = h - 1 .. 0</span>
+	      <span class="diff-line neutral">  var s = h - y - 1</span>
+          <span class="diff-line neutral">  for x = 0 .. y * 2</span>
+          <span class="diff-line neutral">    >`@s+x@,@(h - y - 1)@,▲</span>
+	    </code>
+	  </div>
+	  </div>
+	</details>
+</ol>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter3-7">✅ まとめ</h3>
+<table border=1>
+<tr>
+	<th>制御構文</th>
+	<th>Stone script</th>
+	<th>説明</th>
+</tr>
+<tr>
+	<td>If</td>
+	<td>?</td>
+	<td>条件が真なら実行</td>
+</th>
+<tr>
+	<td>else if</td>
+	<td>:?</td>
+	<td>別の条件を追加</td>
+</th>
+<tr>
+	<td>else</td>
+	<td>:</td>
+	<td>上記すべてに当てはまらなければ実行</td>
+</th>
+<tr>
+	<td>for</td>
+	<td>for i=a..b</td>
+	<td>繰り返し処理</td>
+</th>
+<tr>
+	<td>break</td>
+	<td>break</td>
+	<td>ループを強制終了</td>
+</th>
+<tr>
+	<td>continue</td>
+	<td>continue</td>
+	<td>その回の処理をスキップ</td>
+</th>
+</table>
+<br>この章では、条件によって動きを変えたり、同じ処理を繰り返す方法を学びました。
+<br>これにより、「自動で処理を進めるプログラム」の第一歩を踏み出せます！
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h2 id="chapter4">🟦 第4章：配列</h2> 
+<h3 id="chapter4-1">🔹 4-1. 配列のイメージ</h3>
+<p>変数は1つの値を入れる箱でしたが、配列は「複数の値」をひとまとめにできる箱です。
+<br>[📦📦📦]← こういった連続した箱に番号（インデックス）を振って管理されます。
+<br>var fruits = ["apple", "banana", "cherry"]
+<br>このように、複数のデータを[]で囲って並べることで、配列になります。</p>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter4-2">🔹 4-2. 配列の操作まとめ</h3>
+<p>arr[0]のような番号（インデックス）は0から始まります。
+<br>📌 配列操作まとめ</p>
+  <div class="code-container">
+    <div class="code-header">1. 宣言 var arr=[]</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var array1 = [0, 1, 2]</span>
+    </code>
+  </div>
+<br>
+  <div class="code-container">
+    <div class="code-header">2. 読み取り arr[n]</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var array1 = [0, 1, 2]</span>
+      <span class="diff-line neutral">>`5,3,array1[0]:@array1[0]@</span>
+      <span class="diff-line comment">// 0</span>
+    </code>
+  </div>
+<br>
+  <div class="code-container">
+    <div class="code-header">3. 末尾に追加 arr.Add(value)</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var myArray1 = [5]</span>
+      <span class="diff-line neutral">?time=30</span>
+        <span class="diff-line added">  myArray1.Add(10)</span>
+      <span class="diff-line neutral">>`5,3,myArray1[myArray1.Count()-1]:</span>
+      <span class="diff-line neutral">^@myArray1[myArray1.Count()-1]@</span>
+      <span class="diff-line comment">// [5] → [10]</span>
+    </code>
+  </div>
+<br>
+  <div class="code-container">
+    <div class="code-header">4. 指定位置に追加 arr.Insert(n,value)</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var myArray1 = [10, 3]</span>
+      <span class="diff-line neutral">?time=30</span>
+        <span class="diff-line added">  myArray1.Insert(1, 5)</span>
+      <span class="diff-line neutral">>`5,3,myArray1[1]:</span>
+      <span class="diff-line neutral">^@myArray1[1]@</span>
+      <span class="diff-line comment">// [10, 5, 3]</span>
+    </code>
+  </div>
+<br>
+  <div class="code-container">
+    <div class="code-header">5. 一部削除 arr.RemoveAt(n)</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var myArray1 = [1, 2, 3]</span>
+      <span class="diff-line neutral">?time=30</span>
+        <span class="diff-line added">  myArray1.RemoveAt(1)</span>
+      <span class="diff-line neutral">>`5,3,myArray1[1]:</span>
+      <span class="diff-line neutral">^@myArray1[1]@</span>
+      <span class="diff-line comment">// [1, 3]</span>
+    </code>
+  </div>
+<br>
+  <div class="code-container">
+    <div class="code-header">6. 全削除 arr.Clear()</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var array = [0, 1, 2]</span>
+      <span class="diff-line neutral">?time=30</span>
+        <span class="diff-line added">  array.Clear()</span>
+      <span class="diff-line neutral">>`5,3,array.Count():</span>
+      <span class="diff-line neutral">^@array.Count()@</span>
+      <span class="diff-line comment">// []</span>
+    </code>
+  </div>
+<br>
+  <div class="code-container">
+    <div class="code-header">7. 検索（Contains）arr.Contains(value)</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var myArray1 = [10, 3]</span>
+      <span class="diff-line neutral">?myArray1.Contains(3)</span>
+      <span class="diff-line neutral">  >TRUE</span>
+      <span class="diff-line comment">// true</span>
+    </code>
+  </div>
+<br>
+  <div class="code-container">
+    <div class="code-header">8. 検索（IndexOf）arr.IndexOf(value)</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var myArray = [10, 3]</span>
+      <span class="diff-line neutral">var index = myArray.IndexOf(3)</span>
+      <span class="diff-line neutral">>`5,3,@index@</span>
+      <span class="diff-line comment">// 1</span>
+    </code>
+  </div>
+<br>
+  <div class="code-container">
+    <div class="code-header">9. カウント arr.Count()</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var myArray1 = [0, 1, 2]</span>
+      <span class="diff-line neutral">>`5,3,myArray1.Count():</span>
+      <span class="diff-line neutral">^@myArray1.Count()@"</span>
+      <span class="diff-line comment">// 3</span>
+    </code>
+  </div>
+<br>
+  <div class="code-container">
+    <div class="code-header">10. 書き換え（Emplace）arr.Emplace(n,value)</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var myArray1 = [10, 3]</span>
+      <span class="diff-line neutral">?time=30</span>
+      <span class="diff-line neutral">  myArray1.Emplace(0, 4)</span>
+      <span class="diff-line neutral">>`5,3,myArray1[0]:@myArray1[0]@</span>
+      <span class="diff-line comment">// [4, 3]</span>
+    </code>
+  </div>
+<br>
+  <div class="code-container">
+    <div class="code-header">11. 並び替え（Sort）arr.Sort()</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var myArray = ["Cherry", 2, "Apple",</span>
+      <span class="diff-line neutral">1, true, false, "Banana", 3]</span>
+      <span class="diff-line neutral">?time=30</span>
+      <span class="diff-line neutral">  myArray.Sort()</span>      
+      <span class="diff-line neutral">for i=0..myArray.Count()-1</span>
+      <span class="diff-line neutral"> >`5,@i@,@myArray[i]@</span>      
+      <span class="diff-line comment">// → ループで出力可能</span>
+    </code>
+  </div>
+<br>※stone scriptは1フレームごとに1回実行されます。
+<br>　そのため、
+<br>　Addは1フレームごとに追加されてしまいますし、
+<br>　RemoveAtは適切な条件を書かないと配列外のエラーが出ます。
+  <div class="code-container">
+    <div class="code-header">■ <b style="color: red;">エラーが出るコード</b></div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var fruits=["apple","banana","cherry"]</span>
+      <span class="diff-line neutral">fruits.RemoveAt(2)</span>
+    </code>
+  </div>
+<br>なぜ上記のコードでエラーが出るのか考えてみましょう。
+<br>1フレーム目
+<br>var fruits=["apple","banana","cherry"]
+<br>(処理):fruits[2]を削除して！
+<br>fruits = ["apple", "banana", "cherry"]
+<br>↓
+<br>fruits = ["apple", "banana"]
+<br> 
+<br>2フレーム目
+<br>fruits = ["apple", "banana"]
+<br>(処理):fruits[2]を削除して！
+<br>fruits[2]が存在しないので<b>エラー！</b>
+<br><br>
+<button><a href="#top">Topへ戻る</a></button>
+<br><!--
+<h3 id="chapter4-3">🔹 4-3. 配列の長さを調べる</h3>
+<br>配列の要素がいくつあるかは .Count() で取得できます。
+<br>  
+<br>var fruits = ["apple", "banana", "cherry"]
+<br>> 配列の長さは @fruits.Count()@ です
+<br> -->
+<h3 id="chapter4-4">🔹 4-3. 配列とfor文</h3>
+<p>for文と組み合わせれば、配列のすべての要素を1つずつ処理できます。
+<br> 
+<br>var fruits = ["apple", "banana", "cherry"]
+<br>for i = 0 ..fruits.Count()-1
+<br>    >`3,@i@,@fruits[i]@
+</p><br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter4-5">🔹 4-4. 配列のエラーまとめ</h3>
+<p> var fruits=["apple","banana","cherry"]
+<br>エラーの例	原因
+<br>fruits[3] のように存在しないインデックスを指定した out of bounds～
+<br>fruit.Count() のように、名前を間違えた unable to resolve～
+</p><br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter4-6">🔹 4-A. 練習問題</h3>
+<p>以下の練習でチェック！</p>
+<ol>
+  <li>自分の好きな食べ物を3つ配列にして、すべて表示してみましょう。</li>
+<details class="answer-block">
+  <summary>1.回答例を表示</summary>
+  <div class="answer-content">
+    <div class="code-container">
+      <div class="code-header">■ 練習問題1の回答例</div>
+      <button class="copy-btn">コピー</button>
+       <code>
+         <span class="diff-line neutral">var arr=["sushi","udon","onigiri"]</span>
+         <span class="diff-line neutral">for i=0..arr.Count()-1</span>
+         <span class="diff-line neutral">  >`5,@i@,@arr[i]@</span>
+       </code>
+    </div>
+  </div>
+</details>
+  <li>ある配列の2番目の要素を変更して、表示してみましょう。<br>(条件はなしでOK)</li>
+<details class="answer-block">
+  <summary>2.回答例を表示</summary>
+  <div class="answer-content">
+  <div class="code-container">
+    <div class="code-header">■ 練習問題2の回答例</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">var arr=["sushi","udon","onigiri"]</span>
+      <span class="diff-line neutral">arr.Emplace(1,"soba")</span>
+      <span class="diff-line neutral">>`5,3,@arr[1]@</span>
+    </code>
+  </div>
+  </div>
+</details>
+  <li>配列に新しい要素を追加して、最後の要素だけを表示してみましょう。<br>(条件はなしでOK)</li>
+	<details class="answer-block">
+	  <summary>3.回答例を表示</summary>
+	  <div class="answer-content">
+	  <div class="code-container">
+	    <div class="code-header">■ 練習問題3の回答例</div>
+	    <button class="copy-btn">コピー</button>
+	    <code>
+	      <span class="diff-line neutral">var arr=["sushi","udon","onigiri"]</span>
+	      <span class="diff-line neutral">arr.Add("omisoshiru")</span>
+	      <span class="diff-line neutral">>`5,3,@arr[arr.Count()-1]@</span>
+	    </code>
+	  </div>
+	  </div>
+	</details>
+</ol>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter4-7">✅ まとめ</h3>
+<table border=1>
+<tr>
+	<th>操作</th>
+	<th>書き方例</th>
+</tr>
+<tr>
+	<td>配列の定義</td>
+	<td>var a = [1, 2, 3]</td>
+</tr>	
+<tr>
+	<td>要素の取得</td>
+	<td>a[0]</td>
+</tr>	
+<tr>
+	<td>要素の更新</td>
+	<td>a.Emplace(1,new)</td>
+</tr>	
+<tr>
+	<td>要素の追加</td>
+	<td>a.Add("追加")</td>
+</tr>
+<tr>
+	<td>要素の追加</td>
+	<td>a.Insert(1,"追加")</td>
+</tr>
+<tr>
+	<td>要素の削除</td>
+	<td>a.RemoveAt(1)</td>
+</tr>	
+<tr>
+	<td>配列の初期化</td>
+	<td>a.Clear()</td>
+</tr>
+<tr>
+	<td>配列の長さ</td>
+	<td>a.Count()</td>
+</tr>	
+<tr>
+	<td>繰り返し処理</td>
+	<td>for i = 0 .. a.Count() - 1 ...</td>
+</tr>
+</table>
+<br>この章では、たくさんのデータをまとめて扱う方法として配列の基本を学びました。
+<br>次の章では、関数を学んで、よく使う処理をひとまとめにして再利用できるようになります。
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h2 id="chapter5">🟦 第5章：関数</h2>
+<h3 id="chapter5-1">🔹 5-1. 関数のイメージ</h3>
+<p>関数とは、よく使う処理をひとまとめにして名前をつけたものです。
+<br>関数を函数（函は箱の旧字）と書いていた歴史があるように、文字通りのブラックボックスです。
+<br>「使いたいときに名前を呼べば実行される箱」のようなものです。
+<br>以下のような利点があります。
+<br>🧪「計算する処理」→ 名前をつけて → 呼び出すだけで実行できる
+<br>    何かあれば呼び出し元を修正すればOK（保守性が高い）</p>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter5-2">🔹 5-2. 戻り値と引数</h3>
+<p>■ 引数（ひきすう）
+<br>関数に**渡す値（入力）**のことです。
+<br>例えば「2つの数を渡して合計を求める」関数では、渡された2つの数が引数です。
+<br>■ 戻り値（もどりち）
+<br>関数が実行された**結果として返す値（出力）**のことです。
+<br> 例えば「2つの数を渡して合計を求める」関数では、合計の数が戻り値です。
+<br>※引数も戻り値も、それぞれ関数によって要・不要が変わってきます。
+<br>定義とずれがないように気を付けましょう。</p>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter5-3">🔹 5-3. 関数の定義</h3>
+<p>■ 基本の形
+<br>
+<br>func 関数名(引数)
+<br>    // 処理
+<br>    return 戻り値
+<br>
+<br>■ 例：足し算をする関数 
+<br> 
+<br>func add(a, b)
+<br>    return a + b
+<br> 
+<br>これは、2つの値 a, b を受け取り、足して返す関数です。</p>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter5-4">🔹 5-4. 関数の呼び出し</h3>
+<p>関数を使うときは、その名前と引数を指定して呼び出します。</p>
+<br> 
+  <div class="code-container">
+    <div class="code-header">■ 引数あり・戻り値あり</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">//定義</span>
+      <span class="diff-line neutral">func add(a,b)</span>
+      <span class="diff-line neutral">  return a+b</span>
+      <span class="diff-line neutral">//呼び出し</span>
+      <span class="diff-line neutral">var result=add(3,5)</span>
+      <span class="diff-line neutral">>3+5=@result@</span>
+      <span class="diff-line neutral">//3+5=8と表示される</span>
+    </code>
+  </div>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter5-5">🔹 5-5. いろいろな関数</h3>
+<p>引数と戻り値の有無でいくつか例を出しておきます。</p>
+  <div class="code-container">
+    <div class="code-header">■ 引数なし、戻り値なし</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">//定義</span>
+      <span class="diff-line neutral">func greet()</span>
+      <span class="diff-line neutral">  > Hello!</span>
+      <span class="diff-line neutral">?time<=120</span>
+      <span class="diff-line neutral">  greet()</span>
+      <span class="diff-line neutral">//実行後4秒間 Hello! と表示される</span>
+    </code>
+  </div>
+<br>
+  <div class="code-container">
+    <div class="code-header">■ 引数あり、戻り値なし</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">//定義</span>
+      <span class="diff-line neutral">func say(message)</span>
+      <span class="diff-line neutral">  > @message@</span>
+      <span class="diff-line neutral">?time<=120</span>
+      <span class="diff-line neutral">  say("こんにちは")</span>
+      <span class="diff-line neutral">:</span>
+      <span class="diff-line neutral">  say("こんばんは")</span>
+      <span class="diff-line neutral">//実行後4秒間は こんにちは </span>
+      <span class="diff-line neutral">//その後は こんばんは に変化</span>
+    </code>
+  </div>
+<br> 
+  <div class="code-container">
+    <div class="code-header">■ 引数あり、戻り値あり</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral">//定義</span>
+      <span class="diff-line neutral">func max(a, b)</span>
+      <span class="diff-line neutral">    ? a > b</span>
+      <span class="diff-line neutral">        return a</span>
+      <span class="diff-line neutral">    :</span>
+      <span class="diff-line neutral">        return b</span>
+      <span class="diff-line neutral">//呼び出し(7が表示される)</span>
+      <span class="diff-line neutral">> 最大値は @max(7, 4)@</span>
+    </code>
+  </div>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter5-6">🔹 5-A. 練習問題</h3>
+<p>以下の練習でチェック！</p>
+<ol>
+  <li>引数で与えられた2つの数の積を返す関数 times(a,b) を作って、<br>「5かける3は15」と表示されるように実行してみましょう。</li>
+<details class="answer-block">
+  <summary>1.回答例を表示</summary>
+  <div class="answer-content">
+    <div class="code-container">
+      <div class="code-header">■ 練習問題1の回答例</div>
+      <button class="copy-btn">コピー</button>
+       <code>
+         <span class="diff-line neutral">func times(a,b)</span>
+         <span class="diff-line neutral">  return a*b</span>
+         <span class="diff-line neutral">>5かける3は@times(5,3)@</span>
+       </code>
+    </div>
+  </div>
+</details>
+  <li>ある数が偶数か奇数かを判定する関数 isEven(num) を作って、<br>結果を表示してみましょう。</li>
+	<details class="answer-block">
+	  <summary>2.回答例を表示</summary>
+	  <div class="answer-content">
+	  <div class="code-container">
+	    <div class="code-header">■ 練習問題2の回答例</div>
+	    <button class="copy-btn">コピー</button>
+	    <code>
+	      <span class="diff-line neutral">func isEven(num)</span>
+	      <span class="diff-line neutral">  ?num%2=0</span>
+	      <span class="diff-line neutral">    return 偶数</span>
+	      <span class="diff-line neutral">  :</span>
+	      <span class="diff-line neutral">    return 奇数</span>
+	      <span class="diff-line neutral">>3は@isEven(3)@</span>
+	    </code>
+	  </div>
+	  </div>
+	</details>
+</ol>
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<h3 id="chapter5-7">✅ まとめ</h3>
+<table border=1>
+<tr>
+  <th>用語</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <td>関数</td>
+  <td>処理のかたまりに名前をつけたもの</td>
+</tr>
+<tr>
+  <td>引数</td>
+  <td>関数に渡す値（入力）</td>
+</tr>
+<tr>
+  <td>戻り値</td>
+  <td>関数から返される値（出力）</td>
+</tr>
+<tr>
+  <td>return</td>
+  <td>関数の戻り値を指定するキーワード</td>
+</tr>
+<tr>
+  <td>操作</td>
+  <td>書き方例</td>
+</tr>
+<tr>
+  <td>関数定義</td>
+  <td>func 名前(引数)</td>
+</tr>
+<tr>
+  <td>関数呼び出し</td>
+  <td>名前(引数)</td>
+</tr>
+<tr>
+  <td>return文</td>
+  <td>return 値</td>
+</tr>
+</table>
+<br> 
+<br>この章では、処理をまとめて再利用する方法＝関数について学びました。
+<br>関数を使えば、「同じことを何度も書かずに済む」「プログラムが整理される」といったメリットがあります。
+<br>
+<button><a href="#top">Topへ戻る</a></button>
+<br>
+<!--█████████████████████████████████████████████████████████████████████████████████████████-->
+<!--
+
+<h2 id="chapter1"></h2>
+
+<h3 id="chapter1-1"></h3>
+
+  <div class="code-container">
+    <div class="code-header">【ここに表題】</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral"></span>
+      <span class="diff-line neutral"></span>
+      <span class="diff-line neutral"></span>
+      <span class="diff-line neutral"></span>
+      <span class="diff-line neutral"></span>
+    </code>
+  </div>
+
+<details class="answer-block">
+  <summary>隠す内容など</summary>
+  <div class="answer-content">
+  <div class="code-container">
+    <div class="code-header">■ 隠す内容など</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral"></span>
+    </code>
+  </div>
+  </div>
+</details>
+
+<h3 id="chapter1-3">🔹 1-A. 練習問題</h3>
+<p>以下の練習でチェック！</p>
+<ol>
+  <li>【問題文】</li>
+<details class="answer-block">
+  <summary>1.回答例を表示</summary>
+  <div class="answer-content">
+    <div class="code-container">
+      <div class="code-header">■ 練習問題1の回答例</div>
+      <button class="copy-btn">コピー</button>
+       <code>
+         <span class="diff-line neutral"></span>
+         <span class="diff-line neutral"></span>
+         <span class="diff-line neutral"></span>
+       </code>
+    </div>
+  </div>
+</details>
+  <li>【問題文】</li>
+<details class="answer-block">
+  <summary>2.回答例を表示</summary>
+  <div class="answer-content">
+  <div class="code-container">
+    <div class="code-header">■ 練習問題2の回答例</div>
+    <button class="copy-btn">コピー</button>
+    <code>
+      <span class="diff-line neutral"></span>
+      <span class="diff-line neutral"></span>
+      <span class="diff-line neutral"></span>
+    </code>
+  </div>
+  </div>
+</details>
+  <li>【問題文】</li>
+	<details class="answer-block">
+	  <summary>3.回答例を表示</summary>
+	  <div class="answer-content">
+	  <div class="code-container">
+	    <div class="code-header">■ 練習問題3の回答例</div>
+	    <button class="copy-btn">コピー</button>
+	    <code>
+	      <span class="diff-line neutral"></span>
+	      <span class="diff-line neutral"></span>
+	      <span class="diff-line neutral"></span>
+	    </code>
+	  </div>
+	  </div>
+	</details>
+</ol>
+-->
+<!--
+1.配列 Log を宣言しましょう
+var Log=[]
+
+2.Logが空ではないとき、(5,5)から縦に配列の内容を全表示させましょう
+?Log.Count()>0
+ for i=0..Log.Count()-1
+  >`5,@5+i@,@Log[i]@
+
+3.Logの末尾に引数contentを追加する関数LogAdd(content)を作成しましょう
+func LogAdd(content)
+ Log.Add(content)
+
+4.LogAdd(content)に、要素追加時に3件のみを保持するような制限を設けてみましょう。
+※追加したのち、古いものを消します
+func LogAdd(content)
+ Log.Add(content)
+ ?Log.Count()>3
+  Log.RemoveAt(0)
+5.?time%30=0の条件でLogAdd(content)を呼び出すようにしてみましょう。また、2.を参考に内容の表示を追加しましょう。
+
+
+1.以下のコードを参考にします。
+//表示部
+var Log=[]
+?Log.Count()>0
+ for i=0..Log.Count()-1
+  >`5,@5+i@,@Log[i]@
+
+//書き込み
+func LogAdd(content)
+ Log.Add(content)
+ ?Log.Count()>3
+  Log.RemoveAt(3)
+
+2.攻撃されたら→自分のhpが減っていたら と読み替えますが、
+「自分のHPが減っていたら」はどのように表現できるでしょうか。
+prehpという変数を用いてみましょう。
+
+var prehp=hp
+//処理
+?prehp>hp
+//↓hpが違う場合の処理 
+
+//↓hpとprehpの同期
+prehp=hp
+
+3.
+
+
+簡単に作成するにはloadoutを使用するのが便利です。
+四次元ベルトを使用し、6つの装備セットにそれぞれ当てはめていきます。
+参考までに
+loadout 1 ノーマル用
+loadout 2 ボス用
+loadout 3 予備
+loadout 4 star   / triskelion
+loadout 5 shield / triskelion
+loadout 6 mind
+
+この条件で、以下のような組み立てができます。
+
+?pickup.distance<10
+ loadout 4
+:?foe.distance>18
+ loadout 5
+:
+ ?foe!boss
+  loadout 1
+ :
+  loadout 2
+████████████████████████████████████████████████████████████████████
+  6   実践
+6-1.簡単な周回用script
+6-1-1 まずは装備セットを作成
+
+func walking()
+ equip L triskelion   
+ ?pickup.distance>=10
+     equip R uro
+ :
+     equip R star
+
+func VS()
+ ?foe=vigor
+    return poison
+ :?foe=poison
+    return ice
+ :?foe=ice
+    return fire
+ :?foe=fire
+    return aether
+ :?foe=aether
+    return vigor
+ :
+    return stone
+
+6-2.簡単なパズル
+6-3.ログを取得する関数
+イメージ
+
+┌─ログ─┐
+│ start  │
+│ 移動中 │
+│ 攻撃   │
+└────┘
+
+最初の目標
+・一番下が最新のもの
+・3行表示（履歴をもつ）
+
+最初の方針
+・ログには配列とfor文を使用
+・表示する部分と書き込む部分は別で作成
+・何度も登場する（可能性のある）書き込み部分は関数
+・↑表示部分は1回しか登場しないはずなので関数にしなくてもOK
+・まずは表示部分を作成
+
+[とりあえず書いてみる派][いったん考えてみる派]
+
+以下のコードを実行するとエラーになるのですが、どこが原因でしょう？
+
+//配列を宣言
+var Log=[]
+/*
+ここに書き込み処理を記載
+*/
+//表示部分
+for i=0..Log.Count()-1
+ >`5,@3+i@,@Log[i]@
+
+表示部分で配列の範囲を超えてしまっています。
+Log.Count()-1は-1なので、iは0と-1の2回入ることになりますが、
+Log[0]もLog[-1]も呼び出せません。
+また、3行表示に引っ張られてしまいfor i=0..2としてしまうとNGです。
+NGとはいえ、エラーになった際に気付くことができれば何の問題もありません。
+
+//配列を宣言
+var Log=[]
+/*
+ここに書き込み処理を記載
+*/
+//表示部分
+?Log.Count()>0
+ for i=0..Log.Count()-1
+  >`5,@3+i@,@Log[i]@
+
+このように記載することで、配列 Log が空のときは
+for文を通らないようにすることができます。
+では、3行の表示はどのようにすればいいのかというと、2通りの方法が考えられます。
+　・for文の表示を、3未満と3以上で分岐
+　・配列の要素数を3より大きくならないようにする
+今回は、配列の要素数を3より大きくならないようにする方向で進めていきます。
+
+
+ここで、デバッグ用のコードを記載しておきましょう。
+具体的には、登録の部分を簡単に作ってしまいます。
+
+?time%30=0
+ //ここに処理
+
+と記載することで、1秒ごとに処理を呼び出せるようになります。
+これを活用して、こんな風に書いてみます。
+
+//配列を宣言
+var log=[]
+//書き込み（テスト）
+?time%30=0
+ Log.Add(time)
+//表示部分
+?Log.Count()>0
+ for i=0..Log.Count()-1
+  >`5,@3+i@,@Log[i]@
+
+
+6-4.state,timeを取得する関数
+6-5.迷路
+-->
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById("menu");
+      menu.style.display = (menu.style.display === "block") ? "none" : "block";
+    }
+
+    document.querySelectorAll('.code-container').forEach(container => {
+      const btn = container.querySelector('.copy-btn');
+      const code = container.querySelector('code');
+
+      btn.addEventListener('click', () => {
+        const includeSingle = document.getElementById('includeSingleComment')?.checked ?? true;
+        const includeMulti = document.getElementById('includeMultiComment')?.checked ?? true;
+
+        const lines = Array.from(code.querySelectorAll('.diff-line'));
+
+        let insideMultiComment = false;
+
+        const filtered = lines.filter(line => {
+          const text = line.textContent.trim();
+          if (line.classList.contains('removed')) return false;
+
+          const isSingleComment = text.includes('//');
+          const startsMulti = text.includes('/*');
+          const endsMulti = text.includes('*/');
+
+          if (startsMulti && !endsMulti) {
+            insideMultiComment = true;
+            return includeMulti;
+          }
+
+          if (insideMultiComment) {
+            if (endsMulti) insideMultiComment = false;
+            return includeMulti;
+          }
+
+          if (startsMulti && endsMulti) {
+            return includeMulti;
+          }
+
+          if (isSingleComment) {
+            return includeSingle;
+          }
+
+          return true;
+//        }).map(line => line.textContent.trim());
+          }).map(line => line.textContent.replace(/\s+$/, ''));
+
+        const text = filtered.join('\n');
+        navigator.clipboard.writeText(text).then(() => {
+          btn.textContent = 'コピー済み！';
+          setTimeout(() => btn.textContent = 'コピー', 1500);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
