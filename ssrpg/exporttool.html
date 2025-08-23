@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Markdownプレビュー</title>
+<style>
+body {
+  font-family: sans-serif;
+  margin: 20px;
+  display: block;
+}
+
+.main {
+  display: flex;
+  gap: 20px;
+}
+textarea {
+  width: 40%;
+  height: 90vh;
+  font-family: monospace;
+  padding: 10px;
+}
+.preview {
+  width: 60%;
+  border: 1px solid #ccc;
+  padding: 10px;
+  overflow-y: auto;
+  height: 90vh;
+}
+
+/* コードブロック */
+.code-container {
+  position: relative;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 6px;
+  padding: 1em;
+  overflow-x: auto;
+  margin-bottom: 1em;
+  font-family: monospace;
+  white-space: pre;
+  width: 42ch;
+  box-sizing: content-box;
+  line-height: 1.0;
+}
+.code-header {
+  font-weight: bold;
+  margin-top: 0em;
+  margin-bottom: 0em;
+  color: #ccc;
+}
+.copy-btn {
+  position: absolute;
+  top: 0.5em;
+  right: 0.5em;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 3px;
+  z-index: 2;
+}
+.diff-line {
+  display: flex;
+}
+.diff-line::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 3ch;
+  text-align: right;
+  margin-right: 1ch;
+  opacity: 0.6;
+  user-select: none;
+}
+.code-container code {
+  counter-reset: line;
+}
+
+/* 折り畳み */
+details.answer-block summary {
+  background: #aaa;
+  color: #000;
+  padding: 0.6em 1em;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.3s ease;
+}
+details.answer-block .answer-content {
+  overflow: hidden;
+  max-height: 0;
+  padding: 0 1em;
+  background: #f8f8f8;
+  border-left: 4px solid #aaa;
+  border-radius: 0 0 8px 8px;
+  transition: max-height 0.4s ease, padding 0.4s ease;
+}
+details.answer-block[open] .answer-content {
+  max-height: 500px;
+  padding: 1em;
+}
+blockquote {
+  border-left: 3px solid #ccc;
+  margin: 5px 0;
+  padding-left: 10px;
+  color: #555;
+}
+</style>
+</head>
+<body>
+  <div>
+    <button id="downloadBtn">プレビューをダウンロード</button>
+  </div>
+
+  <div class="main">
+    <textarea id="editor">
+# h2
+## h3
+### h4
+--
+段落と
+改行
+--
+```見出し
+サンプルコード
+console.log("Hello World!");
+```
+::: fold ヒント
+ここに折り畳みの本文
+:::
+---
+
+|*斜体*|**太字**|
+|***太字で斜体***|普通|
+
+> 引用
+---
+↑水平線
+    </textarea>
+
+    <div id="preview" class="preview"></div>
+  </div>
+
+<script>
+  const editor = document.getElementById("editor");
+  const preview = document.getElementById("preview");
+  const downloadBtn = document.getElementById("downloadBtn");
+
+  function parseMarkdown(md) {
+    // コードブロック（表題付き）
+    md = md.replace(/```([^\n]*)\n([\s\S]*?)```/g, (match, title, code) => {
+      const lines = code.trim().split("\n")
+        .map(l => `<span class="diff-line neutral">${l.replace(/</g, "&lt;")}</span>`)
+        .join("\n");
+      return `
+        <div class="code-container">
+          <div class="code-header">■ ${title || "コード"}</div>
+          <button class="copy-btn">コピー</button>
+          <code>${lines}</code>
+        </div>`;
+    });
+
+    // 折り畳み ::: fold タイトル ... :::
+    md = md.replace(/::: fold (.+?)\n([\s\S]*?):::/g, (m, title, body) => {
+      return `
+        <details class="answer-block">
+          <summary>${title}</summary>
+          <div class="answer-content">
+            ${body.trim().replace(/\n/g, "<br>")}
+          </div>
+        </details>`;
+    });
+
+    // 見出し
+    md = md.replace(/^### (.*)$/gm, "<h4>$1</h4>");
+    md = md.replace(/^## (.*)$/gm, "<h3>$1</h3>");
+    md = md.replace(/^# (.*)$/gm, "<h2>$1</h2>");
+
+    // -- ... -- 複数行対応
+    md = md.replace(
+      /(^|\r?\n)--\s*(?:\r?\n)([\s\S]*?)(?:\r?\n)--\s*(?=\r?\n|$)/g,
+      (m, _lead, inner) => `<p>${inner.trim().replace(/\r?\n/g, "<br>")}</p>`
+    );
+    // -- 1行完結 --
+    md = md.replace(/--\s*(.*?)\s*--/g, "<p>$1</p>");
+
+    // 番号付きリスト
+    md = md.replace(/(?:^|\n)(\d+)\. (.*)(?=\n|$)/g, "<ol><li>$2</li></ol>");
+    md = md.replace(/<\/ol>\s*<ol>/g, "");
+
+    // 箇条書き
+    md = md.replace(/(?:^|\n)- (.*)(?=\n|$)/g, "<ul><li>$1</li></ul>");
+    md = md.replace(/<\/ul>\s*<ul>/g, "");
+
+    // 引用
+    md = md.replace(/^> (.*)$/gm, "<blockquote>$1</blockquote>");
+
+    // 区切り線
+    md = md.replace(/^---$/gm, "<hr>");
+
+    // 強調・斜体・インラインコード
+    md = md.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    md = md.replace(/\*(.+?)\*/g, "<em>$1</em>");
+    md = md.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+    // 画像
+    md = md.replace(/!\[(.*?)\]\((.+?)\)/g, `<img src="$2" alt="$1">`);
+
+    // ボタン風リンク
+    md = md.replace(/\[@(.+?)\]\((.+?)\)/g, `<a class="md-button" href="$2" target="_blank">$1</a>`);
+
+    // 通常リンク
+    md = md.replace(/\[(.+?)\]\((.+?)\)/g, `<a href="$2" target="_blank">$1</a>`);
+
+    // テーブル
+    md = md.replace(/((?:\|.*?\|\r?\n)+)(?=\r?\n|$)/g, (m, tableBlock) => {
+      const rows = tableBlock.trim().split(/\r?\n/).map(row => {
+        const cells = row.split("|").filter(c => c.trim() !== "");
+        return "<tr>" + cells.map(c => `<td>${c.trim()}</td>`).join("") + "</tr>";
+      }).join("");
+      return `<table border="1" cellspacing="0" cellpadding="4">${rows}</table>`;
+    });
+
+    return md;
+  }
+
+function render() {
+      const src = document.getElementById("editor").value;
+      const html = parseMarkdown(src);
+      document.getElementById("preview").innerHTML = html;
+
+    // コピーボタン再バインド
+    document.querySelectorAll(".copy-btn").forEach(btn => {
+      const code = btn.parentElement.querySelector("code");
+      btn.onclick = () => {
+        const lines = Array.from(code.querySelectorAll(".diff-line"))
+          .map(line => line.textContent.replace(/\s+$/, ''));
+        navigator.clipboard.writeText(lines.join("\n")).then(() => {
+          btn.textContent = "コピー済み！";
+          setTimeout(() => btn.textContent = "コピー", 1500);
+        });
+      };
+    });
+  }
+
+  editor.addEventListener("input", render);
+  render();
+
+  // ダウンロード処理
+  downloadBtn.addEventListener("click", () => {
+    const content = `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Markdownプレビュー出力</title>
+<style>${document.querySelector("style").innerHTML}</style>
+</head>
+<body>
+${preview.innerHTML}
+<script>
+document.querySelectorAll(".copy-btn").forEach(btn=>{
+  const code=btn.parentElement.querySelector("code");
+  btn.addEventListener("click",()=>{
+    navigator.clipboard.writeText(code.innerText).then(()=>{
+      btn.textContent="コピー済み！";
+      setTimeout(()=>btn.textContent="コピー",1500);
+    });
+  });
+});
+<\\/script>
+</body>
+</html>`;
+    const blob = new Blob([content], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "preview.html";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+</script>
+</body>
+</html>
