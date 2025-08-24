@@ -9,7 +9,6 @@ body {
   margin: 20px;
   display: block;
 }
-
 .main {
   display: flex;
   gap: 20px;
@@ -27,7 +26,6 @@ textarea {
   overflow-y: auto;
   height: 90vh;
 }
-
 /* コードブロック */
 .code-container {
   position: relative;
@@ -78,7 +76,6 @@ textarea {
 .code-container code {
   counter-reset: line;
 }
-
 /* 折り畳み */
 details.answer-block summary {
   background: #aaa;
@@ -109,42 +106,135 @@ blockquote {
   padding-left: 10px;
   color: #555;
 }
+/* ボタン風リンク */
+.md-button {
+ display: inline-block;
+ text-decoration: none;
+ color: white;
+ background-color: #0078d4;
+ padding: 6px 12px;
+ border-radius: 6px;
+  font-weight: bold;
+}
+/* 目次 */
+#toc {
+  background: #f8f8f8;
+  padding: 1em;
+  border: 1px solid #ccc;
+  margin-bottom: 2em;
+}
+#toc ul {
+  list-style: none;
+  padding-left: 0;
+}
+#toc li {
+  margin: 0.5em 0;
+}
+#toc a {
+  text-decoration: none;
+  color: #007acc;
+}
 </style>
 </head>
 <body>
   <div>
     <button id="downloadBtn">プレビューをダウンロード</button>
+    </div><div>
+    	<details class="answer-block">
+<summary>記載方法</summary>
+  <div class="answer-content">
+<table border = 1>
+<tr>
+	<th>記載方法</th>
+	<th>表示</th>
+	<th>記載方法</th>
+	<th>表示</th>
+</tr>
+<tr>
+	<td>#(半角スペース)<br>(目次に反映の見出し)</td>
+	<td><h2>見出し</h2></td>
+	<td>--<br>記載内容<br>--</td>
+	<td><p>普通の文章(段落)<br>改行もそのままOK</p></td>
+</tr>
+<tr>
+	<td>##(半角スペース)<br>(目次に反映の見出し)</td>
+	<td><h3>見出し</h3></td>
+	<td>:::展開前<br>表示内容<br>:::</td>
+	<td>折り畳み</td>
+</tr>
+<tr>
+	<td>###(半角スペース)<br>(目次の反映なし)</td>
+	<td><h4>見出し</h4></td>
+	<td>```見出し<br>記載内容<br>```</td>
+	<td>コードブロック</td>
+</tr>
+<tr>
+	<td>*斜体*</td>
+	<td><i>斜体</i></td>
+	<td>|A|B|<br>|C|D|</td>
+	<td><table border="1" cellspacing="0" cellpadding="4">
+		<tbody>
+			<tr>
+				<td>A</td>
+				<td>B</td>
+			</tr>
+			<tr>
+				<td>C</td>
+				<td>D</td>
+			</tr>
+		</tbody>
+	</table></td>
+</tr><tr>
+	<td>**太字**</td>
+	<td><b>太字</b></td>
+	<td>---</td>
+	<td><hr>水平線</td>
+</tr>
+<tr>
+	<td>***太字で斜体***</td>
+	<td><b><i>太字で斜体</i></b></td>
+	<td>>(半角スペース)引用</td>
+	<td><blockquote>引用</blockquote></td>
+</tr>
+<tr>
+	<td>[@表示名](リンク)<br>#TOPを指定でTOPに戻る</td>
+	<td> <a class="md-button" href="#TOP" target="_blank">表示名</a></td>
+	<td>[表示名](リンク)</td>
+	<td><a href="#TOP" target="_blank">表示名</a></td>
+</tr>
+</table>
+	  </div>
+	  </div>
   </div>
-
   <div class="main">
-    <textarea id="editor">
-# h2
+    <textarea id="editor"># h2
 ## h3
 ### h4
+--  
+段落と  
+改行  
 --
-段落と
-改行
---
-```見出し
-サンプルコード
-console.log("Hello World!");
+```見出し  
+var test="test"
 ```
-::: fold ヒント
+::: ヒント
 ここに折り畳みの本文
 :::
+
+> 引用(↓ハイフン3つで水平線↓)
 ---
 
 |*斜体*|**太字**|
 |***太字で斜体***|普通|
 
-> 引用
----
-↑水平線
-    </textarea>
 
+--
+すべてコードを打っていくよりかは簡易的なツールとして使用できそうなものができました。
+役に立つ場面があるのかはわかりませんが……
+--
+    </textarea>
     <div id="preview" class="preview"></div>
   </div>
-
 <script>
   const editor = document.getElementById("editor");
   const preview = document.getElementById("preview");
@@ -155,7 +245,7 @@ console.log("Hello World!");
     md = md.replace(/```([^\n]*)\n([\s\S]*?)```/g, (match, title, code) => {
       const lines = code.trim().split("\n")
         .map(l => `<span class="diff-line neutral">${l.replace(/</g, "&lt;")}</span>`)
-        .join("\n");
+        .join("");
       return `
         <div class="code-container">
           <div class="code-header">■ ${title || "コード"}</div>
@@ -163,9 +253,8 @@ console.log("Hello World!");
           <code>${lines}</code>
         </div>`;
     });
-
-    // 折り畳み ::: fold タイトル ... :::
-    md = md.replace(/::: fold (.+?)\n([\s\S]*?):::/g, (m, title, body) => {
+    // 折り畳み ::: タイトル ... :::
+    md = md.replace(/:::(.+?)\n([\s\S]*?):::/g, (m, title, body) => {
       return `
         <details class="answer-block">
           <summary>${title}</summary>
@@ -174,12 +263,10 @@ console.log("Hello World!");
           </div>
         </details>`;
     });
-
     // 見出し
     md = md.replace(/^### (.*)$/gm, "<h4>$1</h4>");
     md = md.replace(/^## (.*)$/gm, "<h3>$1</h3>");
     md = md.replace(/^# (.*)$/gm, "<h2>$1</h2>");
-
     // -- ... -- 複数行対応
     md = md.replace(
       /(^|\r?\n)--\s*(?:\r?\n)([\s\S]*?)(?:\r?\n)--\s*(?=\r?\n|$)/g,
@@ -187,35 +274,26 @@ console.log("Hello World!");
     );
     // -- 1行完結 --
     md = md.replace(/--\s*(.*?)\s*--/g, "<p>$1</p>");
-
     // 番号付きリスト
     md = md.replace(/(?:^|\n)(\d+)\. (.*)(?=\n|$)/g, "<ol><li>$2</li></ol>");
     md = md.replace(/<\/ol>\s*<ol>/g, "");
-
     // 箇条書き
     md = md.replace(/(?:^|\n)- (.*)(?=\n|$)/g, "<ul><li>$1</li></ul>");
     md = md.replace(/<\/ul>\s*<ul>/g, "");
-
     // 引用
     md = md.replace(/^> (.*)$/gm, "<blockquote>$1</blockquote>");
-
     // 区切り線
     md = md.replace(/^---$/gm, "<hr>");
-
     // 強調・斜体・インラインコード
     md = md.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
     md = md.replace(/\*(.+?)\*/g, "<em>$1</em>");
     md = md.replace(/`([^`]+)`/g, "<code>$1</code>");
-
     // 画像
     md = md.replace(/!\[(.*?)\]\((.+?)\)/g, `<img src="$2" alt="$1">`);
-
     // ボタン風リンク
     md = md.replace(/\[@(.+?)\]\((.+?)\)/g, `<a class="md-button" href="$2" target="_blank">$1</a>`);
-
     // 通常リンク
     md = md.replace(/\[(.+?)\]\((.+?)\)/g, `<a href="$2" target="_blank">$1</a>`);
-
     // テーブル
     md = md.replace(/((?:\|.*?\|\r?\n)+)(?=\r?\n|$)/g, (m, tableBlock) => {
       const rows = tableBlock.trim().split(/\r?\n/).map(row => {
@@ -224,14 +302,60 @@ console.log("Hello World!");
       }).join("");
       return `<table border="1" cellspacing="0" cellpadding="4">${rows}</table>`;
     });
-
     return md;
   }
 
-function render() {
-      const src = document.getElementById("editor").value;
-      const html = parseMarkdown(src);
-      document.getElementById("preview").innerHTML = html;
+  function slugify(text) {
+    return text.trim().toLowerCase()
+      .replace(/[^\w\-ぁ-んァ-ヶｱ-ﾝﾞﾟ一-龠]/g, '-') // 日本語・英数字以外はハイフン
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  function generateTOC(container) {
+    const headings = container.querySelectorAll("h2, h3");
+    let tocHtml = '<nav id="toc"><h2 id="top">目次</h2><ul>';
+    let lastH2 = null;
+    const usedIds = new Set();
+
+    headings.forEach(h => {
+      const text = h.textContent;
+      const tag = h.tagName.toLowerCase();
+
+      // ID生成（slugify + 重複回避）
+      let baseId = slugify(text) || "section";
+      let id = baseId;
+      let counter = 1;
+      while (usedIds.has(id)) {
+        id = `${baseId}-${counter++}`;
+      }
+      usedIds.add(id);
+      h.id = id; // ← 既存h2/h3にも適用
+
+      if (tag === "h2") {
+        if (lastH2) tocHtml += "</ul></li>";
+        tocHtml += `<li><a href="#${id}">${text}</a><ul>`;
+        lastH2 = id;
+      } else if (tag === "h3") {
+        tocHtml += `<li><a href="#${id}">${text}</a></li>`;
+      }
+    });
+
+    if (lastH2) tocHtml += "</ul></li>";
+    tocHtml += "</ul></nav>";
+
+    return tocHtml;
+  }
+
+
+  function render() {
+    const src = editor.value;
+    const html = parseMarkdown(src);
+    preview.innerHTML = html;
+
+    // 目次生成
+    const toc = generateTOC(preview);
+    preview.insertAdjacentHTML("afterbegin", toc);
 
     // コピーボタン再バインド
     document.querySelectorAll(".copy-btn").forEach(btn => {
@@ -252,27 +376,33 @@ function render() {
 
   // ダウンロード処理
   downloadBtn.addEventListener("click", () => {
-    const content = `
+    const src = editor.value;
+ const tempDiv = document.createElement("div");
+ tempDiv.innerHTML = parseMarkdown(src);
+ const toc = generateTOC(tempDiv);
+ const htmlWithIds = tempDiv.innerHTML; // IDが反映された見出し入りHTML
+ const content = `
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Markdownプレビュー出力</title>
+<title>プレビュー出力</title>
 <style>${document.querySelector("style").innerHTML}</style>
 </head>
 <body>
-${preview.innerHTML}
+${toc}
+${htmlWithIds}
 <script>
 document.querySelectorAll(".copy-btn").forEach(btn=>{
   const code=btn.parentElement.querySelector("code");
   btn.addEventListener("click",()=>{
-    navigator.clipboard.writeText(code.innerText).then(()=>{
+    navigator.clipboard.writeText(code.innerText).then(()=>{  
       btn.textContent="コピー済み！";
       setTimeout(()=>btn.textContent="コピー",1500);
     });
   });
 });
-<\\/script>
+<\/script>
 </body>
 </html>`;
     const blob = new Blob([content], { type: "text/html" });
