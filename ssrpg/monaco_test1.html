@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>Stone Script Editor</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+:root {
+  --panel-bg: #1e1e1e;
+  --panel-fg: #ddd;
+  --panel-muted: #9aa0a6;
+  --border: #3a3a3a;
+  --ruler-color: #333;
+}
+body {
+  margin: 0;
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+  background: #111;
+  color: #ddd;
+}
+.wrap {
+ flex: 1; 
+ display: grid; 
+ grid-template-columns: 1fr 300px;
+}
+#editor { 
+height: 100%; 
+}
+#docPanel {
+ border-left: 1px solid #444; 
+ padding: 10px; 
+ background: #1e1e1e; 
+}
+.panelContent {
+  height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 12px 14px;
+  line-height: 1.6;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.docHeader {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--panel-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.docName {
+  font-weight: 700;
+  color: #fff;
+}
+.muted {
+  color: var(--panel-muted);
+}
+code {
+  background: #00000055;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+}
+.hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--panel-muted);
+}
+#docSearch {
+  flex: 1;
+  font-size: 12px;
+  padding: 2px 4px;
+  background: #252525;
+  color: #ddd;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+/*
+@media (max-width: 900px) {
+  .wrap {
+    grid-template-columns: 1fr;
+  }
+  #docPanel {
+    display: none;
+  }
+}*/
+.main {
+  display: flex;
+  gap: 20px;
+}
+
+/* スマホ対応 */
+@media (max-width: 768px) {
+  .main {
+    flex-direction: column; /* 横並び → 縦並びに */
+  }
+  .right-panel {
+    width: 100%;  /* パネルを全幅で表示 */
+    display: block;
+  }
+}
+
+/* カスタム右クリックメニュー */
+#contextMenu {
+  position: absolute;
+  background: #252525;
+  border: 1px solid #555;
+  color: #ddd;
+  z-index: 9999;
+  display: none;
+  min-width: 140px;
+  font-size: 13px;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+#contextMenu li {
+  padding: 6px 10px;
+  cursor: pointer;
+  list-style: none;
+}
+#contextMenu li:hover { background: #444; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs/loader.min.js"></script>
+</head>
+<body>
+<header>
+  <h2>自作言語エディタ（Stone Script）</h2>
+  <span class="muted">補完候補やカーソル位置に応じて右パネルに説明を常時表示</span>
+</header>
+<div class="wrap">
+  <div id="editor"></div>
+  <aside id="docPanel">
+    <div class="docHeader">
+      <span class="docName" id="docName">説明パネル</span>
+      <input type="text" id="docSearch" placeholder="検索...">
+      <span class="muted" id="docMeta">Ready</span>
+    </div>
+    <div class="panelContent" id="docBody">
+      補完候補（<code>Ctrl</code>+<code>Space</code>）や、識別子上にカーソルを置くとここに説明が出ます。
+      <div class="hint">ヒント: 列ガイドは40列に設定済み。必要に応じて <code>rulers</code> を調整してください。</div>
+    </div>
+  </aside>
+</div>
+
+<!-- カスタム右クリックメニュー -->
+<div id="contextMenu">
+  <ul>
+    <li data-action="selectAll">すべて選択</li>
+    <li data-action="cut">切り取り</li>
+    <li data-action="copy">コピー</li>
+    <li data-action="paste">貼り付け</li>
+  </ul>
+</div>
+
+<script>
+require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs' } });
+
+require(['vs/editor/editor.main'], function () {
+  monaco.languages.register({ id: 'stone_script' });
+
+  monaco.languages.setMonarchTokensProvider('stone_script', {
+    tokenizer: {
+      root: [
+        [/\b(var|if|else|for|function|return|print)\b/, 'keyword'],
+        [/"([^"\\]|\\.)*$/, 'string.invalid'],
+        [/"/, { token: 'string.quote', bracket: '@open', next: '@string' }],
+        [/[0-9]+/, 'number'],
+        [/\/\/.*$/, 'comment'],
+        [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier']
+      ],
+      string: [
+        [/[^\\"]+/, 'string'],
+        [/\\./, 'string.escape'],
+        [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
+      ]
+    }
+  });
+
+  const DOCS = {
+    print: { title: 'print', body: 'print は文字列を出力します。\n使用例:\n  print "Hello World"\n  print "value=" + x' },
+    if: { title: 'if', body: '条件分岐を行います。\n構文:\n  if condition {\n    ...\n  } else {\n    ...\n  }' },
+    var: { title: 'var', body: '変数を宣言します。\n使用例:\n  var x = 10\n  var name = "stone"' },
+    function: { title: 'function', body: '関数を定義します。\n構文:\n  function name(params) {\n    ...\n  }' },
+    return: { title: 'return', body: '関数から値を返します。\n使用例:\n  return x + 1' },
+    for: { title: 'for', body: '反復処理を行います。\n構文（例）:\n  for i = 0..10 {\n    print i\n  }' }
+  };
+
+  function s(label, kind, snippet, detail, doc) {
+    return { label, kind, insertText: snippet, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, detail, documentation: doc };
+  }
+
+  monaco.languages.registerCompletionItemProvider('stone_script', {
+    provideCompletionItems: () => {
+      return { suggestions: [
+        s('print', monaco.languages.CompletionItemKind.Function, 'print "$1"', '文字を出力', DOCS.print.body),
+        s('if', monaco.languages.CompletionItemKind.Keyword, 'if $1 {\n\t$0\n}', '条件分岐', DOCS.if.body),
+        s('var', monaco.languages.CompletionItemKind.Keyword, 'var ${1:name} = $0', '変数宣言', DOCS.var.body),
+        s('function', monaco.languages.CompletionItemKind.Function, 'function ${1:name}(${2:params}) {\n\t$0\n}', '関数定義', DOCS.function.body),
+        s('return', monaco.languages.CompletionItemKind.Keyword, 'return $0', '値を返す', DOCS.return.body),
+        s('for', monaco.languages.CompletionItemKind.Keyword, 'for ${1:i} = ${2:0}..${3:10} {\n\t$0\n}', '反復処理', DOCS.for.body)
+      ]};
+    }
+  });
+
+  const editorOptions = {
+    value: 'print "Hello World"\nvar x = 10\nif x {\n\tprint "ok"\n}',
+    language: 'stone_script',
+    theme: 'vs-dark',
+    fontSize: 14,
+    lineHeight: 22,
+    rulers: [40],
+    wordWrap: 'off',
+    minimap: { enabled: false },
+    automaticLayout: true,
+    contextmenu: false,
+    suggest: { showWords: true, preview: true, showInlineDetails: true },
+    quickSuggestions: { other: true, comments: false, strings: true }
+  };
+  const editor = monaco.editor.create(document.getElementById('editor'), editorOptions);
+
+  const docNameEl = document.getElementById('docName');
+  const docBodyEl = document.getElementById('docBody');
+  const docMetaEl = document.getElementById('docMeta');
+  const docSearchEl = document.getElementById('docSearch');
+
+  function showDocText(title, body, meta = 'Info') {
+    docNameEl.textContent = title || '説明';
+    docBodyEl.textContent = body || '（説明はありません）';
+    docMetaEl.textContent = meta;
+  }
+
+  function getDocForWord(word) { return DOCS[word] || null; }
+
+  function updateDocPanel(){
+    const pos = editor.getPosition();
+    if(!pos) return;
+    const word = editor.getModel().getWordAtPosition(pos)?.word;
+    const doc = DOCS[word];
+    if(doc){
+      docNameEl.textContent = doc.title;
+      docBodyEl.textContent = doc.body;
+    } else {
+      docNameEl.textContent = "説明パネル";
+      docBodyEl.textContent = "説明はありません。";
+    }
+  }
+  editor.onDidChangeCursorPosition(updateDocPanel);
+  editor.onDidChangeModelContent(updateDocPanel);
+
+  // ---------- カスタム右クリック ----------
+  const contextMenu = document.getElementById('contextMenu');
+  editor.getDomNode().addEventListener('contextmenu', e=>{
+    e.preventDefault();
+    contextMenu.style.display = "block";
+    contextMenu.style.left = e.pageX + "px";
+    contextMenu.style.top = e.pageY + "px";
+  });
+  document.addEventListener("click", ()=> contextMenu.style.display="none");
+
+  contextMenu.addEventListener("click", e=>{
+    const action = e.target.dataset.action;
+    if(!action) return;
+    const selection = editor.getSelection();
+    const model = editor.getModel();
+    switch(action){
+      case "selectAll":
+        editor.setSelection(model.getFullModelRange());
+        break;
+      case "cut":
+        navigator.clipboard.writeText(model.getValueInRange(selection));
+        editor.executeEdits("", [{ range: selection, text: "" }]);
+        break;
+      case "copy":
+        navigator.clipboard.writeText(model.getValueInRange(selection));
+        break;
+      case "paste":
+        navigator.clipboard.readText().then(text=>{
+          editor.executeEdits("", [{ range: selection, text }]);
+        });
+        break;
+    }
+    contextMenu.style.display = "none";
+  });
+  
+  
+  
+});
+</script>
+</body>
+</html>
