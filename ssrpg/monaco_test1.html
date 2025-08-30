@@ -289,6 +289,22 @@ require(['vs/editor/editor.main'], function () {
   
   
   
+  
+  document.addEventListener("contextmenu", e => e.preventDefault()); // 標準メニュー無効化
+
+document.addEventListener("touchstart", e => {
+  this.touchTimer = setTimeout(() => {
+    showCustomMenu(e.touches[0].clientX, e.touches[0].clientY);
+  }, 600); // 0.6秒長押しでメニュー表示
+});
+
+document.addEventListener("touchend", () => {
+  clearTimeout(this.touchTimer);
+});
+
+  
+  
+  
 });
 </script>
 </body>
