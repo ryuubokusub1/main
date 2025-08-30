@@ -10,7 +10,6 @@
   --panel-fg: #ddd;
   --panel-muted: #9aa0a6;
   --border: #3a3a3a;
-  --ruler-color: #333;
 }
 body {
   margin: 0;
@@ -29,13 +28,6 @@ header {
   gap: 4px;
   position: relative;
 }
-<!--
-.wrap {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 300px;
-}
--->
 #editor { height: 100%; }
 #docPanel {
   border-left: 1px solid #444;
@@ -51,72 +43,67 @@ header {
   white-space: pre-wrap;
   word-break: break-word;
 }
-.docHeader {
-  padding: 6px 0;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+.docHeader { padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
 .docName { font-weight: 700; color: #fff; }
 .muted { color: var(--panel-muted); }
-code {
-  background: #00000055;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-#docSearch {
-  flex: 1;
-  font-size: 12px;
-  padding: 2px 4px;
-  background: #252525;
-  color: #ddd;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-}
-/* メニュースタイル */
-#customMenu, #contextMenu {
-  position: absolute;
-  display: none;
-  background: #252525;
-  border: 1px solid #555;
-  color: #ddd;
-  min-width: 140px;
-  z-index: 1000;
-  border-radius: 4px;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  font-size: 13px;
-}
-#customMenu li, #contextMenu li {
-  padding: 6px 10px;
-  cursor: pointer;
-}
+code { background: #00000055; padding: 2px 6px; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+#docSearch { flex: 1; font-size: 12px; padding: 2px 4px; background: #252525; color: #ddd; border: 1px solid var(--border); border-radius: 4px; }
+#customMenu, #contextMenu { position: absolute; display: none; background: #252525; border: 1px solid #555; color: #ddd; min-width: 140px; z-index: 10000; border-radius: 4px; list-style: none; padding: 0; margin: 0; font-size: 13px; }
+#customMenu li, #contextMenu li { padding: 6px 10px; cursor: pointer; }
 #customMenu li:hover, #contextMenu li:hover { background: #444; }
 .wrap {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 300px; /* デフォルトは右にパネル */
-  grid-template-rows: auto;        /* 高さは自動 */
-  gap: 0;
+  grid-template-columns: 1fr minmax(0, 300px);
+  grid-template-rows: auto;
+  height: 100%; /* 追加 */
 }
 
-/* スマホ縦画面（幅 600px 以下を目安）で下にパネル */
+
+#docPanel {
+  border-left: 1px solid #444;
+  padding: 10px;
+  background: var(--panel-bg);
+  max-width: 100%; /* 横幅が画面をはみ出さないように */
+  overflow: auto;
+}
+
 @media (max-width: 600px) {
   .wrap {
-    grid-template-columns: 1fr;   /* 1列にしてパネルを下に */
-    grid-template-rows: 1fr 300px; /* 上：エディタ 下：パネル */
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto; /* 上：editor 下：panel */
+  }
+  #editor {
+    height: calc(100vh - 50px - 50px); /* headerやボタンの高さに応じて調整 */
   }
   #docPanel {
+    width: 100%;
+    max-height: calc(100vh - 50px); /* パネルも画面内に収める */
+    overflow: auto;
+    order: 2;
     border-left: none;
     border-top: 1px solid #444;
-    width: 100%;
-    order: 2;
   }
 }
 
+.overlay {
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.3);
+  display: none; justify-content: center; align-items: center;
+  z-index: 99999;
+}
+.modal {
+  background: #fff; border-radius: 8px; padding: 10px; min-width: 400px;
+  z-index: 100000; position: relative;
+}
+.tabs { display: flex; border-bottom: 2px solid #ccc; }
+.tab { padding: 8px 16px; cursor: pointer; border: 1px solid #ccc; border-bottom: none; background: #eee; margin-right: 4px; border-radius: 6px 6px 0 0; }
+.tab.active { background: #fff; font-weight: bold; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+td { border: 1px solid #aaa; padding: 8px; text-align: center; cursor: pointer; }
+td:hover { background: #f0f0f0; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs/loader.min.js"></script>
 </head>
@@ -124,7 +111,10 @@ code {
 <header>
   <h2>自作言語エディタ（Stone Script）</h2>
   <span class="muted">補完候補やカーソル位置に応じて右パネルに説明を表示</span>
-  <button id="menuBtn" style="width:auto; padding:2px 6px;">☰ メニュー</button>
+  <div style="display:flex; gap:8px; margin-top:6px;">
+    <button id="menuBtn" style="width:auto; padding:2px 6px;">☰ メニュー</button>
+    <button id="openBtn">表を開く</button>
+  </div>
   <ul id="customMenu">
     <li data-action="selectAll">すべて選択</li>
     <li data-action="cut">切り取り</li>
@@ -147,7 +137,6 @@ code {
   </aside>
 </div>
 
-<!-- 右クリックメニュー -->
 <ul id="contextMenu">
   <li data-action="selectAll">すべて選択</li>
   <li data-action="cut">切り取り</li>
@@ -155,7 +144,30 @@ code {
   <li data-action="paste">貼り付け</li>
 </ul>
 
+<!-- overlay は body の末尾 -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <div class="tabs">
+      <div class="tab active" data-tab="tab1">タブ1</div>
+      <div class="tab" data-tab="tab2">タブ2</div>
+    </div>
+    <div class="tab-content active" id="tab1">
+      <table>
+        <tr><td>りんご</td><td>みかん</td></tr>
+        <tr><td>ぶどう</td><td>バナナ</td></tr>
+      </table>
+    </div>
+    <div class="tab-content" id="tab2">
+      <table>
+        <tr><td>犬</td><td>猫</td></tr>
+        <tr><td>鳥</td><td>魚</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
 <script>
+// Monaco Editor 初期化
 require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs' } });
 require(['vs/editor/editor.main'], function () {
   monaco.languages.register({ id: 'stone_script' });
@@ -191,16 +203,16 @@ require(['vs/editor/editor.main'], function () {
   }
 
   monaco.languages.registerCompletionItemProvider('stone_script', {
-    provideCompletionItems: () => {
-      return { suggestions: [
+    provideCompletionItems: () => ({
+      suggestions: [
         s('print', monaco.languages.CompletionItemKind.Function, 'print "$1"', '文字を出力', DOCS.print.body),
         s('if', monaco.languages.CompletionItemKind.Keyword, 'if $1 {\n\t$0\n}', '条件分岐', DOCS.if.body),
         s('var', monaco.languages.CompletionItemKind.Keyword, 'var ${1:name} = $0', '変数宣言', DOCS.var.body),
         s('function', monaco.languages.CompletionItemKind.Function, 'function ${1:name}(${2:params}) {\n\t$0\n}', '関数定義', DOCS.function.body),
         s('return', monaco.languages.CompletionItemKind.Keyword, 'return $0', '値を返す', DOCS.return.body),
         s('for', monaco.languages.CompletionItemKind.Keyword, 'for ${1:i} = ${2:0}..${3:10} {\n\t$0\n}', '反復処理', DOCS.for.body)
-      ]};
-    }
+      ]
+    })
   });
 
   const editor = monaco.editor.create(document.getElementById('editor'), {
@@ -218,9 +230,9 @@ require(['vs/editor/editor.main'], function () {
     quickSuggestions: { other: true, comments: false, strings: true }
   });
 
+  // ドキュメントパネル更新
   const docNameEl = document.getElementById('docName');
   const docBodyEl = document.getElementById('docBody');
-
   function updateDocPanel() {
     const pos = editor.getPosition();
     if(!pos) return;
@@ -234,11 +246,10 @@ require(['vs/editor/editor.main'], function () {
       docBodyEl.textContent = "説明はありません。";
     }
   }
-
   editor.onDidChangeCursorPosition(updateDocPanel);
   editor.onDidChangeModelContent(updateDocPanel);
 
-  // メニューボタン
+  // メニュー機能
   const menuBtn = document.getElementById("menuBtn");
   const customMenu = document.getElementById("customMenu");
   menuBtn.addEventListener("click", (e) => {
@@ -248,10 +259,8 @@ require(['vs/editor/editor.main'], function () {
     customMenu.style.display = customMenu.style.display === "block" ? "none" : "block";
     e.stopPropagation();
   });
-  document.addEventListener("click", (e) => {
-    if (!customMenu.contains(e.target) && e.target !== menuBtn) {
-      customMenu.style.display = "none";
-    }
+  document.addEventListener("click", e => {
+    if (!customMenu.contains(e.target) && e.target !== menuBtn) customMenu.style.display = "none";
   });
   customMenu.addEventListener("click", e => {
     const action = e.target.dataset.action;
@@ -268,9 +277,7 @@ require(['vs/editor/editor.main'], function () {
         navigator.clipboard.writeText(model.getValueInRange(selection));
         break;
       case "paste":
-        navigator.clipboard.readText().then(text=>{
-          editor.executeEdits("", [{ range: selection, text }]);
-        });
+        navigator.clipboard.readText().then(text=>{ editor.executeEdits("", [{ range: selection, text }]); });
         break;
     }
     customMenu.style.display = "none";
@@ -300,13 +307,45 @@ require(['vs/editor/editor.main'], function () {
         navigator.clipboard.writeText(model.getValueInRange(selection));
         break;
       case "paste":
-        navigator.clipboard.readText().then(text=>{
-          editor.executeEdits("", [{ range: selection, text }]);
-        });
+        navigator.clipboard.readText().then(text=>{ editor.executeEdits("", [{ range: selection, text }]); });
         break;
     }
     contextMenu.style.display = "none";
   });
+});
+
+// 表モーダル
+const openBtn = document.getElementById("openBtn");
+const overlay = document.getElementById("overlay");
+const modal = document.getElementById("modal");
+openBtn.addEventListener("click", () => { overlay.style.display = "flex"; });
+
+// タブ切り替え
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.tab).classList.add("active");
+  });
+});
+
+// tdクリックでコピー
+document.querySelectorAll(".tab-content").forEach(tabContent => {
+  tabContent.addEventListener("click", (e) => {
+    const td = e.target.closest("td");
+    if(td){
+      navigator.clipboard.writeText(td.innerText).then(() => {
+        console.log(`コピーしました: ${td.innerText}`);
+        overlay.style.display = "none";
+      });
+    }
+  });
+});
+
+// モーダル外クリックで閉じる
+overlay.addEventListener("click", (e) => {
+  if(!modal.contains(e.target)) overlay.style.display = "none";
 });
 </script>
 </body>
