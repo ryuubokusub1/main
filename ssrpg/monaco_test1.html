@@ -29,11 +29,13 @@ header {
   gap: 4px;
   position: relative;
 }
+<!--
 .wrap {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 300px;
 }
+-->
 #editor { height: 100%; }
 #docPanel {
   border-left: 1px solid #444;
@@ -93,8 +95,20 @@ code {
   cursor: pointer;
 }
 #customMenu li:hover, #contextMenu li:hover { background: #444; }
-@media (max-width: 900px) {
-  .wrap { grid-template-columns: 1fr; }
+.wrap {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 300px; /* デフォルトは右にパネル */
+  grid-template-rows: auto;        /* 高さは自動 */
+  gap: 0;
+}
+
+/* スマホ縦画面（幅 600px 以下を目安）で下にパネル */
+@media (max-width: 600px) {
+  .wrap {
+    grid-template-columns: 1fr;   /* 1列にしてパネルを下に */
+    grid-template-rows: 1fr 300px; /* 上：エディタ 下：パネル */
+  }
   #docPanel {
     border-left: none;
     border-top: 1px solid #444;
@@ -102,6 +116,7 @@ code {
     order: 2;
   }
 }
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs/loader.min.js"></script>
 </head>
