@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <title>Stone Script Editor</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 :root {
   --panel-bg: #1e1e1e;
@@ -19,24 +19,30 @@ body {
   flex-direction: column;
   background: #111;
   color: #ddd;
+  font-family: sans-serif;
+}
+header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
 }
 .wrap {
- flex: 1; 
- display: grid; 
- grid-template-columns: 1fr 300px;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 300px;
 }
-#editor { 
-height: 100%; 
-}
+#editor { height: 100%; }
 #docPanel {
- border-left: 1px solid #444; 
- padding: 10px; 
- background: #1e1e1e; 
+  border-left: 1px solid #444;
+  padding: 10px;
+  background: var(--panel-bg);
 }
 .panelContent {
   height: 100%;
   overflow: auto;
-  overscroll-behavior: contain;
   padding: 12px 14px;
   line-height: 1.6;
   font-size: 14px;
@@ -44,32 +50,19 @@ height: 100%;
   word-break: break-word;
 }
 .docHeader {
-  padding: 10px 12px;
+  padding: 6px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--panel-muted);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
-.docName {
-  font-weight: 700;
-  color: #fff;
-}
-.muted {
-  color: var(--panel-muted);
-}
+.docName { font-weight: 700; color: #fff; }
+.muted { color: var(--panel-muted); }
 code {
   background: #00000055;
   padding: 2px 6px;
   border-radius: 6px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  font-size: 13px;
-}
-.hint {
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--panel-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 #docSearch {
   flex: 1;
@@ -80,58 +73,51 @@ code {
   border: 1px solid var(--border);
   border-radius: 4px;
 }
-/*
-@media (max-width: 900px) {
-  .wrap {
-    grid-template-columns: 1fr;
-  }
-  #docPanel {
-    display: none;
-  }
-}*/
-.main {
-  display: flex;
-  gap: 20px;
-}
-
-/* スマホ対応 */
-@media (max-width: 768px) {
-  .main {
-    flex-direction: column; /* 横並び → 縦並びに */
-  }
-  .right-panel {
-    width: 100%;  /* パネルを全幅で表示 */
-    display: block;
-  }
-}
-
-/* カスタム右クリックメニュー */
-#contextMenu {
+/* メニュースタイル */
+#customMenu, #contextMenu {
   position: absolute;
+  display: none;
   background: #252525;
   border: 1px solid #555;
   color: #ddd;
-  z-index: 9999;
-  display: none;
   min-width: 140px;
-  font-size: 13px;
+  z-index: 1000;
   border-radius: 4px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
 }
-#contextMenu li {
+#customMenu li, #contextMenu li {
   padding: 6px 10px;
   cursor: pointer;
-  list-style: none;
 }
-#contextMenu li:hover { background: #444; }
+#customMenu li:hover, #contextMenu li:hover { background: #444; }
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: 1fr; }
+  #docPanel {
+    border-left: none;
+    border-top: 1px solid #444;
+    width: 100%;
+    order: 2;
+  }
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs/loader.min.js"></script>
 </head>
 <body>
 <header>
   <h2>自作言語エディタ（Stone Script）</h2>
-  <span class="muted">補完候補やカーソル位置に応じて右パネルに説明を常時表示</span>
+  <span class="muted">補完候補やカーソル位置に応じて右パネルに説明を表示</span>
+  <button id="menuBtn" style="width:auto; padding:2px 6px;">☰ メニュー</button>
+  <ul id="customMenu">
+    <li data-action="selectAll">すべて選択</li>
+    <li data-action="cut">切り取り</li>
+    <li data-action="copy">コピー</li>
+    <li data-action="paste">貼り付け</li>
+  </ul>
 </header>
+
 <div class="wrap">
   <div id="editor"></div>
   <aside id="docPanel">
@@ -141,28 +127,23 @@ code {
       <span class="muted" id="docMeta">Ready</span>
     </div>
     <div class="panelContent" id="docBody">
-      補完候補（<code>Ctrl</code>+<code>Space</code>）や、識別子上にカーソルを置くとここに説明が出ます。
-      <div class="hint">ヒント: 列ガイドは40列に設定済み。必要に応じて <code>rulers</code> を調整してください。</div>
+      補完候補（<code>Ctrl</code>+<code>Space</code>）や識別子上にカーソルを置くと説明が出ます。
     </div>
   </aside>
 </div>
 
-<!-- カスタム右クリックメニュー -->
-<div id="contextMenu">
-  <ul>
-    <li data-action="selectAll">すべて選択</li>
-    <li data-action="cut">切り取り</li>
-    <li data-action="copy">コピー</li>
-    <li data-action="paste">貼り付け</li>
-  </ul>
-</div>
+<!-- 右クリックメニュー -->
+<ul id="contextMenu">
+  <li data-action="selectAll">すべて選択</li>
+  <li data-action="cut">切り取り</li>
+  <li data-action="copy">コピー</li>
+  <li data-action="paste">貼り付け</li>
+</ul>
 
 <script>
 require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs' } });
-
 require(['vs/editor/editor.main'], function () {
   monaco.languages.register({ id: 'stone_script' });
-
   monaco.languages.setMonarchTokensProvider('stone_script', {
     tokenizer: {
       root: [
@@ -182,12 +163,12 @@ require(['vs/editor/editor.main'], function () {
   });
 
   const DOCS = {
-    print: { title: 'print', body: 'print は文字列を出力します。\n使用例:\n  print "Hello World"\n  print "value=" + x' },
-    if: { title: 'if', body: '条件分岐を行います。\n構文:\n  if condition {\n    ...\n  } else {\n    ...\n  }' },
-    var: { title: 'var', body: '変数を宣言します。\n使用例:\n  var x = 10\n  var name = "stone"' },
-    function: { title: 'function', body: '関数を定義します。\n構文:\n  function name(params) {\n    ...\n  }' },
-    return: { title: 'return', body: '関数から値を返します。\n使用例:\n  return x + 1' },
-    for: { title: 'for', body: '反復処理を行います。\n構文（例）:\n  for i = 0..10 {\n    print i\n  }' }
+    print: { title: 'print', body: '文字列を出力します\n例:\nprint "Hello World"' },
+    if: { title: 'if', body: '条件分岐\nif condition { ... } else { ... }' },
+    var: { title: 'var', body: '変数宣言\nvar x = 10' },
+    function: { title: 'function', body: '関数定義\nfunction name(params) { ... }' },
+    return: { title: 'return', body: '値を返す\nreturn x + 1' },
+    for: { title: 'for', body: '反復処理\nfor i = 0..10 { ... }' }
   };
 
   function s(label, kind, snippet, detail, doc) {
@@ -207,7 +188,7 @@ require(['vs/editor/editor.main'], function () {
     }
   });
 
-  const editorOptions = {
+  const editor = monaco.editor.create(document.getElementById('editor'), {
     value: 'print "Hello World"\nvar x = 10\nif x {\n\tprint "ok"\n}',
     language: 'stone_script',
     theme: 'vs-dark',
@@ -220,23 +201,12 @@ require(['vs/editor/editor.main'], function () {
     contextmenu: false,
     suggest: { showWords: true, preview: true, showInlineDetails: true },
     quickSuggestions: { other: true, comments: false, strings: true }
-  };
-  const editor = monaco.editor.create(document.getElementById('editor'), editorOptions);
+  });
 
   const docNameEl = document.getElementById('docName');
   const docBodyEl = document.getElementById('docBody');
-  const docMetaEl = document.getElementById('docMeta');
-  const docSearchEl = document.getElementById('docSearch');
 
-  function showDocText(title, body, meta = 'Info') {
-    docNameEl.textContent = title || '説明';
-    docBodyEl.textContent = body || '（説明はありません）';
-    docMetaEl.textContent = meta;
-  }
-
-  function getDocForWord(word) { return DOCS[word] || null; }
-
-  function updateDocPanel(){
+  function updateDocPanel() {
     const pos = editor.getPosition();
     if(!pos) return;
     const word = editor.getModel().getWordAtPosition(pos)?.word;
@@ -249,28 +219,64 @@ require(['vs/editor/editor.main'], function () {
       docBodyEl.textContent = "説明はありません。";
     }
   }
+
   editor.onDidChangeCursorPosition(updateDocPanel);
   editor.onDidChangeModelContent(updateDocPanel);
 
-  // ---------- カスタム右クリック ----------
-  const contextMenu = document.getElementById('contextMenu');
-  editor.getDomNode().addEventListener('contextmenu', e=>{
+  // メニューボタン
+  const menuBtn = document.getElementById("menuBtn");
+  const customMenu = document.getElementById("customMenu");
+  menuBtn.addEventListener("click", (e) => {
+    const rect = menuBtn.getBoundingClientRect();
+    customMenu.style.left = rect.left + "px";
+    customMenu.style.top = rect.bottom + "px";
+    customMenu.style.display = customMenu.style.display === "block" ? "none" : "block";
+    e.stopPropagation();
+  });
+  document.addEventListener("click", (e) => {
+    if (!customMenu.contains(e.target) && e.target !== menuBtn) {
+      customMenu.style.display = "none";
+    }
+  });
+  customMenu.addEventListener("click", e => {
+    const action = e.target.dataset.action;
+    const selection = editor.getSelection();
+    const model = editor.getModel();
+    if(!action) return;
+    switch(action){
+      case "selectAll": editor.setSelection(model.getFullModelRange()); break;
+      case "cut":
+        navigator.clipboard.writeText(model.getValueInRange(selection));
+        editor.executeEdits("", [{ range: selection, text: "" }]);
+        break;
+      case "copy":
+        navigator.clipboard.writeText(model.getValueInRange(selection));
+        break;
+      case "paste":
+        navigator.clipboard.readText().then(text=>{
+          editor.executeEdits("", [{ range: selection, text }]);
+        });
+        break;
+    }
+    customMenu.style.display = "none";
+  });
+
+  // 右クリックメニュー
+  const contextMenu = document.getElementById("contextMenu");
+  editor.getDomNode().addEventListener('contextmenu', e => {
     e.preventDefault();
     contextMenu.style.display = "block";
     contextMenu.style.left = e.pageX + "px";
     contextMenu.style.top = e.pageY + "px";
   });
-  document.addEventListener("click", ()=> contextMenu.style.display="none");
-
+  document.addEventListener("click", () => contextMenu.style.display="none");
   contextMenu.addEventListener("click", e=>{
     const action = e.target.dataset.action;
-    if(!action) return;
     const selection = editor.getSelection();
     const model = editor.getModel();
+    if(!action) return;
     switch(action){
-      case "selectAll":
-        editor.setSelection(model.getFullModelRange());
-        break;
+      case "selectAll": editor.setSelection(model.getFullModelRange()); break;
       case "cut":
         navigator.clipboard.writeText(model.getValueInRange(selection));
         editor.executeEdits("", [{ range: selection, text: "" }]);
@@ -286,25 +292,6 @@ require(['vs/editor/editor.main'], function () {
     }
     contextMenu.style.display = "none";
   });
-  
-  
-  
-  
-  document.addEventListener("contextmenu", e => e.preventDefault()); // 標準メニュー無効化
-
-document.addEventListener("touchstart", e => {
-  this.touchTimer = setTimeout(() => {
-    showCustomMenu(e.touches[0].clientX, e.touches[0].clientY);
-  }, 600); // 0.6秒長押しでメニュー表示
-});
-
-document.addEventListener("touchend", () => {
-  clearTimeout(this.touchTimer);
-});
-
-  
-  
-  
 });
 </script>
 </body>
