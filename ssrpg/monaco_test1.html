@@ -93,12 +93,12 @@ code { background: #00000055; padding: 2px 6px; border-radius: 6px; font-family:
   z-index: 99999;
 }
 .modal {
-  background: #fff; border-radius: 8px; padding: 10px; min-width: 400px;
+  background: #222; border-radius: 8px; padding: 10px; min-width: 400px;
   z-index: 100000; position: relative;
 }
 .tabs { display: flex; border-bottom: 2px solid #ccc; }
-.tab { padding: 8px 16px; cursor: pointer; border: 1px solid #ccc; border-bottom: none; background: #eee; margin-right: 4px; border-radius: 6px 6px 0 0; }
-.tab.active { background: #fff; font-weight: bold; }
+.tab { padding: 8px 16px; cursor: pointer; border: 1px solid #ccc; border-bottom: none; background: #222; margin-right: 4px; border-radius: 6px 6px 0 0; }
+.tab.active { background: #666; font-weight: bold; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 table { border-collapse: collapse; width: 100%; margin-top: 10px; }
@@ -148,20 +148,110 @@ td:hover { background: #f0f0f0; }
 <div class="overlay" id="overlay">
   <div class="modal" id="modal">
     <div class="tabs">
-      <div class="tab active" data-tab="tab1">タブ1</div>
-      <div class="tab" data-tab="tab2">タブ2</div>
+      <div class="tab active" data-tab="tab1">装飾</div>
+      <div class="tab" data-tab="tab2">矢印</div>
+      <div class="tab" data-tab="tab3">罫線</div>
+      <div class="tab" data-tab="tab4">属性</div>
+      <div class="tab" data-tab="tab5">ブロック</div>
+      <div class="tab" data-tab="tab9">ギリシャ</div>
+      <div class="tab" data-tab="tab6">記号1</div>
+      <div class="tab" data-tab="tab7">記号2</div>
+      <div class="tab" data-tab="tab8">記号3</div>
+      <div class="tab" data-tab="tab10">記号4</div>      
     </div>
     <div class="tab-content active" id="tab1">
       <table>
-        <tr><td>りんご</td><td>みかん</td></tr>
-        <tr><td>ぶどう</td><td>バナナ</td></tr>
+        <tr>
+        	<td>☆</td>
+        	<td>☺️</td>
+        	<td>ʘ</td>
+        	<td>☼</td>
+        </tr>
+        <tr>
+        	<td>❤️</td>
+        	<td>♦️</td>
+        	<td>♣️</td>
+        	<td>♠️</td>
+        </tr>
+        <tr>
+        	<td>•</td>
+        	<td>◘</td>
+        	<td>⏹️</td>
+        	<td>◙</td>
+        </tr>
+        <tr>
+        	<td>♂️</td>
+        	<td>♀️</td>
+        	<td>♪</td>
+        	<td>♫</td>
+        </tr>
       </table>
     </div>
     <div class="tab-content" id="tab2">
-      <table>
-        <tr><td>犬</td><td>猫</td></tr>
-        <tr><td>鳥</td><td>魚</td></tr>
-      </table>
+		<table>
+		<tr><td>▶️</td><td>◀️</td><td>▲</td><td>▼</td></tr>
+		<tr><td>↑</td><td>↓</td><td>→</td><td>←</td></tr>
+		</table>
+    </div>
+    <div class="tab-content" id="tab3">
+    <table>
+<tr><td>│</td><td>┤</td><td>╡</td><td>╢</td><td>╖</td><td>╕</td><td>╣</td><td>║</td><td>╗</td><td>╝</td><td>╜</td><td>╛</td><td>┐</td></tr>
+<tr><td>└</td><td>┴</td><td>┬</td><td>├</td><td>─</td><td>┼</td><td>╞</td><td>╟</td><td>╚</td><td>╔</td><td>╩</td><td>╦</td><td>╠</td></tr>
+<tr><td>═</td><td>╬</td><td>╧</td><td>╨</td><td>╤</td><td>╥</td><td>╙</td><td>╘</td><td>╒</td><td>╓</td><td>╫</td><td>╪</td><td>┘</td><td>┌</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab4">
+    <table>
+<tr><td>❤️</td><td>∞</td><td>❄️</td><td>\\\*</td><td>δ</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab5">
+    <table>
+<tr><td>░</td><td>▒</td><td>▓</td><td>█</td><td>▄</td><td>▀</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab6">
+    <table>
+<tr><td>À</td><td>⚿</td><td>œ</td><td>§</td><td>≠</td><td>¿</td><td>¯</td><td>¡</td></tr>
+<tr><td>!</td><td>＂</td><td>#</td><td>$</td><td>%</td><td>\\\&</td><td>'</td><td>(</td></tr>
+<tr><td>)</td><td>\\\*</td><td>+</td><td>,</td><td>-</td><td>.</td><td>/</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab7">
+    <table>
+<tr><td>:</td><td>;</td><td><</td><td>=</td><td>></td><td>?</td><td>@</td><td>\\\[</td></tr>
+<tr><td>\\\\</td><td>]</td><td>^</td><td>`</td><td>{</td><td>|</td><td>}</td><td>~</td><td>´</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab8">
+    <table>
+<tr><td>Ç</td><td>ü</td><td>é</td><td>â</td><td>ä</td><td>à</td><td>å</td><td>ç</td></tr>
+<tr><td>ê</td><td>ë</td><td>è</td><td>ï</td><td>î</td><td>ì</td><td>Ä</td><td>Å</td></tr>
+<tr><td>É</td><td>æ</td><td>Æ</td><td>ô</td><td>ö</td><td>ò</td><td>û</td><td>ù</td></tr>
+<tr><td>ý</td><td>Ö</td><td>Ü</td><td>€</td><td>£</td><td>￥</td><td>₩</td><td>Á</td></tr>
+<tr><td>á</td><td>í</td><td>ó</td><td>ú</td><td>ñ</td><td>Ñ</td><td>ã</td><td>õ</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab9">
+    <table>
+<tr><td>ζ</td><td>η</td><td>ξ</td><td>λ</td><td>ψ</td><td>έ</td><td>«</td><td>»</td></tr>
+<tr><td>ρ</td><td>ι</td><td>α</td><td>β</td><td>γ</td><td>π</td><td>Σ</td><td>σ</td></tr>
+<tr><td>μ</td><td>τ</td><td>Φ</td><td>Θ</td><td>Ω</td><td>δ</td><td>∞</td><td>φ</td></tr>
+<tr><td>ε</td><td>ω</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab10">
+    <table>
+<tr><td>≡</td><td>±</td><td>≥</td><td>≤</td><td>⌐</td><td>¬</td><td>÷</td><td>≈</td></tr>
+<tr><td>°</td><td>…</td><td>·</td><td>†</td><td>☤</td><td>∆</td><td>❄️</td><td>┊</td></tr>
+</table>
     </div>
   </div>
 </div>
