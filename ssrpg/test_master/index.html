@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Stone Script Editor</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root {
+  --panel-bg: #1e1e1e;
+  --panel-fg: #ddd;
+  --panel-muted: #9aa0a6;
+  --border: #3a3a3a;
+}
+body {
+  margin: 0;
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+  background: #111;
+  color: #ddd;
+  font-family: sans-serif;
+}
+header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+#editor { height: 100%; }
+#docPanel {
+  border-left: 1px solid #444;
+  padding: 10px;
+  background: var(--panel-bg);
+}
+.panelContent {
+  height: 100%;
+  overflow: auto;
+  padding: 12px 14px;
+  line-height: 1.6;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.docHeader { padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
+.docName { font-weight: 700; color: #fff; }
+.muted { color: var(--panel-muted); }
+code { background: #00000055; padding: 2px 6px; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+#docSearch { flex: 1; font-size: 12px; padding: 2px 4px; background: #252525; color: #ddd; border: 1px solid var(--border); border-radius: 4px; }
+.wrap {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 300px);
+  grid-template-rows: auto;
+  height: 100%;
+}
+#docPanel {
+  border-left: 1px solid #444;
+  padding: 10px;
+  background: var(--panel-bg);
+  max-width: 100%;
+  overflow: auto;
+}
+@media (max-width: 600px) {
+  .wrap {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+  #editor {
+    height: calc(100vh - 50px - 50px);
+  }
+  #docPanel {
+    width: 100%;
+    max-height: calc(100vh - 50px);
+    overflow: auto;
+    order: 2;
+    border-left: none;
+    border-top: 1px solid #444;
+  }
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs/loader.min.js"></script>
+</head>
+<body>
+<header>
+  <h2>エディタ（Stone Script）</h2>
+  <span class="muted">補完候補やカーソル位置に応じて右パネルに説明を表示</span>
+</header>
+<div class="wrap">
+  <div id="editor"></div>
+  <aside id="docPanel">
+    <div class="docHeader">
+      <span class="docName" id="docName">説明</span>
+      <input type="text" id="docSearch" placeholder="検索...">
+      <span class="muted" id="docMeta"></span>
+    </div>
+    <div class="panelContent" id="docBody">
+      補完候補（<code>Ctrl</code>+<code>Space</code>）や識別子上にカーソルを置くと説明が出ます。
+    </div>
+  </aside>
+</div>
+
+<script>
+require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs' } });
+
+require(['vs/editor/editor.main'], function () {
+  monaco.languages.register({ id: 'stone_script' });
+  monaco.languages.setMonarchTokensProvider('stone_script', {
+    tokenizer: {
+      root: [
+        [/\b(var|if|else|for|function|return|print)\b/, 'keyword'],
+        [/[:?^]/, 'keyword'],
+        [/"([^"\\]|\\.)*$/, 'string.invalid'],
+        [/"/, { token: 'string.quote', bracket: '@open', next: '@string' }],
+        [/[0-9]+/, 'number'],
+        [/\/\/.*$/, 'comment'],
+        [/\/\*/, 'comment', '@comment'],
+        [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier']
+      ],
+      comment: [
+        [/[^\/*]+/, 'comment'],
+        [/\*\//, 'comment', '@pop'],
+        [/[\/*]/, 'comment']
+      ],
+      string: [
+        [/[^\\"]+/, 'string'],
+        [/\\./, 'string.escape'],
+        [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
+      ]
+    }
+  });
+
+  const editor = monaco.editor.create(document.getElementById('editor'), {
+    value: 'print "Hello World"\nvar x = 10\nif x {\n\tprint "ok"\n}',
+    language: 'stone_script',
+    theme: 'vs-dark',
+    fontSize: 14,
+    lineHeight: 22,
+    minimap: { enabled: false },
+    automaticLayout: true,
+    contextmenu: false,
+    suggest: { showWords: true, preview: true, showInlineDetails: true },
+    quickSuggestions: { other: true, comments: false, strings: true }
+  });
+
+  let MASTER_DOCS = {};
+
+  function flattenJSON(obj, prefix = "") {
+    let result = {};
+    for (let key in obj) {
+      let path = prefix ? prefix + "." + key : key;
+      if (typeof obj[key] === "object" && obj[key] !== null) {
+        result[path] = JSON.stringify(obj[key], null, 2);
+        Object.assign(result, flattenJSON(obj[key], path));
+      } else {
+        result[path] = obj[key];
+      }
+    }
+    return result;
+  }
+
+  function getSuggestions(prefix) {
+    let keys = Object.keys(MASTER_DOCS);
+    let depth = prefix.split(".").filter(Boolean);
+    let matchPrefix = depth.join(".");
+    let candidates = new Set();
+
+    keys.forEach(k => {
+      if (k.startsWith(matchPrefix)) {
+        let parts = k.split(".");
+        if (parts.length > depth.length) {
+          candidates.add(parts[depth.length]);
+        }
+      }
+    });
+
+    return Array.from(candidates).map(c => ({
+      label: c,
+      kind: monaco.languages.CompletionItemKind.Property,
+      insertText: c,
+      detail: c,
+      documentation: MASTER_DOCS[matchPrefix + "." + c] || ""
+    }));
+  }
+
+  monaco.languages.registerCompletionItemProvider('stone_script', {
+    triggerCharacters: ['.', '/'],
+    provideCompletionItems: (model, position) => {
+      const textUntilPos = model.getValueInRange({
+        startLineNumber: position.lineNumber,
+        startColumn: 1,
+        endLineNumber: position.lineNumber,
+        endColumn: position.column
+      });
+
+      const match = textUntilPos.match(/([\w\.]+)$/);
+      const prefix = match ? match[1] : "";
+
+      let suggestions = [];
+      if (prefix) {
+        suggestions = getSuggestions(prefix);
+      } else {
+        suggestions = Object.keys(MASTER_DOCS).map(k => {
+          return {
+            label: k,
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: k,
+            detail: k,
+            documentation: MASTER_DOCS[k]
+          };
+        });
+      }
+      return { suggestions };
+    }
+  });
+
+  const docNameEl = document.getElementById('docName');
+  const docBodyEl = document.getElementById('docBody');
+
+  function updateDocPanel() {
+    const pos = editor.getPosition();
+    if (!pos) return;
+    const word = editor.getModel().getWordAtPosition(pos)?.word;
+    if (!word) return;
+
+    const fullText = editor.getValue().split(/\s+/).find(t => t.endsWith(word)) || word;
+    const doc = MASTER_DOCS[fullText];
+    if (doc) {
+      docNameEl.textContent = fullText;
+      docBodyEl.textContent = doc;
+    } else {
+      docNameEl.textContent = "説明パネル";
+      docBodyEl.textContent = "説明はありません。";
+    }
+  }
+  editor.onDidChangeCursorPosition(updateDocPanel);
+  editor.onDidChangeModelContent(updateDocPanel);
+
+  fetch("master.json")
+    .then(r => r.json())
+    .then(data => {
+      MASTER_DOCS = flattenJSON(data);
+      console.log("Loaded master.json", MASTER_DOCS);
+    });
+});
+</script>
+</body>
+</html>

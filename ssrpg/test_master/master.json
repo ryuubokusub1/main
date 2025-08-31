@@ -1,0 +1,2794 @@
+    // 構文検索用データマスタ
+   const syntaxMaster = [
+      {
+    syntax: "?{condition}",
+    description: "戻り値:なし\n論理条件を評価します。条件が真の場合、インデントされた行（ifブロック）を実行します。",
+    args: [
+      { name: "condition", type: "boolean expression" }
+    ],
+    example: "?loc = caves\n  loadout 1\n// locが'caves'の場合、loadout 1を装備"
+  },
+  {
+    syntax: ":",
+    description: "戻り値:なし\n直前の '?' 条件が偽の場合に実行される代替の論理分岐（elseブロック）を示します。",
+    args: [],
+    example: "?loc = caves\n  loadout 1\n:\n  loadout 2\n// locが'caves'ならloadout 1、そうでなければloadout 2を装備"
+  },
+  {
+    syntax: ":?{condition}",
+    description: "戻り値:なし\n直前の '?' または ':?' 条件が偽の場合に、さらに追加の条件を評価する代替の論理分岐（else-ifブロック）を示します。",
+    args: [
+      { name: "condition", type: "boolean expression" }
+    ],
+    example: "?loc = caves\n  loadout 1\n:?loc = deadwood\n  loadout 2\n:\n  loadout 3\n// locが'caves'ならloadout 1、'deadwood'ならloadout 2、それ以外ならloadout 3を装備"
+  },
+  {
+    syntax: "// {comment}",
+    description: "戻り値:なし\nコメントを示します。'//' の右側のテキストはスクリプト実行時に論理的な影響を与えません。",
+    args: [
+      { name: "comment", type: "string" }
+    ],
+    example: "?loc = caves\n  loadout 1\n//The above equips loadout 1 for Caves of Fear\n// locが'caves'ならloadout 1を装備（コメント付き）"
+  },
+  {
+    syntax: "/* {comment} */",
+    description: "戻り値:なし\nブロックコメントを示します。'/*' と '*/' の間のテキストはスクリプト実行時に論理的な影響を与えません。",
+    args: [
+      { name: "comment", type: "string" }
+    ],
+    example: "/*\n?loc = caves\n  loadout 1\n*/\n// このスクリプトは何もしません（全てコメント内）"
+  },
+  {
+    syntax: "^",
+    description: "戻り値:なし\n前の行を継続します。複数行にわたる条件や出力を1行として扱う際に使用します。",
+    args: [],
+    example: "?loc=caves |\n^loc = mine\n  equip repeating\n// locが'caves'または'mine'ならrepeatingを装備"
+  },
+  {
+    syntax: "?loc",
+    description: "戻り値:string\nプレイヤーが現在訪れている場所を示します。",
+    args: [],
+    example: "?loc = caves\n  loadout 1\n// locが'caves'ならloadout 1を装備"
+  },
+  {
+    syntax: "?loc.id",
+    description: "戻り値:string\n現在の場所のユニークな識別子を示します。",
+    args: [],
+    example: "var id\nid = loc.id\n>Exploring @id@\n// 現在の場所IDを表示"
+  },
+  {
+    syntax: "?loc.gp",
+    description: "戻り値:int\n現在のランで使用されている総ギアパワーを示します。",
+    args: [],
+    example: ">`0,1,Run GP = @loc.gp@\n// 現在の総ギアパワーを表示"
+  },
+  {
+    syntax: "?loc.name",
+    description: "戻り値:string\n現在の場所のローカライズされた名前を示します。",
+    args: [],
+    example: ">Exploring @loc.name@\n// 現在の場所名を表示"
+  },
+  {
+    syntax: "?loc.stars",
+    description: "戻り値:int\n現在の場所の難易度を示します。",
+    args: [],
+    example: "?loc = caves\n  ?loc.stars=4\n    loadout 1\n  ?loc.stars=5\n    loadout 2\n// cavesの難易度に応じて装備を変更"
+  },
+  {
+    syntax: "?loc.begin",
+    description: "戻り値:bool\n場所の最初のフレーム（time = 0）でのみ真となり、ゲームシミュレーションが実行される前です。Ouroborosループ後では真になりません。変数のリセットに役立ちます。",
+    args: [],
+    example: "var i\n?loc.begin\n  i = 0\n  ?loc = caves\n    i = -100\n// 場所開始時にiをリセット"
+  },
+  {
+    syntax: "?loc.loop",
+    description: "戻り値:bool\nOuroborosループ後のランの最初のフレームで真となります。",
+    args: [],
+    example: "var loopCount = 0\n?loc.loop\n  loopCount++\n// ループごとにカウントを増加"
+  },
+  {
+    syntax: "?loc.isQuest",
+    description: "戻り値:bool\n現在の場所がレジェンドやカスタムクエストの特別な場所であれば真、それ以外は偽となります。",
+    args: [],
+    example: "?loc.isQuest\n  >`0,1,We're in a special quest location\n// クエスト場所ならメッセージ表示"
+  },
+  {
+    syntax: "loc.averageTime",
+    description: "戻り値:int\n現在の場所の平均クリア時間を示します。最新のクリア時間が最も重み付けされ、古い時間ほど影響が少なくなります。",
+    args: [],
+    example: ">`0,2,Average time =\n^ @loc.averageTime@ frames\n// 平均クリア時間を表示"
+  },
+  {
+    syntax: "loc.bestTime",
+    description: "戻り値:int\n現在の場所の最短クリア時間（ハイスコア）を示します。",
+    args: [],
+    example: ">`0,1,Best time =\n^ @loc.bestTime@ frames\n// 最短クリア時間を表示"
+  },
+  {
+    syntax: "?encounter.isElite",
+    description: "戻り値:bool\n現在のエンカウンターがエリートエンカウンターかどうかを示します。",
+    args: [],
+    example: ">`0,1,Elite = @encounter.isElite@\n// エリートかどうかを表示"
+  },
+  {
+    syntax: "?encounter.eliteMod",
+    description: "戻り値:string\n現在のエンカウンターの特別な修飾子（存在する場合）を示します。",
+    args: [],
+    example: ">`0,2,Modifier = @encounter.eliteMod@\n// エリートの修飾子を表示"
+  },
+  {
+    syntax: "?foe",
+    description: "戻り値:string\nプレイヤーが現在ターゲットにしている敵を示します。",
+    args: [],
+    example: "?foe = boo\n  equip vigor staff\n// foeが'boo'ならvigor staffを装備"
+  },
+  {
+    syntax: "?foe.id",
+    description: "戻り値:string\nプレイヤーがターゲットにしている敵のユニークなID（またはタイプ）を示します。",
+    args: [],
+    example: "?foe.id = 'skeleton'\n  equip sword\n// foeのIDが'skeleton'ならswordを装備"
+  },
+  {
+    syntax: "?foe.name",
+    description: "戻り値:string\nプレイヤーがターゲットにしている敵のローカライズされた名前を示します。",
+    args: [],
+    example: ">`0,1,Foe = @foe.name@\n// 敵の名前を表示"
+  },
+  {
+    syntax: "?foe.damage",
+    description: "戻り値:int\nプレイヤーがターゲットにしている敵の1回ごとの攻撃ダメージを示します。",
+    args: [],
+    example: ">`0,1,foe damage = @foe.damage@\n// 敵のダメージを表示"
+  },
+  {
+    syntax: "?foe.distance",
+    description: "戻り値:int\nプレイヤーとターゲットにしている敵との距離を示します。",
+    args: [],
+    example: "?foe.distance < 5\n  equip sword\n// 敵が5未満の距離ならswordを装備"
+  },
+  {
+    syntax: "?foe.z",
+    description: "戻り値:int\nターゲットにしている敵のZ位置を示します。",
+    args: [],
+    example: "?foe.z > 0\n  >Foe is above!\n// 敵が上方にいる場合にメッセージ"
+  },
+  {
+    syntax: "?foe.count",
+    description: "戻り値:int\nプレイヤーから46ユニット以内にいる敵の数を示します。",
+    args: [],
+    example: "?foe.count > 3\n  equip shield\n// 敵が3体以上ならshieldを装備"
+  },
+  {
+    syntax: "?foe.GetCount({distance})",
+    description: "戻り値:int\n指定したユニット数以内にいる敵の数を示します。",
+    args: [
+      { name: "distance", type: "int" }
+    ],
+    example: "?foe.GetCount(10) > 2\n  >Crowded!\n// 10ユニット以内に敵が2体以上ならメッセージ"
+  },
+  {
+    syntax: "?foe.hp",
+    description: "戻り値:int\nプレイヤーがターゲットにしている敵の現在のヒットポイントを示します。",
+    args: [],
+    example: "?foe.hp < 10\n  >Foe is weak!\n// 敵のHPが10未満ならメッセージ"
+  },
+  {
+    syntax: "?foe.maxhp",
+    description: "戻り値:int\nプレイヤーがターゲットにしている敵の最大ヒットポイントを示します。",
+    args: [],
+    example: ">`0,1,Foe HP = @foe.hp@/@foe.maxhp@\n// 敵のHPと最大HPを表示"
+  },
+  {
+    syntax: "?foe.armor",
+    description: "戻り値:int\nプレイヤーがターゲットにしている敵の現在のアーマーを示します。",
+    args: [],
+    example: "?foe.armor > 5\n  equip hammer\n// 敵のアーマーが5を超えるならhammerを装備"
+  },
+  {
+    syntax: "?foe.maxarmor",
+    description: "戻り値:int\nプレイヤーがターゲットにしている敵の最大アーマーを示します。",
+    args: [],
+    example: ">`0,1,Foe Armor = @foe.armor@/@foe.maxarmor@\n// 敵のアーマーと最大アーマーを表示"
+  },
+  {
+    syntax: "?foe.buffs.count",
+    description: "戻り値:int\nターゲットにしている敵にかかっているバフ（正の効果）の数を返します。",
+    args: [],
+    example: "?foe.buffs.count > 0\n  >`0,3,Foe buffs = @foe.buffs.string@\n// 敵にバフがあれば詳細を表示"
+  },
+  {
+    syntax: "?foe.buffs.string",
+    description: "戻り値:string\nターゲットにしている敵のすべてのバフに関する情報を合成した文字列を返します。",
+    args: [],
+    example: "?foe.buffs.count > 0\n  >`0,3,Foe buffs = @foe.buffs.string@\n// 敵にバフがあれば詳細を表示"
+  },
+  {
+    syntax: "?foe.buffs.GetCount({buff})",
+    description: "戻り値:int\nターゲットにしている敵に特定のバフがいくつあるかを返します。",
+    args: [
+      { name: "buff", type: "string" }
+    ],
+    example: "?foe.buffs.GetCount('strength') > 0\n  >Strength buff detected!\n// 敵に'strength'バフがあればメッセージ"
+  },
+  {
+    syntax: "?foe.buffs.GetTime({buff})",
+    description: "戻り値:int\nターゲットにしている敵に特定のバフの持続時間を返します。",
+    args: [
+      { name: "buff", type: "string" }
+    ],
+    example: ">`0,2,Strength time = @foe.buffs.GetTime('strength')@\n// 'strength'バフの残り時間を表示"
+  },
+  {
+    syntax: "?buffs.oldest",
+    description: "戻り値:string\nプレイヤーにかかっている最も古いバフのIDを返します。",
+    args: [],
+    example: ">`0,1,Oldest buff: @buffs.oldest@\n// プレイヤーの最古バフを表示"
+  },
+  {
+    syntax: "?foe.debuffs.count",
+    description: "戻り値:int\nターゲットにしている敵にかかっているデバフ（負の効果）の数を返します。",
+    args: [],
+    example: "?foe.debuffs.count > 0\n  >`0,4,Foe debuffs = @foe.debuffs.string@\n// 敵にデバフがあれば詳細を表示"
+  },
+  {
+    syntax: "?foe.debuffs.string",
+    description: "戻り値:string\nターゲットにしている敵のすべてのデバフに関する情報を合成した文字列を返します。",
+    args: [],
+    example: "?foe.debuffs.count > 0\n  >`0,4,Foe debuffs = @foe.debuffs.string@\n// 敵にデバフがあれば詳細を表示"
+  },
+  {
+    syntax: "?foe.debuffs.GetCount({debuff})",
+    description: "戻り値:int\nターゲットにしている敵に特定のデバフがいくつあるかを返します。",
+    args: [
+      { name: "debuff", type: "string" }
+    ],
+    example: ">`0,1,Chill debuff count =\n^ @foe.debuffs.GetCount('debuff_chill')@\n// 'debuff_chill'の数を表示"
+  },
+  {
+    syntax: "?foe.debuffs.GetTime({debuff})",
+    description: "戻り値:int\nターゲットにしている敵に特定のデバフの持続時間を返します。",
+    args: [
+      { name: "debuff", type: "string" }
+    ],
+    example: ">`0,2,Chill debuff time =\n^ @foe.debuffs.GetTime('debuff_chill')@\n// 'debuff_chill'の残り時間を表示"
+  },
+  {
+    syntax: "?debuffs.oldest",
+    description: "戻り値:string\nプレイヤーにかかっている最も古いデバフのIDを返します。",
+    args: [],
+    example: ">`0,1,Oldest debuff: @debuffs.oldest@\n// プレイヤーの最古デバフを表示"
+  },
+  {
+    syntax: "?foe.state",
+    description: "戻り値:int\nターゲットにしている敵の現在の状態を表す数値を返します。",
+    args: [],
+    example: "?foe.state = 0\n  >`0,0,Foe is asleep\n// 敵が眠っている場合にメッセージ"
+  },
+  {
+    syntax: "?foe.time",
+    description: "戻り値:int\nターゲットにしている敵が現在の状態になってからの経過フレーム数を返します。",
+    args: [],
+    example: ">`0,0,Foe = @foe.name@:@foe.state@,@foe.time@\n// 敵の状態と経過時間を表示"
+  },
+  {
+    syntax: "?foe.level",
+    description: "戻り値:int\nターゲットにしている敵のレベル番号を返します。",
+    args: [],
+    example: ">`0,0,Foe = @foe.name@ is level @foe.level@\n// 敵のレベルを表示"
+  },
+  {
+    syntax: "?harvest",
+    description: "戻り値:string\n次に採取可能なオブジェクト（木や岩など）を示します。",
+    args: [],
+    example: "?harvest=Boulder\n  equip shovel\n// 採取対象が'Boulder'ならshovelを装備"
+  },
+  {
+    syntax: "?harvest.distance",
+    description: "戻り値:int\nプレイヤーと最も近い採取可能オブジェクトとの距離を示します。",
+    args: [],
+    example: "?loc=Rocky & harvest.distance < 7\n  equip shovel\n// Rockyで採取対象が7未満ならshovelを装備"
+  },
+  {
+    syntax: "?harvest.z",
+    description: "戻り値:int\n最も近い採取可能オブジェクトのZ位置を示します。",
+    args: [],
+    example: "?loc=Rocky & harvest.z > 5\n  equip shovel\n// RockyでZ位置が5超ならshovelを装備"
+  },
+  {
+    syntax: "?input.x",
+    description: "戻り値:int\n入力デバイス（マウス/タッチ）のASCIIグリッド上のX位置を示します。",
+    args: [],
+    example: "> (@input.x@, @input.y@)\n// 入力位置を表示"
+  },
+  {
+    syntax: "?input.y",
+    description: "戻り値:int\n入力デバイス（マウス/タッチ）のASCIIグリッド上のY位置を示します。",
+    args: [],
+    example: "> (@input.x@, @input.y@)\n// 入力位置を表示"
+  },
+  {
+    syntax: "?item.left",
+    description: "戻り値:string\n左手に装備されているアイテムを示します。",
+    args: [],
+    example: ">`0,1,Left:@item.left@\n>`0,2,Right:@item.right@\n// 左右の装備を表示"
+  },
+    {
+    syntax: "?item.right",
+    description: "戻り値:string\n右手に装備されているアイテムを示します。",
+    args: [],
+    example: "?item.right = quarterstaff\n  activate R\n// 右手にquarterstaffならアビリティ起動"
+  },
+  {
+    syntax: "?item.left.gp",
+    description: "戻り値:int\n左手に装備されているアイテムのギアパワーの値を返します。",
+    args: [],
+    example: ">`0,1,Left GP:@item.left.gp@\n// 左手のギアパワーを表示"
+  },
+  {
+    syntax: "?item.right.gp",
+    description: "戻り値:int\n右手に装備されているアイテムのギアパワーの値を返します。",
+    args: [],
+    example: ">`0,2,Right GP:@item.right.gp@\n// 右手のギアパワーを表示"
+  },
+  {
+    syntax: "?item.left.id",
+    description: "戻り値:string\n左手に装備されているアイテムのIDを返します。",
+    args: [],
+    example: ">`0,1,Left ID:@item.left.id@\n// 左手のアイテムIDを表示"
+  },
+  {
+    syntax: "?item.right.id",
+    description: "戻り値:string\n右手に装備されているアイテムのIDを返します。",
+    args: [],
+    example: ">`0,2,Right ID:@item.right.id@\n// 右手のアイテムIDを表示"
+  },
+  {
+    syntax: "?item.left.state",
+    description: "戻り値:int\n左手に装備されている武器の現在の状態を数値で示します。",
+    args: [],
+    example: ">`0,1,@item.left.state@:@item.left.time@\n// 左手の状態と時間を表示"
+  },
+  {
+    syntax: "?item.left.time",
+    description: "戻り値:int\n左手に装備されている武器の現在の状態での経過フレーム数を返します。",
+    args: [],
+    example: ">`0,1,@item.left.state@:@item.left.time@\n// 左手の状態と時間を表示"
+  },
+  {
+    syntax: "?item.right.state",
+    description: "戻り値:int\n右手に装備されている武器の現在の状態を数値で示します。",
+    args: [],
+    example: ">`0,2,@item.right.state@:@item.right.time@\n// 右手の状態と時間を表示"
+  },
+  {
+    syntax: "?item.right.time",
+    description: "戻り値:int\n右手に装備されている武器の現在の状態での経過フレーム数を返します。",
+    args: [],
+    example: ">`0,2,@item.right.state@:@item.right.time@\n// 右手の状態と時間を表示"
+  },
+  {
+    syntax: "?item.potion",
+    description: "戻り値:string\n現在調合されているポーションを示します。自動補充が有効な場合'auto'を含みます。",
+    args: [],
+    example: "?item.potion ! empty & item.potion = auto\n  activate potion\n// ポーションが空でなく自動補充なら起動"
+  },
+  {
+    syntax: "?pickup",
+    description: "戻り値:string\nプレイヤーが現在ターゲットにしているピックアップを示します。",
+    args: [],
+    example: "?pickup\n  equip star stone\n:\n  loadout 1\n// ピックアップがあればstar stoneを装備"
+  },
+  {
+    syntax: "?pickup.distance",
+    description: "戻り値:int\nプレイヤーとターゲットにしているピックアップとの距離を示します。",
+    args: [],
+    example: "?pickup.distance < 5\n  equipL star stone\n// ピックアップが5未満なら左手で装備"
+  },
+  {
+    syntax: "?pickup.z",
+    description: "戻り値:int\nターゲットにしているピックアップのZ位置を示します。",
+    args: [],
+    example: "?pickup.z > 7\n  equipL star stone\n// ピックアップのZが7超なら左手で装備"
+  },
+  {
+    syntax: "?armor",
+    description: "戻り値:int\nプレイヤーの現在のアーマーを、小数点以下切り捨てで示します。",
+    args: [],
+    example: "?armor < 3\n  equip shield\n// アーマーが3未満ならshieldを装備"
+  },
+  {
+    syntax: "?armor.f",
+    description: "戻り値:int\nプレイヤーの現在のアーマーの小数部分を示します。",
+    args: [],
+    example: "?armor.f = 4\n  >Armor fraction is 0.4\n// アーマーの小数が0.4ならメッセージ"
+  },
+  {
+    syntax: "?buffs.count",
+    description: "戻り値:int\nプレイヤーにかかっているバフ（正の効果）の数を返します。",
+    args: [],
+    example: "?buffs.count > 0\n  >`0,1,Player buffs = @buffs.string@\n// バフがあれば詳細を表示"
+  },
+  {
+    syntax: "?buffs.string",
+    description: "戻り値:string\nプレイヤーのすべてのバフに関する情報を合成した文字列を返します。",
+    args: [],
+    example: "?buffs.count > 0\n  >`0,1,Player buffs = @buffs.string@\n// バフがあれば詳細を表示"
+  },
+  {
+    syntax: "?buffs.GetCount({buff})",
+    description: "戻り値:int\nプレイヤーに特定のバフがいくつあるかを返します。",
+    args: [
+      { name: "buff", type: "string" }
+    ],
+    example: "?buffs.GetCount('speed') > 0\n  >Speed buff active!\n// 'speed'バフがあればメッセージ"
+  },
+  {
+    syntax: "?buffs.GetTime({buff})",
+    description: "戻り値:int\nプレイヤーに特定のバフの持続時間を返します。",
+    args: [
+      { name: "buff", type: "string" }
+    ],
+    example: ">`0,1,Speed time = @buffs.GetTime('speed')@\n// 'speed'バフの残り時間を表示"
+  },
+  {
+    syntax: "?debuffs.count",
+    description: "戻り値:int\nプレイヤーにかかっているデバフ（負の効果）の数を返します。",
+    args: [],
+    example: "?debuffs.count > 0\n  >`0,2,Player debuffs = @debuffs.string@\n// デバフがあれば詳細を表示"
+  },
+  {
+    syntax: "?debuffs.string",
+    description: "戻り値:string\nプレイヤーのすべてのデバフに関する情報を合成した文字列を返します。",
+    args: [],
+    example: "?debuffs.count > 0\n  >`0,2,Player debuffs = @debuffs.string@\n// デバフがあれば詳細を表示"
+  },
+  {
+    syntax: "?debuffs.GetCount({debuff})",
+    description: "戻り値:int\nプレイヤーに特定のデバフがいくつあるかを返します。",
+    args: [
+      { name: "debuff", type: "string" }
+    ],
+    example: "?debuffs.GetCount('poison') > 0\n  >Poisoned!\n// 'poison'デバフがあればメッセージ"
+  },
+  {
+    syntax: "?debuffs.GetTime({debuff})",
+    description: "戻り値:int\nプレイヤーに特定のデバフの持続時間を返します。",
+    args: [
+      { name: "debuff", type: "string" }
+    ],
+    example: ">`0,1,Poison time = @debuffs.GetTime('poison')@\n// 'poison'デバフの残り時間を表示"
+  },
+  {
+    syntax: "?hp",
+    description: "戻り値:int\nプレイヤーの現在のヒットポイントを示します。",
+    args: [],
+    example: "?hp < 5\n  activate potion\n// HPが5未満ならポーション使用"
+  },
+  {
+    syntax: "?maxhp",
+    description: "戻り値:int\nプレイヤーの最大ヒットポイントを示します。",
+    args: [],
+    example: ">`0,1,HP = @hp@/@maxhp@\n// HPと最大HPを表示"
+  },
+  {
+    syntax: "?maxarmor",
+    description: "戻り値:int\nプレイヤーの最大アーマーを、小数点以下切り捨てで示します。",
+    args: [],
+    example: ">`0,1,Armor = @armor@/@maxarmor@\n// アーマーと最大アーマーを表示"
+  },
+  {
+    syntax: "?pos.x",
+    description: "に戻り値:int\nプレイヤーの現在のX位置を示します。",
+    args: [],
+    example: ">`0,1,X = @pos.x@\n// X位置を表示"
+  },
+  {
+    syntax: "?pos.y",
+    description: "戻り値:int\nプレイヤーの現在のY位置を示します。",
+    args: [],
+    example: ">`0,1,Y = @pos.y@\n// Y位置を表示"
+  },
+  {
+    syntax: "?pos.z",
+    description: "戻り値:int\nプレイヤーの現在のZ位置を示します。",
+    args: [],
+    example: ">`0,1,Z = @pos.z@\n// Z位置を表示"
+  },
+  {
+    syntax: "?ai.enabled",
+    description: "戻り値:bool\nAIがオンなら真、オフ（例: シネマティック中）なら偽を返します。",
+    args: [],
+    example: "?ai.enabled\n  >AI is on\n// AIが有効ならメッセージ"
+  },
+  {
+    syntax: "?ai.paused",
+    description: "戻り値:bool\nAIが一時停止中（例: 宝物待ち）なら真を返します。",
+    args: [],
+    example: "?ai.paused\n  >AI paused\n// AIが一時停止ならメッセージ"
+  },
+  {
+    syntax: "?ai.idle",
+    description: "戻り値:bool\nプレイヤーがアイドル状態（攻撃完了待ちなど）なら真を返します。",
+    args: [],
+    example: "?ai.idle\n  >Player is idle\n// アイドルならメッセージ"
+  },
+  {
+    syntax: "?ai.walking",
+    description: "戻り値:bool\nプレイヤーが移動中なら真を返します。",
+    args: [],
+    example: "?ai.walking\n  >Player is moving\n// 移動中ならメッセージ"
+  },
+  {
+    syntax: "?bighead",
+    description: "戻り値:bool\nプレイヤーがビッグヘッド（Moondial）を有効にしている場合に真を返します。",
+    args: [],
+    example: "?bighead\n  >Big Head mode!\n// ビッグヘッドならメッセージ"
+  },
+  {
+    syntax: "?face",
+    description: "戻り値:string\nプレイヤーの現在の表情を示します。",
+    args: [],
+    example: "?face = '^^'\n  >Happy\n// 表情が'^^'なら'Happy'を表示"
+  },
+  {
+    syntax: "?key",
+    description: "戻り値:string\nカスタムゲーム入力の状態を示します。",
+    args: [],
+    example: ">@key@\n// 現在の入力を表示"
+  },
+  {
+    syntax: "?res.stone",
+    description: "戻り値:int\nプレイヤーのインベントリにある石のリソース量を示します。",
+    args: [],
+    example: ">`0,1,Stone = @res.stone@\n// 石のリソースを表示"
+  },
+  {
+    syntax: "?res.wood",
+    description: "戻り値:int\nプレイヤーのインベントリにある木のリソース量を示します。",
+    args: [],
+    example: "?loc = Deadwood\n  >Wood = @res.wood@\n// Deadwoodで木のリソースを表示"
+  },
+  {
+    syntax: "?res.tar",
+    description: "戻り値:int\nプレイヤーのインベントリにあるタールのリソース量を示します。",
+    args: [],
+    example: ">`0,1,Tar = @res.tar@\n// タールのリソースを表示"
+  },
+  {
+    syntax: "?res.ki",
+    description: "戻り値:int\nプレイヤーのインベントリにあるキのリソース量を示します。",
+    args: [],
+    example: ">`0,1,Ki = @res.ki@\n// キのリソースを表示"
+  },
+  {
+    syntax: "?res.bronze",
+    description: "戻り値:int\nプレイヤーのインベントリにあるブロンズのリソース量を示します。",
+    args: [],
+    example: ">`0,1,Bronze = @res.bronze@\n// ブロンズのリソースを表示"
+  },
+    {
+    syntax: "?res.crystals",
+    description: "戻り値:int\nプレイヤーのインベントリにあるクリスタルのリソース量を示します。",
+    args: [],
+    example: ">`0,1,#magenta, - @res.crystals@\n// クリスタルのリソースを表示"
+  },
+  {
+    syntax: "?player.direction",
+    description: "戻り値:int\nプレイヤーが向いている方向を示します。右なら1、左なら-1を返します。",
+    args: [],
+    example: "?player.direction = 1\n  >`0,0,Walking right\n:\n  >`0,0,Walking left\n// 方向に応じたメッセージ"
+  },
+  {
+    syntax: "player.framesPerMove",
+    description: "戻り値:int\nプレイヤーが1ポジション進むのにかかるフレーム数を示します。",
+    args: [],
+    example: ">`0,1,Player Movement: @player.framesPerMove@\n// 移動ごとのフレーム数を表示"
+  },
+  {
+    syntax: "player.name",
+    description: "戻り値:string\nプレイヤーが選んだ名前を示します。",
+    args: [],
+    example: "var name\nvar x\nname = player.name\nx = string.Size(name) / -2\n>o@x@,-2,@name@\n// プレイヤーの頭上に名前を表示"
+  },
+  {
+    syntax: "player.GetNextLegendName()",
+    description: "戻り値:string\nプレイヤーがまだクリアしていない次にアンロックされるレジェンドクエストの名前を返します。",
+    args: [],
+    example: ">`0,1,Next Legend: @player.GetNextLegendName()@\n// 次のレジェンドクエスト名を表示"
+  },
+  {
+    syntax: "?rng",
+    description: "戻り値:int\n0から9999までのランダムな整数を返します。",
+    args: [],
+    example: "?rng < 5000\n  >Heads!\n:\n  >Tails!\n// 50%の確率でHeadsまたはTails"
+  },
+  {
+    syntax: "?rngf",
+    description: "戻り値:float\n0から1までのランダムな浮動小数点数を返します。",
+    args: [],
+    example: ">random float = @rngf@\n// ランダムな浮動小数点数を表示"
+  },
+  {
+    syntax: "?screen.i",
+    description: "戻り値:int\nゲーム内の画面位置を示すインデックスで、プレイヤーが右端に達してスライドすると増加します。",
+    args: [],
+    example: ">`0,0,Screen index = @screen.i@\n// 画面インデックスを表示"
+  },
+  {
+    syntax: "?screen.x",
+    description: "戻り値:int\nゲーム内の画面のX位置を示します。",
+    args: [],
+    example: ">`0,0,Screen position X = @screen.x@\n// 画面のX位置を表示"
+  },
+  {
+    syntax: "?screen.w",
+    description: "戻り値:int\n画面のASCIIグリッドの幅を示します。",
+    args: [],
+    example: "var sw = screen.w\n>Screen width = @sw@\n// 画面幅を表示"
+  },
+  {
+    syntax: "?screen.h",
+    description: "戻り値:int\n画面のASCIIグリッドの高さを示します。",
+    args: [],
+    example: "var sh = screen.h\n>Screen height = @sh@\n// 画面高さを表示"
+  },
+  {
+    syntax: "?summon.count",
+    description: "戻り値:int\nゲーム内に現在存在する召喚された味方の数を返します。",
+    args: [],
+    example: "?summon.count = 0 &\n^ item.CanActivate()\n  equipL talisman\n  activate L\n// 召喚が0でアビリティ使用可能ならtalismanを装備"
+  },
+  {
+    syntax: "summon.GetId({index = 0})",
+    description: "戻り値:string\n指定したインデックスの召喚のIDを返します。インデックスはオプションで、デフォルトは0（最初の召喚）。該当する召喚がない場合はnullを返します。",
+    args: [
+      { name: "index", type: "int", optional: true }
+    ],
+    example: "?summon.GetId() ! 'cinderwisp' &\n^ item.CanActivate()\n  equipR fire talisman\n  activate R\n// 召喚が'cinderwisp'でなければfire talismanを使用"
+  },
+  {
+    syntax: "summon.GetName({index = 0})",
+    description: "戻り値:string\n指定したインデックスの召喚のローカライズされた名前を返します。インデックスはオプションで、デフォルトは0。該当する召喚がない場合はnullを返します。",
+    args: [
+      { name: "index", type: "int", optional: true }
+    ],
+    example: ">`0,1,Summon:@summon.GetName()@\n// 最初の召喚の名前を表示"
+  },
+  {
+    syntax: "summon.GetVar({varName}, {index = 0})",
+    description: "戻り値:any\n召喚のカスタム変数の値を返します。召喚の種類によって公開される変数は異なります。インデックスはオプションで、デフォルトは0。該当する召喚がない場合はnullを返します。変数名が無効な場合はエラーを表示します。",
+    args: [
+      { name: "varName", type: "string" },
+      { name: "index", type: "int", optional: true }
+    ],
+    example: "?summon.GetId() = cinderwisp &\n^summon.GetVar('ignition') > 2\n  activate cinderwisp\n// 'ignition'が2超ならcinderwispを起動"
+  },
+  {
+    syntax: "summon.GetState({index = 0})",
+    description: "戻り値:int\n指定したインデックスの召喚の現在の状態を表す数値を返します。インデックスはオプションで、デフォルトは0。該当する召喚がない場合は-1を返します。",
+    args: [
+      { name: "index", type: "int", optional: true }
+    ],
+    example: ">`0,1,Summon state:@summon.GetState()@\n// 最初の召喚の状態を表示"
+  },
+  {
+    syntax: "summon.GetTime({index = 0})",
+    description: "戻り値:int\n指定したインデックスの召喚の現在の状態での経過フレーム数を返します。インデックスはオプションで、デフォルトは0。該当する召喚がない場合は-1を返します。",
+    args: [
+      { name: "index", type: "int", optional: true }
+    ],
+    example: ">`0,1,Summon time:@summon.GetTime()@\n// 最初の召喚の経過時間を表示"
+  },
+  {
+    syntax: "?totalgp",
+    description: "戻り値:int\nインベントリの総'Gear Power'を返します。アイテムの星レベルとエンチャントボーナスから計算されます。",
+    args: [],
+    example: ">My gear power = @totalgp@\n// 総ギアパワーを表示"
+  },
+  {
+    syntax: "?time",
+    description: "戻り値:int\n現在の場所のフレーム番号を返します。",
+    args: [],
+    example: "?time % 300 = 0\n  >Every 10 seconds you'll see this message\n// 10秒ごとにメッセージ"
+  },
+  {
+    syntax: "?totaltime",
+    description: "戻り値:int\nボスのサブロケーションがある場合に累積された現在の場所のフレーム番号を返します。",
+    args: [],
+    example: ">`0,0,Current time = @totaltime@ frames\n// 累積時間を表示"
+  },
+  {
+    syntax: "time.msbn",
+    description: "戻り値:BigNumber\n1970-01-01T00:00:00Zからの経過ミリ秒数を表すUnix時間を返します。うるう秒は考慮されません。",
+    args: [],
+    example: ">@time.msbn@\n// Unix時間を表示"
+  },
+  {
+    syntax: "time.year",
+    description: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（年）を返します。",
+    args: [],
+    example: ">`0,0,@time.year@/@time.month@/@time.day@\n^ @time.hour@:@time.minute@:@time.second@\n// ローカル時間を表示"
+  },
+  {
+    syntax: "time.month",
+    description: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（月）を返します。",
+    args: [],
+    example: ">`0,0,@time.year@/@time.month@/@time.day@\n^ @time.hour@:@time.minute@:@time.second@\n// ローカル時間を表示"
+  },
+  {
+    syntax: "time.day",
+    description: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（日）を返します。",
+    args: [],
+    example: ">`0,0,@time.year@/@time.month@/@time.day@\n^ @time.hour@:@time.minute@:@time.second@\n// ローカル時間を表示"
+  },
+  {
+    syntax: "time.hour",
+    description: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（時）を返します。",
+    args: [],
+    example: ">`0,0,@time.year@/@time.month@/@time.day@\n^ @time.hour@:@time.minute@:@time.second@\n// ローカル時間を表示"
+  },
+  {
+    syntax: "time.minute",
+    description: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（分）を返します。",
+    args: [],
+    example: ">`0,0,@time.year@/@time.month@/@time.day@\n^ @time.hour@:@time.minute@:@time.second@\n// ローカル時間を表示"
+  },
+  {
+    syntax: "time.second",
+    description: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（秒）を返します。",
+    args: [],
+    example: ">`0,0,@time.year@/@time.month@/@time.day@\n^ @time.hour@:@time.minute@:@time.second@\n// ローカル時間を表示"
+  },
+  {
+    syntax: "utc.year",
+    description: "戻り値:int\n現在のUTC時間（年）を返します。",
+    args: [],
+    example: "var utcZ = utc.year*356*12*24*30 +\n^utc.month*12*24 + utc.day*24+utc.hour\n// UTC時間を計算"
+  },
+  {
+    syntax: "utc.month",
+    description: "戻り値:int\n現在のUTC時間（月）を返します。",
+    args: [],
+    example: "var utcZ = utc.year*356*12*24*30 +\n^utc.month*12*24 + utc.day*24+utc.hour\n// UTC時間を計算"
+  },
+  {
+    syntax: "utc.day",
+    description: "戻り値:int\n現在のUTC時間（日）を返します。",
+    args: [],
+    example: "var utcZ = utc.year*356*12*24*30 +\n^utc.month*12*24 + utc.day*24+utc.hour\n// UTC時間を計算"
+  },
+  {
+    syntax: "utc.hour",
+    description: "戻り値:int\n現在のUTC時間（時）を返します。",
+    args: [],
+    example: "var utcZ = utc.year*356*12*24*30 +\n^utc.month*12*24 + utc.day*24+utc.hour\n// UTC時間を計算"
+  },
+  {
+    syntax: "utc.minute",
+    description: "戻り値:int\n現在のUTC時間（分）を返します。",
+    args: [],
+    example: "var utcZ = utc.year*356*12*24*30 +\n^utc.month*12*24 + utc.day*24+utc.hour\n// UTC時間を計算"
+  },
+  {
+    syntax: "utc.second",
+    description: "戻り値:int\n現在のUTC時間（秒）を返します。",
+    args: [],
+    example: "var utcZ = utc.year*356*12*24*30 +\n^utc.month*12*24 + utc.day*24+utc.hour\n// UTC時間を計算"
+  },
+  {
+    syntax: "activate {ability}",
+    description: "戻り値:なし\nアイテムのアビリティを起動します。abilityは'potion', 'P', 'left', 'L', 'right', 'R'、またはアビリティIDを指定可能です。",
+    args: [
+      { name: "ability", type: "string" }
+    ],
+    example: "activate R\n// 右手に装備されたアイテムのアビリティを起動"
+  },
+  {
+    syntax: "brew {ingredients}",
+    description: "戻り値:なし\nポーション瓶を指定した材料の組み合わせで補充します。ラン開始時（time 0）でのみ実行されます。材料はstone, wood, tar, bronzeで、+で区切ります。材料名は英語または設定で選択した言語で記述可能です。",
+    args: [
+      { name: "ingredients", type: "string" }
+    ],
+    example: "?loc.begin\n  brew bronze + tar\n// 開始時にbronzeとtarでポーションを調合"
+  },
+  {
+    syntax: "equip {str}",
+    description: "戻り値:なし\n指定した基準に基づいてアイテムを装備します。strは最大7つの基準を指定可能。両手持ちアイテムにはこの形式を使用する必要があります。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "equip vigor crossbow *8 +5\n// vigor crossbow（星8、強化+5）を装備"
+  },
+    {
+    syntax: "equipL {str}",
+    description: "戻り値:なし\n指定した基準に最も適合するアイテムを左手で装備します。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "equipL poison d_sword\n// poison d_swordを左手で装備"
+  },
+  {
+    syntax: "equipR {str}",
+    description: "戻り値:なし\n指定した基準に最も適合するアイテムを右手で装備します。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "equipR vigor shield\n// vigor shieldを右手で装備"
+  },
+  {
+    syntax: "equip @{var}@",
+    description: "戻り値:なし\n文字列変数から基準を取得してアイテムを装備します。減算基準もサポートします。",
+    args: [
+      { name: "var", type: "string" }
+    ],
+    example: "var weaponName = 'poison sword *10 -big'\nequipR @weaponName@\n// 変数からpoison swordを右手で装備"
+  },
+  {
+    syntax: "loadout {n}",
+    description: "戻り値:なし\n指定した番号のロードアウトを装備します。",
+    args: [
+      { name: "n", type: "int" }
+    ],
+    example: "?loc = caves\n  loadout 1\n?loc = deadwood\n  loadout 2\n// 場所に応じたロードアウトを装備"
+  },
+  {
+    syntax: "> {str}",
+    description: "戻り値:なし\n画面上部に文字列を表示します。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: ">Hello World!\n// 'Hello World!' を画面上部に表示"
+  },
+  {
+    syntax: "> @{varName}@",
+    description: "戻り値:なし\n変数の値を挿入して文字列を表示します。複数の変数を1つの表示に挿入可能です。挿入するには変数名を@で囲みます。",
+    args: [
+      { name: "varName", type: "string" }
+    ],
+    example: "var foeInfo\nfoeInfo = foe\n>FOE = @foeInfo@\n// 現在の敵情報を表示"
+  },
+  {
+    syntax: ">(abcd",
+    description: "戻り値:なし\nプレイヤーにカスタム表情を表示します。ビッグヘッドが必要です。",
+    args: [
+      { name: "abcd", type: "string" }
+    ],
+    example: ">( OwO\n// 'OwO'表情を表示"
+  },
+  {
+    syntax: ">o{X},{Y},[#rrggbb,]{str}",
+    description: "戻り値:なし\nプレイヤーの位置を基準に高度な表示を行います。XとYは座標オフセット、#rrggbbは16進数のテキスト色です。色は#white, #cyanなども使用可能。虹色は#rainFFで指定（FFは明るさ）。",
+    args: [
+      { name: "X", type: "int" },
+      { name: "Y", type: "int" },
+      { name: "#rrggbb", type: "string", optional: true },
+      { name: "str", type: "string" }
+    ],
+    example: ">o-6,3,#red,Let's go!\n// プレイヤーの左6下3に赤で'Let's go!'を表示"
+  },
+  {
+    syntax: ">h{X},{Y},[#rrggbb,]{str}",
+    description: "戻り値:なし\nビッグヘッドと同じレイヤーに表示します。帽子などのアクセサリーに最適です。",
+    args: [
+      { name: "X", type: "int" },
+      { name: "Y", type: "int" },
+      { name: "#rrggbb", type: "string", optional: true },
+      { name: "str", type: "string" }
+    ],
+    example: ">h-2,-3,#yellow,ascii\n##_\n#| |\n_|_|_\nasciiend\n// 黄色の帽子を表示"
+  },
+  {
+    syntax: ">`{X},{Y},[#rrggbb,]{str}",
+    description: "戻り値:なし\n画面の左上を基準に高度な表示を行います。",
+    args: [
+      { name: "X", type: "int" },
+      { name: "Y", type: "int" },
+      { name: "#rrggbb", type: "string", optional: true },
+      { name: "str", type: "string" }
+    ],
+    example: "var posX = 10\nvar posY = 5\nvar color = rainE1\n>`@posX@,@posY@,#@color@,Hello World!\n// 変数を使って表示"
+  },
+  {
+    syntax: ">c{X},{Y},[#rrggbb,]{str}",
+    description: "戻り値:なし\n画面中央を基準に高度な表示を行います。色はオプションです。",
+    args: [
+      { name: "X", type: "int" },
+      { name: "Y", type: "int" },
+      { name: "#rrggbb", type: "string", optional: true },
+      { name: "str", type: "string" }
+    ],
+    example: ">c0,0,Hello World!\n// 中央に'Hello World!'を表示（色は白）"
+  },
+  {
+    syntax: ">f{X},{Y},[#rrggbb,]{str}",
+    description: "戻り値:なし\nターゲットにしている敵の頭の位置を基準に高度な表示を行います。",
+    args: [
+      { name: "X", type: "int" },
+      { name: "Y", type: "int" },
+      { name: "#rrggbb", type: "string", optional: true },
+      { name: "str", type: "string" }
+    ],
+    example: ">f-2,0,#ff0000,ascii\n##!\n-#?#-\n##?\nasciiend\n// 敵の頭に赤い照準を表示"
+  },
+  {
+    syntax: "var {variable}",
+    description: "戻り値:なし\n数学的、論理的、文字列操作に使用できる変数を宣言します。ライフサイクルや動作は他の言語と異なる場合があります。",
+    args: [
+      { name: "variable", type: "string" }
+    ],
+    example: "var message = Hello World!\n>@message@\n// 'Hello World!' を表示"
+  },
+  {
+    syntax: "func {function}",
+    description: "戻り値:なし\n後で呼び出せる関数を宣言します。",
+    args: [
+      { name: "function", type: "string" }
+    ],
+    example: "func Print(message)\n  >@message@\n\nPrint(Hello World!)\n// 'Hello World!' を表示する関数"
+  },
+  {
+    syntax: "for {v} = {a}..{b}",
+    description: "戻り値:なし\n変数'v'を値'a'から'b'まで反復するループを作成します。ループ内のコードは複数回実行されます。",
+    args: [
+      { name: "v", type: "string" },
+      { name: "a", type: "int" },
+      { name: "b", type: "int" }
+    ],
+    example: "var a\na = 0\nfor i = 1..5\n  a = a + i\n>a = @a@\n// 1から5までの合計を表示"
+  },
+  {
+    syntax: "import {script}",
+    description: "戻り値:なし\n外部スクリプトの単一コピーをロードして実行します。",
+    args: [
+      { name: "script", type: "string" }
+    ],
+    example: "import Fishing\n// Fishingミニゲームをインポート"
+  },
+  {
+    syntax: "new {script}",
+    description: "戻り値:any\n'import'と同様に外部スクリプトをロードして実行しますが、'new'でロードされたオブジェクトはそれぞれ独立したコピーであり、スクリプト本体は1回のみ実行されます。",
+    args: [
+      { name: "script", type: "string" }
+    ],
+    example: "var v = new Components/Vector\nv.Init(10, 5)\n>Vector = @v@\n// ベクターオブジェクトを作成して表示"
+  },
+  {
+    syntax: "disable abilities",
+    description: "戻り値:なし\nポーションと武器のアビリティの起動を無効にします。HUDボタンもグレーアウトします。",
+    args: [],
+    example: "disable abilities\n// アビリティを無効化"
+  },
+  {
+    syntax: "enable abilities",
+    description: "戻り値:なし\n以前に'disable abilities'で無効化されたアビリティの起動を復元します。",
+    args: [],
+    example: "enable abilities\n// アビリティを復元"
+  },
+  {
+    syntax: "disable banner",
+    description: "戻り値:なし\n場所の開始と終了時に表示される水平バナーのレンダリングを無効にします。",
+    args: [],
+    example: "disable banner\n// バナーを無効化"
+  },
+  {
+    syntax: "enable banner",
+    description: "戻り値:なし\n水平バナーのレンダリングを復元します。",
+    args: [],
+    example: "enable banner\n// バナーを復元"
+  },
+  {
+    syntax: "disable hud [{opts}]",
+    description: "戻り値:なし\nゲームプレイのユーザーインターフェース要素を非表示かつ無効にします。オプションで指定する要素: p=プレイヤーのHPとデバフ, f=敵のHPとデバフ, a=アビリティボタン, r=リソース, b=バナー, u=ユーティリティベルト。",
+    args: [
+      { name: "opts", type: "string", optional: true }
+    ],
+    example: "disable hud ru\n// リソース(r)とユーティリティベルト(u)を無効化"
+  },
+  {
+    syntax: "enable hud [{opts}]",
+    description: "戻り値:なし\n'disable hud'で非表示にしたUI要素を復元します。オプションは'disable hud'と同じです。",
+    args: [
+      { name: "opts", type: "string", optional: true }
+    ],
+    example: "enable hud\n// すべてのHUDを復元"
+  },
+  {
+    syntax: "disable loadout input",
+    description: "戻り値:なし\n入力キーによる武器ロードアウトの保存や呼び出しを無効にします。",
+    args: [],
+    example: "disable loadout input\n// ロードアウト入力を無効化"
+  },
+  {
+    syntax: "enable loadout input",
+    description: "戻り値:なし\n入力キーによる武器ロードアウトの保存や呼び出しを復元します。",
+    args: [],
+    example: "enable loadout input\n// ロードアウト入力を復元"
+  },
+  {
+    syntax: "disable loadout print",
+    description: "戻り値:なし\nロードアウトが呼び出されたときに表示されるメッセージを非表示にします。",
+    args: [],
+    example: "disable loadout print\n// ロードアウトメッセージを非表示"
+  },
+  {
+    syntax: "enable loadout print",
+    description: "戻り値:なし\nロードアウトメッセージの表示を復元します。",
+    args: [],
+    example: "enable loadout print\n// ロードアウトメッセージを復元"
+  },
+  {
+    syntax: "disable npcDialog",
+    description: "戻り値:なし\nNPCの会話バブルを非表示にし、自動スキップします。",
+    args: [],
+    example: "disable npcDialog\n// NPC会話を無効化"
+  },
+  {
+    syntax: "enable npcDialog",
+    description: "戻り値:なし\nNPCの会話バブルを復元します。",
+    args: [],
+    example: "enable npcDialog\n// NPC会話を復元"
+  },
+  {
+    syntax: "disable pause",
+    description: "戻り値:なし\nポーズボタンのUIを非表示にします。[P]ショートカットではポーズ可能です。",
+    args: [],
+    example: "disable pause\n// ポーズボタンを非表示"
+  },
+  {
+    syntax: "enable pause",
+    description: "戻り値:なし\n'disable pause'で非表示にしたポーズボタンを復元します。",
+    args: [],
+    example: "enable pause\n// ポーズボタンを復元"
+  },
+  {
+    syntax: "disable player",
+    description: "戻り値:なし\nプレイヤーを非表示にします。戦闘には影響せず、見た目のみの変更です。",
+    args: [],
+    example: "disable player\n// プレイヤーを非表示"
+  },
+  {
+    syntax: "enable player",
+    description: "戻り値:なし\n'disable player'で非表示にしたプレイヤーの表示を復元します。",
+    args: [],
+    example: "enable player\n// プレイヤーを復元"
+  },
+  {
+    syntax: "play {sound} [{pitch}]",
+    description: "戻り値:なし\n効果音を再生します。ピッチはオプションで、デフォルトは100。高い値で高音、低い値で低音になります。",
+    args: [
+      { name: "sound", type: "string" },
+      { name: "pitch", type: "int", optional: true }
+    ],
+    example: "?key = primary\n  play buy\n// 'primary'キーで'buy'音を再生"
+  },
+  {
+    syntax: "= ",
+    description: "戻り値:bool\n値が等しいか、文字列が含まれているかを比較します。",
+    args: [],
+    example: "?hp = maxhp\n  loadout 2\n// HPが最大ならloadout 2を装備"
+  },
+  {
+    syntax: "! ",
+    description: "戻り値:bool\n値が等しくないか、文字列が含まれていないかを比較します。",
+    args: [],
+    example: "?foe ! poison\n  equipL sword\n// 敵が'poison'でなければswordを左手で装備"
+  },
+  {
+    syntax: "& ",
+    description: "戻り値:bool\n論理AND演算子です。",
+    args: [],
+    example: "?loc=caves & foe=boss\n  equip boss slayer\n// cavesで敵がbossなら装備"
+  },
+  {
+    syntax: "| ",
+    description: "戻り値:bool\n論理OR演算子です。'&'と'|'が混在する場合、'&'が先に評価されます。",
+    args: [],
+    example: "?foe=slow | foe.count>3\n  activate potion\n// 敵が'slow'か3体以上ならポーション起動"
+  },
+  {
+    syntax: "> ",
+    description: "戻り値:bool\n大なり比較です。難易度、敵の数、HPなどで使用可能です。",
+    args: [],
+    example: "?foe.count > 10\n  equip shiny bardiche\n// 敵が10体超なら装備"
+  },
+  {
+    syntax: "< ",
+    description: "戻り値:bool\n小なり比較です。",
+    args: [],
+    example: "?hp < 6\n  activate potion\n// HPが6未満ならポーション起動"
+  },
+  {
+    syntax: ">= ",
+    description: "戻り値:bool\n大なりイコール比較です。'>'と'='を組み合わせたもの。",
+    args: [],
+    example: "?loc.stars >= 6\n  equipR vigor shield\n// 難易度6以上ならvigor shieldを右手で装備"
+  },
+  {
+    syntax: "<= ",
+    description: "戻り値:bool\n小なりイコール比較です。'<'と'='を組み合わせたもの。",
+    args: [],
+    example: "?hp <= 6\n  activate potion\n// HPが6以下ならポーション起動"
+  },
+  {
+    syntax: "+ ",
+    description: "戻り値:number\n2つの数値または変数を加算します。",
+    args: [],
+    example: "var a = 2 + 3\n// aは5になる"
+  },
+  {
+    syntax: "- ",
+    description: "戻り値:number\n2つの数値または変数を減算します。",
+    args: [],
+    example: "?hp < maxhp - 5\n  equip vigor sword dL\n// HPが最大-5未満なら装備"
+  },
+  {
+    syntax: "* ",
+    description: "戻り値:number\n2つの数値または変数を乗算します。",
+    args: [],
+    example: "var a = 2\nvar b = 5\na = a * b\n// aは10になる"
+  },
+  {
+    syntax: "/ ",
+    description: "戻り値:number\n1つの数値または変数を別の数値で除算します。整数の場合、結果は切り捨てられます。",
+    args: [],
+    example: "var a = 8\na = a / 4\n// aは2になる"
+  },
+  {
+    syntax: "++ ",
+    description: "戻り値:なし\n変数を1増加させます。",
+    args: [],
+    example: "var a = 3\na++\n// aは4になる"
+  },
+  {
+    syntax: "-- ",
+    description: "戻り値:なし\n変数を1減少させます。",
+    args: [],
+    example: "var a = 3\na--\n// aは2になる"
+  },
+  {
+    syntax: "% ",
+    description: "戻り値:number\nモジュロ演算子。1つの数を別の数で割った余りを返します。",
+    args: [],
+    example: "var a = 5 % 4\n// aは1になる"
+  },
+  {
+    syntax: "( ) ",
+    description: "戻り値:なし\n演算の優先順位を指定するために使用します。",
+    args: [],
+    example: "var a = 2 * (3 - 1)\n// aは4になる"
+  },
+  {
+    syntax: "! ",
+    description: "戻り値:bool\nブール式の値を反転します。",
+    args: [],
+    example: "? !ai.enabled\n  >The AI is not enabled.\n// AIが無効ならメッセージ"
+  },
+  {
+    syntax: "?ambient",
+    description: "戻り値:string\n現在アクティブなすべてのアンビエント音声IDをカンマ区切りリストで返します。",
+    args: [],
+    example: ">`0,0,Ambient Layers = @ambient@\n// アンビエント音声リストを表示"
+  },
+  {
+    syntax: "ambient.Add({str})",
+    description: "戻り値:なし\n指定した音声IDでアンビエント音声のレイヤーを追加します。最大4レイヤー。5つ目のレイヤーを追加すると最古のレイヤーが削除されます。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "?loc.begin\n  ambient.Add(ambient_crypt)\n// 開始時に'crypt'音声を追加"
+  },
+  {
+    syntax: "ambient.Stop()",
+    description: "戻り値:なし\nすべてのアンビエント音声レイヤーをクリアします。",
+    args: [],
+    example: "?time = 3\n  ambient.Stop()\n  ambient.Add(ambient_mines)\n// 3フレームで音声を切り替え"
+  },
+  {
+    syntax: "b.Add({num})",
+    description: "戻り値:自身\nBigNumberに数を加算します（+）。",
+    args: [
+      { name: "num", type: "number or BigNumber" }
+    ],
+    example: "var bn = math.BigNumber(12)\nbn.Add(5)\n>@bn@\n// 17"
+  },
+  {
+    syntax: "b.Sub({num})",
+    description: "戻り値:自身\nBigNumberから数を減算します（-）。",
+    args: [
+      { name: "num", type: "number or BigNumber" }
+    ],
+    example: "var bn = math.BigNumber(12)\nbn.Sub(5)\n>@bn@\n// 7"
+  },
+  {
+    syntax: "b.Mul({num})",
+    description: "戻り値:自身\nBigNumberに数を乗算します（*）。",
+    args: [
+      { name: "num", type: "number or BigNumber" }
+    ],
+    example: "var myBigNum1 = math.BigNumber(12)\nmyBigNum1.Mul(5)\n>@myBigNum1@\n// 60"
+  },
+  {
+    syntax: "b.Div({num})",
+    description: "戻り値:自身\nBigNumberを数で除算します（/）。",
+    args: [
+      { name: "num", type: "number or BigNumber" }
+    ],
+    example: "var myBigNum1 = math.BigNumber(12)\nmyBigNum1.Div(5)\n>@myBigNum1@\n// 2"
+  },
+  {
+    syntax: "b.Eq({num})",
+    description: "戻り値:bool\nBigNumberが数と等しいかを判定します（=）。",
+    args: [
+      { name: "num", type: "number or BigNumber" }
+    ],
+    example: "var bn = math.BigNumber(5)\n>@bn.Eq(5)@ @bn.Eq(3)@\n// true false"
+  },
+  {
+    syntax: "b.Gt({num})",
+    description: "戻り値:bool\nBigNumberが数より大きいかを判定します（>）。",
+    args: [
+      { name: "num", type: "number or BigNumber" }
+    ],
+    example: "var bn = math.BigNumber(5)\n>@bn.Gt(3)@ @bn.Gt(10)@\n// true false"
+  },
+  {
+    syntax: "b.Ge({num})",
+    description: "戻り値:bool\nBigNumberが数以上かを判定します（>=）。",
+    args: [
+      { name: "num", type: "number or BigNumber" }
+    ],
+    example: "var bn = math.BigNumber(5)\n>@bn.Ge(3)@ @bn.Ge(5)@\n// true true"
+  },
+  {
+    syntax: "b.Lt({num})",
+    description: "戻り値:bool\nBigNumberが数より小さいかを判定します（<）。",
+    args: [
+      { name: "num", type: "number or BigNumber" }
+    ],
+    example: "var bn = math.BigNumber(5)\n>@bn.Lt(3)@ @bn.Lt(10)@\n// false true"
+  },
+  {
+    syntax: "b.Le({num})",
+    description: "戻り値:bool\nBigNumberが数以下かを判定します（<=）。",
+    args: [
+      { name: "num", type: "number or BigNumber" }
+    ],
+    example: "var bn = math.BigNumber(5)\n>@bn.Le(10)@ @bn.Le(5)@\n// true true"
+  },
+  {
+    syntax: "b.ToFloat()",
+    description: "戻り値:float\nBigNumberを浮動小数点数に変換します。数が大きすぎるか小さすぎる場合はエラーをスローします。",
+    args: [],
+    example: "var bn = math.BigNumber(5)\nvar fNumber = bn.ToFloat()\n>float = @fNumber@\n// 5.0"
+  },
+  {
+    syntax: "b.ToInt()",
+    description: "戻り値:int\nBigNumberを整数に変換します。数が大きすぎるか小さすぎる場合はエラーをスローします。",
+    args: [],
+    example: "var bn = math.BigNumber(5)\nvar iNumber = bn.ToInt()\n>integer = @iNumber@\n// 5"
+  },
+  {
+    syntax: "b.ToString()",
+    description: "戻り値:string\nBigNumberの文字列表現を返します。保存用にシリアル化できます。",
+    args: [],
+    example: "var myBigNum = math.BigNumber('123456789123456789')\nstorage.Set('myBN', myBigNum.ToString())\n// 文字列として保存"
+  },
+  {
+    syntax: "b.ToUI()",
+    description: "戻り値:string\nユーザーインターフェース用の短縮された文字列表現を返します。",
+    args: [],
+    example: "var myBigNum = math.BigNumber('123456789123456789')\n>@myBigNum.ToUI()@\n// 123.5Qa"
+  },
+  {
+    syntax: "color.FromRGB({r},{g},{b})",
+    description: "戻り値:string\n3つの整数（0-255）から色を文字列に変換します。",
+    args: [
+      { name: "r", type: "int" },
+      { name: "g", type: "int" },
+      { name: "b", type: "int" }
+    ],
+    example: "var c = color.FromRGB(255, 0, 128)\n>`0,0,@c@, @c@\n// RGBから色を生成"
+  },
+  {
+    syntax: "color.ToRGB({string})",
+    description: "戻り値:int[3]\n文字列から3つの整数（0-255）に色を変換します。",
+    args: [
+      { name: "string", type: "string" }
+    ],
+    example: "var c = color.Random()\nvar rgb = color.ToRGB(c)\nvar r = rgb[0]\nvar g = rgb[1]\nvar b = rgb[2]\n>`0,0,@c@, @c@ \\n @r@ \\n @g@ \\n @b@\n// 色をRGBに分解"
+  },
+  {
+    syntax: "color.Lerp({c1},{c2},{t})",
+    description: "戻り値:string\n色c1からc2へ時間（パーセンテージ）tで線形補間します。",
+    args: [
+      { name: "c1", type: "string" },
+      { name: "c2", type: "string" },
+      { name: "t", type: "float" }
+    ],
+    example: "var c1 = '#ff4400'\nvar c2 = '#8888ff'\nvar t = 0.5\nvar c\nt = math.sin(time*0.1) / 2 + 0.5\nc = color.Lerp(c1, c2, t)\n>`0,1,@c@,@c@\\n ??????\n// 色を補間"
+  },
+  {
+    syntax: "color.Random()",
+    description: "戻り値:string\nランダムな色を返します。",
+    args: [],
+    example: "var c\nc = color.Random()\n>`0,0,@c@,@c@\\n ??????\n// ランダムな色を表示"
+  },
+  {
+    syntax: "draw.Bg({x}, {y}, {color})",
+    description: "戻り値:なし\n特定の画面位置の背景色を設定します。",
+    args: [
+      { name: "x", type: "int" },
+      { name: "y", type: "int" },
+      { name: "color", type: "string" }
+    ],
+    example: "draw.Bg(5, 4, #red)\n// (5,4)に赤い背景を設定"
+  },
+  {
+    syntax: "draw.Bg({x}, {y}, {color}, {w}, {h})",
+    description: "戻り値:なし\n画面上の矩形領域の背景色を設定します。",
+    args: [
+      { name: "x", type: "int" },
+      { name: "y", type: "int" },
+      { name: "color", type: "string" },
+      { name: "w", type: "int" },
+      { name: "h", type: "int" }
+    ],
+    example: "draw.Bg(5, 4, #cyan, 10, 6)\n// (5,4)から幅10、高さ6のシアンの背景を設定"
+  },
+  {
+    syntax: "draw.Box({x}, {y}, {w}, {h}, {color}, {style})",
+    description: "戻り値:なし\n指定した位置とサイズで矩形を描画します。矩形の境界は色とスタイル番号で定義されます。負のスタイル番号は矩形の中央を透明にします。注意: 現在、高度なプリントは常にボックスの上に描画されます。",
+    args: [
+      { name: "x", type: "int" },
+      { name: "y", type: "int" },
+      { name: "w", type: "int" },
+      { name: "h", type: "int" },
+      { name: "color", type: "string" },
+      { name: "style", type: "int" }
+    ],
+    example: "var style = 1\n?key = leftBegin\n  style--\n?key = rightBegin\n  style++\ndraw.Box(10, 5, 30, 15, #333333, style)\n>`12,6,#ffffff,Style = @style@\n>`12,8,#888888,Press Left/Right\\nto change style\n// スタイルを変更可能なボックス"
+  },
+  {
+    syntax: "draw.Clear()",
+    description: "戻り値:なし\n画面全体をクリアします。",
+    args: [],
+    example: "draw.Clear()\n// 画面をクリア"
+  },
+  {
+    syntax: "draw.GetSymbol({x}, {y})",
+    description: "戻り値:string\n画面位置(x, y)のグリフを返します。",
+    args: [
+      { name: "x", type: "int" },
+      { name: "y", type: "int" }
+    ],
+    example: "var s\nvar x = 20\nvar y = 10\nvar drawX\n?key=leftBegin\n  x--\n?key=rightBegin\n  x++\n?key=upBegin\n  y--\n?key=downBegin\n  y++\ns = draw.GetSymbol(x, y)\n>`0,1,Symbol = @s@\ndrawX = x - 1\n>`@drawX@,@y@,[#]\n// 選択した位置のシンボルを表示"
+  },
+  {
+    syntax: "draw.Player()",
+    description: "戻り値:なし\nスクリプトの特定の地点で、装備やアドオンを含むプレイヤーキャラクターを描画します。",
+    args: [],
+    example: "draw.Player()\n// プレイヤーを描画"
+  },
+  {
+    syntax: "draw.Player({x},{y})",
+    description: "戻り値:なし\nスクリプトの特定の地点で、装備やアドオンを含むプレイヤーキャラクターを指定したオフセット(x, y)で描画します。絶対位置での描画はscreen名前空間を参照。",
+    args: [
+      { name: "x", type: "int", optional: true },
+      { name: "y", type: "int", optional: true }
+    ],
+    example: "draw.Player(5, 10)\n// (5,10)にプレイヤーを描画"
+  },
+  {
+    syntax: "int.Parse({str})",
+    description: "戻り値:integer\n数値の文字列を整数値に変換します。数値でない文字列の場合はエラーをスローします。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "var s = '999'\nvar i = int.Parse(s)\ni++\n// 999を整数に変換し、1増加"
+  },
+  {
+    syntax: "event.GetObjectiveId({int})",
+    description: "戻り値:string\nコミュニティまたはシーズンイベントのアクティブな目標のIDを返します。目標のインデックスを渡します（通常0, 1, 2）。",
+    args: [
+      { name: "int", type: "int" }
+    ],
+    example: "var id\nid = event.GetObjectiveId(0)\n>`0,1,@id@:@p@/@g@\n// 目標IDを表示"
+  },
+  {
+    syntax: "event.GetObjectiveProgress({int})",
+    description: "戻り値:int\nコミュニティまたはシーズンイベントのアクティブな目標の進捗を返します。目標のインデックスを渡します（通常0, 1, 2）。",
+    args: [
+      { name: "int", type: "int" }
+    ],
+    example: "var p\np = event.GetObjectiveProgress(0)\n>`0,1,@id@:@p@/@g@\n// 目標進捗を表示"
+  },
+  {
+    syntax: "event.GetObjectiveGoal({int})",
+    description: "戻り値:int\nコミュニティまたはシーズンイベントのアクティブな目標のゴールを返します。目標のインデックスを渡します（通常0, 1, 2）。",
+    args: [
+      { name: "int", type: "int" }
+    ],
+    example: "var id\nvar p\nvar g\nid = event.GetObjectiveId(0)\np = event.GetObjectiveProgress(0)\ng = event.GetObjectiveGoal(0)\n>`0,1,@id@:@p@/@g@\n// 目標情報を表示"
+  },
+  {
+    syntax: "item.CanActivate()",
+    description: "戻り値:boolean\nアイテムのアビリティを起動できる場合は真、そうでない場合は偽を返します。ボス戦前やシネマティック中など、一部の状況ではクールダウンがなくても起動が無効になります。",
+    args: [],
+    example: "?item.CanActivate()\n  equip Bardiche\n  activate R\n// アビリティ起動が可能ならBardicheを装備して使用"
+  },
+  {
+    syntax: "item.CanActivate({str})",
+    description: "戻り値:boolean\n特定のアイテムを起動できる場合は真を返します。アイテムが装備されている場合にのみ真になります。特定の基準を満たさないと起動できないアイテムもあります。item.GetCooldown()のサブセットです。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "equip bardiche\n?item.GetCooldown('skeleton_arm') <= 0\n  equip skeleton arm\n  ?item.CanActivate('skeleton_arm')\n    activate R\n// skeleton_armが起動可能なら使用"
+  },
+  {
+    syntax: "item.GetCooldown({str})",
+    description: "戻り値:integer\n指定したアビリティの残りクールダウン時間（フレーム単位）を返します。無効なアビリティ文字列は-1を返します。未使用の武器アビリティも-1を返す場合があります。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "?foe = boss & item.GetCooldown('bardiche') <= 0\n  equip bardiche\n  activate R\n// ボス戦でbardicheが使用可能なら装備して起動"
+  },
+  {
+    syntax: "item.GetCount({str})",
+    description: "戻り値:integer\nインベントリ内のアイテムのコピー数を返します。アイテムが見つからない場合は0を返します。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "var searchCriteria = 'sword *0 -big -socket'\nvar swordCount = item.GetCount(searchCriteria)\n>I have @swordCount@ basic swords\n// 基本的な剣の数を表示"
+  },
+  {
+    syntax: "item.GetLoadoutL({int})",
+    description: "戻り値:string\n特定のロードアウトの左手のアイテムを返します。整数パラメータはクエリするロードアウト番号です。スロットにアイテムがない場合は空文字列を返します。",
+    args: [
+      { name: "int", type: "int" }
+    ],
+    example: ">`0,1,Left: @item.GetLoadoutL(1)@\n// ロードアウト1の左手アイテムを表示"
+  },
+  {
+    syntax: "item.GetLoadoutR({int})",
+    description: "戻り値:string\n特定のロードアウトの右手のアイテムを返します。整数パラメータはクエリするロードアウト番号です。スロットにアイテムがない場合は空文字列を返します。",
+    args: [
+      { name: "int", type: "int" }
+    ],
+    example: ">`0,2,Right: @item.GetLoadoutR(1)@\n// ロードアウト1の右手アイテムを表示"
+  },
+  {
+    syntax: "item.GetTreasureCount()",
+    description: "戻り値:integer\nインベントリ内の宝箱の現在の数を返します。",
+    args: [],
+    example: "var trs\ntrs = item.GetTreasureCount()\n>`0,2,Treasures: @trs@/@max@\n// 宝箱の数を表示"
+  },
+  {
+    syntax: "item.GetTreasureLimit()",
+    description: "戻り値:integer\nインベントリ内の宝箱の総容量（最大容量）を返します。",
+    args: [],
+    example: "var trs\nvar max\ntrs = item.GetTreasureCount()\nmax = item.GetTreasureLimit()\n>`0,2,Treasures: @trs@/@max@\n// 宝箱の数と容量を表示"
+  },
+  {
+    syntax: "key.Bind({act}, {key1})",
+    description: "戻り値:なし\n特定のアクションに新しいキーを割り当てます。他のアクションがそのキーを使っている場合、元のアクションからキーが放棄されます。",
+    args: [
+      { name: "act", type: "string" },
+      { name: "key1", type: "string" }
+    ],
+    example: "?loc.begin\n  key.Bind('Potion', 'P')\n// 'P'キーをポーションに割り当て"
+  },
+  {
+    syntax: "key.Bind({act}, {key1}, {key2})",
+    description: "戻り値:なし\n特定のアクションに2つの新しいキーを割り当てます。他のアクションがそのキーを使っている場合、元のアクションからキーが放棄されます。",
+    args: [
+      { name: "act", type: "string" },
+      { name: "key1", type: "string" },
+      { name: "key2", type: "string" }
+    ],
+    example: "?loc.begin\n  key.Bind('Potion', 'P', 'Q')\n// 'P'と'Q'をポーションに割り当て"
+  },
+  {
+    syntax: "key.GetKeyAct({key})",
+    description: "戻り値:string\n指定したキーに割り当てられたアクションを返します。キーが何にも割り当てられていない場合は'None'を返します。",
+    args: [
+      { name: "key", type: "string" }
+    ],
+    example: "key.GetKeyAct('P')\n// 'P'キーのアクションを取得"
+  },
+  {
+    syntax: "key.GetActKey({act})",
+    description: "戻り値:string\n指定したアクションに割り当てられた最初のキーを返します。キーが割り当てられていない場合は'None'を返します。",
+    args: [
+      { name: "act", type: "string" }
+    ],
+    example: "key.GetActKey('Potion')\n// 'Potion'の最初のキーを取得"
+  },
+  {
+    syntax: "key.GetActKey2({act})",
+    description: "戻り値:string\n指定したアクションに割り当てられた2番目のキーを返します。2番目のキーが割り当てられていない場合は'None'を返します。",
+    args: [
+      { name: "act", type: "string" }
+    ],
+    example: "key.GetActKey2('Potion')\n// 'Potion'の2番目のキーを取得"
+  },
+  {
+    syntax: "key.GetActLabel({act})",
+    description: "戻り値:string\n指定したアクションに割り当てられた最初のキーを表すユーザー向けラベルを返します。現在の実装ではキーの最初の文字を返します。",
+    args: [
+      { name: "act", type: "string" }
+    ],
+    example: "key.GetActLabel('Potion')\n// 'Potion'のラベルを取得"
+  },
+  {
+    syntax: "key.ResetBinds()",
+    description: "戻り値:なし\nすべてのアクションをデフォルトのキー割り当てにリセットします。",
+    args: [],
+    example: "key.ResetBinds()\n// キー割り当てをリセット"
+  },
+  {
+    syntax: "loc.Leave()",
+    description: "戻り値:なし\nプレイヤーが手動で退出したかのようにランを放棄します。",
+    args: [],
+    example: "loc.Leave()\n// ランを放棄"
+  },
+  {
+    syntax: "loc.Pause()",
+    description: "戻り値:なし\nプレイヤーがポーズボタンを押したかのようにランを一時停止します。",
+    args: [],
+    example: "loc.Pause()\n// ランを一時停止"
+  },
+  {
+    syntax: "math.Abs({num})",
+    description: "戻り値:number\n指定した数の絶対値を返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = -2\nnumber = math.Abs(number)\n// numberは2になる"
+  },
+  {
+    syntax: "math.Acos({num})",
+    description: "戻り値:number\n数のアークコサインをラジアンで返します。入力範囲は-1から1で、範囲外の場合は'NaN'を返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.Acos(-1)\n// numberはπになる"
+  },
+  {
+    syntax: "math.Asin({num})",
+    description: "戻り値:number\n数のアークサインをラジアンで返します。入力範囲は-1から1で、範囲外の場合は'NaN'を返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.Asin(1)\n// numberはπ/2になる"
+  },
+  {
+    syntax: "math.Atan({num})",
+    description: "戻り値:number\n数のアークタンジェントをラジアンで返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.Atan(2)\n// numberは1.107149になる"
+  },
+  {
+    syntax: "math.Atan2({y}, {x})",
+    description: "戻り値:number\nx軸と原点から点(x,y)への線との角度をラジアンで返します。",
+    args: [
+      { name: "y", type: "number" },
+      { name: "x", type: "number" }
+    ],
+    example: "var number = math.Atan2(3, 2)\n// numberは0.9827937になる"
+  },
+  {
+    syntax: "math.BigNumber()",
+    description: "戻り値:BigNumber\n新しいBigNumberオブジェクトをデフォルトで作成します。",
+    args: [],
+    example: "var myBigNum = math.BigNumber()\n>@myBigNum@\n// デフォルトのBigNumberを作成"
+  },
+  {
+    syntax: "math.BigNumber({number})",
+    description: "戻り値:BigNumber\n浮動小数点数または整数から新しいBigNumberオブジェクトを作成します。",
+    args: [
+      { name: "number", type: "number" }
+    ],
+    example: "var myBigNum = math.BigNumber(500)\nmyBigNum.Add(500)\n>@myBigNum@\n// 500からBigNumberを作成し加算"
+  },
+  {
+    syntax: "math.BigNumber({str})",
+    description: "戻り値:BigNumber\n文字列を解析して新しいBigNumberオブジェクトを作成します。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "var myBigNum = math.BigNumber('500')\nmyBigNum.Add(500).Mul(1000).Mul(1000).Mul(1000)\n>@myBigNum@\n// '500'からBigNumberを作成し計算\n// 1000000000000"
+  },
+  {
+    syntax: "math.Ceil({num})",
+    description: "戻り値:number\n数を切り上げて、それより大きい最初の整数を返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.Ceil(4.2)\n// numberは5.0になる"
+  },
+  {
+    syntax: "math.CeilToInt({num})",
+    description: "戻り値:integer\n数を切り上げて、それより大きい最初の整数を返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.CeilToInt(4.2)\n// numberは5になる"
+  },
+  {
+    syntax: "math.Clamp({num}, {min}, {max})",
+    description: "戻り値:number\n数を'min'と'max'の範囲内に制限します。既に範囲内にある場合は変更せず返します。",
+    args: [
+      { name: "num", type: "number" },
+      { name: "min", type: "number" },
+      { name: "max", type: "number" }
+    ],
+    example: "var number = 50\nnumber = math.Clamp(number, 0, 10)\n// numberは10になる"
+  },
+  {
+    syntax: "math.Cos({num})",
+    description: "戻り値:number\n指定したラジアン角度のコサインを返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.Cos(0)\n// numberは1になる"
+  },
+  {
+    syntax: "math.e",
+    description: "戻り値:float\nオイラー数とも呼ばれる定数e（約2.71828）を返します。",
+    args: [],
+    example: ">E = @math.e@\n// eの値を画面に表示"
+  },
+  {
+    syntax: "math.Exp({num})",
+    description: "戻り値:number\neを指定したべき乗に上げた値を返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.Exp(3)\n// numberは20.08554になる"
+  },
+  {
+    syntax: "math.Floor({num})",
+    description: "戻り値:number\n数を切り捨てて、それより小さい最初の整数を返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.Floor(2.7)\n// numberは2.0になる"
+  },
+  {
+    syntax: "math.FloorToInt({num})",
+    description: "戻り値:integer\n数を切り捨てて、それより小さい最初の整数を返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.FloorToInt(2.7)\n// numberは2になる"
+  },
+  {
+    syntax: "math.Lerp({a}, {b}, {t})",
+    description: "戻り値:number\n値aからbへ時間（パーセンテージ）tで線形補間を行います。",
+    args: [
+      { name: "a", type: "number" },
+      { name: "b", type: "number" },
+      { name: "t", type: "float" }
+    ],
+    example: "var number = math.Lerp(0.0, 20.0, 0.75)\n// numberは15.0になる"
+  },
+  {
+    syntax: "math.Log({num}, {base})",
+    description: "戻り値:number\n指定した底での数の対数を返します。",
+    args: [
+      { name: "num", type: "number" },
+      { name: "base", type: "number" }
+    ],
+    example: "var number = math.Log(5, 2)\n// numberは2.321928になる"
+  },
+  {
+    syntax: "math.Max({num1}, {num2})",
+    description: "戻り値:number\n2つの数のうち大きい方を返します。",
+    args: [
+      { name: "num1", type: "number" },
+      { name: "num2", type: "number" }
+    ],
+    example: "var number = math.Max(3, 10)\n// numberは10になる"
+  },
+  {
+    syntax: "math.Min({num1}, {num2})",
+    description: "戻り値:number\n2つの数のうち小さい方を返します。",
+    args: [
+      { name: "num1", type: "number" },
+      { name: "num2", type: "number" }
+    ],
+    example: "var number = math.Min(3, 10)\n// numberは3になる"
+  },
+  {
+    syntax: "math.pi",
+    description: "戻り値:float\n円周率π（約3.1415926）を返します。",
+    args: [],
+    example: ">PI = @math.pi@\n// πの値を画面に表示"
+  },
+  {
+    syntax: "math.Pow({num}, {p})",
+    description: "戻り値:number\n数を指定したべき乗に上げた値を返します。",
+    args: [
+      { name: "num", type: "number" },
+      { name: "p", type: "number" }
+    ],
+    example: "var number = math.Pow(3, 2)\n// numberは9になる"
+  },
+  {
+    syntax: "math.Round({num})",
+    description: "戻り値:number\n数を最も近い整数に丸めます。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.Round(2.7)\n// numberは3.0になる"
+  },
+  {
+    syntax: "math.RoundToInt({num})",
+    description: "戻り値:integer\n数を最も近い整数に丸めます。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.RoundToInt(2.7)\n// numberは3になる"
+  },
+  {
+    syntax: "math.Sign({num})",
+    description: "戻り値:number\n指定した数が負の場合は-1、それ以外の場合は1を返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var sign = math.Sign(-21)\nvar n = 10 * sign\n// nは-10になる"
+  },
+  {
+    syntax: "math.Sin({num})",
+    description: "戻り値:number\n指定したラジアン角度のサインを返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.Sin(math.pi / 2)\n// numberは1になる"
+  },
+  {
+    syntax: "math.Sqrt({num})",
+    description: "戻り値:number\n数の平方根を返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.Sqrt(9)\n// numberは3になる"
+  },
+  {
+    syntax: "math.Tan({num})",
+    description: "戻り値:number\n指定したラジアン角度のタンジェントを返します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.Tan(2)\n// numberは-2.18504になる"
+  },
+  {
+    syntax: "math.ToDeg({num})",
+    description: "戻り値:number\nラジアンの数を度に変換します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.ToDeg(2 * math.pi)\n// numberは360になる"
+  },
+  {
+    syntax: "math.ToRad({num})",
+    description: "戻り値:number\n度の数をラジアンに変換します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "var number = math.ToRad(360)\n// numberは2πになる"
+  },
+  {
+    syntax: "?music",
+    description: "戻り値:string\n現在再生中の音楽のIDを返します。",
+    args: [],
+    example: ">`0,0,Current Music = @music@\n// 現在の音楽IDを表示"
+  },
+  {
+    syntax: "music.Play({str})",
+    description: "戻り値:なし\n指定した音声IDで音楽を再生します。同時に再生できる音楽は1つだけです。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "?loc.begin | loc.loop\n  music.Play(temple_0)\n// 開始またはループ時にtemple_0を再生"
+  },
+  {
+    syntax: "music.Stop()",
+    description: "戻り値:なし\nすべての音楽を停止します。",
+    args: [],
+    example: "?!string.Equals(music, '')\n  music.Stop()\n// 音楽が再生中なら停止"
+  },
+  {
+    syntax: "player.ShowScaredFace({num})",
+    description: "戻り値:なし\nビッグヘッドが有効な場合、指定した時間だけプレイヤーの表情を怖がった顔に変更します。",
+    args: [
+      { name: "num", type: "number" }
+    ],
+    example: "?key = primaryBegin\n  player.ShowScaredFace(1)\n// 'primary'キーで1フレーム怖がる"
+  },
+  {
+    syntax: "screen.FromWorldX({int})",
+    description: "戻り値:integer\nX軸の値をワールドスペースからスクリーンスペースに変換します。",
+    args: [
+      { name: "int", type: "int" }
+    ],
+    example: "var x\nx = screen.FromWorldX(pos.x)\n>`0,1,Player position on screen: @x@,@y@\n// ワールドXをスクリーンXに変換"
+  },
+  {
+    syntax: "screen.FromWorldZ({int})",
+    description: "戻り値:integer\nワールドスペースのZ軸の値をスクリーンスペースのY軸に変換します。",
+    args: [
+      { name: "int", type: "int" }
+    ],
+    example: "var y\ny = screen.FromWorldZ(pos.z - pos.y)\n>`0,1,Player position on screen: @x@,@y@\n// ワールドZをスクリーンYに変換"
+  },
+  {
+    syntax: "screen.ToWorldX({int})",
+    description: "戻り値:integer\nX軸の値をスクリーンスペースからワールドスペースに変換します。",
+    args: [
+      { name: "int", type: "int" }
+    ],
+    example: "var x\nx = screen.ToWorldX(input.x)\n>`0,2,World position of cursor: @x@,@z@\n// スクリーンXをワールドXに変換"
+  },
+  {
+    syntax: "screen.ToWorldZ({int})",
+    description: "戻り値:integer\nスクリーンスペースのY軸の値をワールドスペースのZ軸に変換します。",
+    args: [
+      { name: "int", type: "int" }
+    ],
+    example: "var z\nz = screen.ToWorldZ(input.y)\n>`0,2,World position of cursor: @x@,@z@\n// スクリーンYをワールドZに変換"
+  },
+  {
+    syntax: "screen.Next()",
+    description: "戻り値:なし\n複数画面の場所で、カメラをプレイヤーに対して1画面前方に移動します。",
+    args: [],
+    example: "?key = rightBegin\n  screen.Next()\n// 'right'キーでカメラを前方に"
+  },
+  {
+    syntax: "screen.Previous()",
+    description: "戻り値:なし\n複数画面の場所で、カメラをプレイヤーに対して1画面後方に移動します。",
+    args: [],
+    example: "?key = leftBegin\n  screen.Previous()\n// 'left'キーでカメラを後方に"
+  },
+  {
+    syntax: "screen.ResetOffset()",
+    description: "戻り値:なし\nカメラをプレイヤーに追従する状態にリセットし、screen.Next()やscreen.Previous()による変更を解除します。",
+    args: [],
+    example: "var lastScreenI = -1\n?lastScreenI ! screen.i\n  screen.ResetOffset()\nlastScreenI = screen.i\n// カメラをリセット"
+  },
+  {
+    syntax: "storage.Delete({string})",
+    description: "戻り値:なし\n指定したキーに存在する値を削除します。",
+    args: [
+      { name: "string", type: "string" }
+    ],
+    example: "storage.Delete('highscore')\n// 'highscore'を削除"
+  },
+  {
+    syntax: "storage.Get({string})",
+    description: "戻り値:value\n指定したキーから永続的な値を返します。",
+    args: [
+      { name: "string", type: "string" }
+    ],
+    example: "var value = storage.Get('highscore')\n?value\n  >High Score = @value@\n:\n  >No High Score found.\n// ハイスコアを取得"
+  },
+  {
+    syntax: "storage.Get({string}, {value})",
+    description: "戻り値:value\n指定したキーから永続的な値を返します。見つからない場合は2番目のパラメータをデフォルト値として返します。",
+    args: [
+      { name: "string", type: "string" },
+      { name: "value", type: "any" }
+    ],
+    example: "var value = storage.Get('highscore', 0)\n>High Score = @value@\n// ハイスコアがなければ0を返す"
+  },
+  {
+    syntax: "storage.Has({string})",
+    description: "戻り値:boolean\n指定したキーが永続ストレージに存在する場合は真、そうでない場合は偽を返します。",
+    args: [
+      { name: "string", type: "string" }
+    ],
+    example: "?storage.Has('highscore')\n  var value = storage.Get('highscore')\n  >High Score = @value@\n:\n  >No High Score found.\n// ハイスコアの存在を確認"
+  },
+  {
+    syntax: "storage.Incr({string})",
+    description: "戻り値:integer\n指定したキーに格納された値を1増加させ、新しい値を返します。",
+    args: [
+      { name: "string", type: "string" }
+    ],
+    example: "?gameOver\n  storage.Incr('stat_TimesPlayed')\n// ゲームオーバー時にプレイ回数を増加"
+  },
+  {
+    syntax: "storage.Keys()",
+    description: "戻り値:array\n現在のコンテキストで利用可能なすべてのストレージキーを含む文字列の配列を取得します。",
+    args: [],
+    example: "var a\n?time % 30 = 0\n  a = storage.Keys()\n  for i = 0 .. a.Count()-1\n    >Key @i@ = @a[i]@\n// 30フレームごとにキーを表示"
+  },
+  {
+    syntax: "storage.Incr({string}, {integer})",
+    description: "戻り値:integer\n指定したキーに格納された値を指定した量だけ増加させ、新しい値を返します。",
+    args: [
+      { name: "string", type: "string" },
+      { name: "integer", type: "int" }
+    ],
+    example: "var amount\n?foundCoins\n  amount = rng%5 + 5\n  storage.Incr('coins', amount)\n// コインを見つけたら5?9増加"
+  },
+  {
+    syntax: "storage.Set({string}, {value})",
+    description: "戻り値:なし\n指定したキーに値を永続ストレージに保存します。",
+    args: [
+      { name: "string", type: "string" },
+      { name: "value", type: "any" }
+    ],
+    example: "var score = 1000\nstorage.Set('highscore', score)\n// ハイスコアを1000として保存"
+  },
+  {
+    syntax: "string.Break({string}, {integer})",
+    description: "戻り値:array\n文字列を指定した最大幅で複数の文字列に分割します。",
+    args: [
+      { name: "string", type: "string" },
+      { name: "integer", type: "int" }
+    ],
+    example: "var s = 'The brown fox jumps over the lazy dog'\nvar a = string.Break(s, 14)\nfor i = 0 .. a.Count()-1\n  >`0,@i@,@a[i]@\n// 幅14で文字列を分割"
+  },
+  {
+    syntax: "string.Capitalize({str})",
+    description: "戻り値:string\n文字列の最初の文字を大文字に変更します。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "var a = 'foo'\na = string.Capitalize(a)\n>@a@\n// 'Foo' を表示"
+  },
+  {
+    syntax: "string.Equals({str1}, {str2})",
+    description: "戻り値:boolean\n2つの文字列パラメータを受け取り、完全に同じ場合は真を、そうでない場合は偽を返します。大文字小文字を区別します。",
+    args: [
+      { name: "str1", type: "string" },
+      { name: "str2", type: "string" }
+    ],
+    example: "var a = 'foo'\n?string.Equals(a, 'foo')\n  >The strings are equal\n:\n  >They are NOT equal\n// この場合、文字列は等しい"
+  },
+  {
+    syntax: "string.Format({str1}, {...})",
+    description: "戻り値:string\nフォーマットテンプレートを他のパラメータの値で置き換え、最終的な合成文字列を返します。多くのフォーマットオプションをサポートする強力な関数です。",
+    args: [
+      { name: "str1", type: "string" },
+      { name: "...", type: "any", optional: true }
+    ],
+    example: "var str = 'My name is {0} and I have {1} power!'\nvar result = string.Format(\n^  str,\n^  player.name,\n^  totalgp\n^)\n>@result@\n// 名前とパワーをフォーマット"
+  },
+  {
+    syntax: "string.IndexOf({str}, {criteria})",
+    description: "戻り値:integer\n文字列変数と基準文字列を受け取り、文字列内で基準の位置を見つけます。見つからない場合は-1を返します。",
+    args: [
+      { name: "str", type: "string" },
+      { name: "criteria", type: "string" }
+    ],
+    example: "var a = 'Hello World!'\nvar index = string.IndexOf(a, 'llo')\n// indexは2になる"
+  },
+  {
+    syntax: "string.IndexOf({str}, {criteria}, {startAt})",
+    description: "戻り値:integer\n文字列変数、基準文字列、開始インデックスを受け取り、開始位置から基準の位置を見つけます。見つからない場合は-1を返します。",
+    args: [
+      { name: "str", type: "string" },
+      { name: "criteria", type: "string" },
+      { name: "startAt", type: "int" }
+    ],
+    example: "var a = 'Hello World!'\nvar index = string.IndexOf(a, 'llo', 4)\n// indexは-1になる（位置4から検索）"
+  },
+  {
+    syntax: "string.Join({s}, {[]})",
+    description: "戻り値:string\n文字列の配列をセパレータsで結合し、単一の文字列にします。",
+    args: [
+      { name: "s", type: "string" },
+      { name: "[]", type: "array" }
+    ],
+    example: "var a = ['Hello', 'World', '!']\nvar b = string.Join(';', a)\n>`0,0,@b@\n// 'Hello;World;!' を表示"
+  },
+  {
+    syntax: "string.Join({s}, {[]}, {int})",
+    description: "戻り値:string\n文字列の配列をセパレータsで結合し、開始インデックスから結合します。",
+    args: [
+      { name: "s", type: "string" },
+      { name: "[]", type: "array" },
+      { name: "int", type: "int" }
+    ],
+    example: "var a = ['Hello', 'World', '!']\nvar b = string.Join(';', a, 1)\n>`0,0,@b@\n// 'World;!' を表示"
+  },
+  {
+    syntax: "string.Join({s}, {[]}, {int}, {int})",
+    description: "戻り値:string\n文字列の配列をセパレータsで結合し、開始インデックスと結合する要素数を指定します。",
+    args: [
+      { name: "s", type: "string" },
+      { name: "[]", type: "array" },
+      { name: "int", type: "int" },
+      { name: "int", type: "int" }
+    ],
+    example: "var a = ['Hello', 'World', '!']\nvar b = string.Join(';', a, 0, 2)\n>`0,0,@b@\n// 'Hello;World' を表示"
+  },
+  {
+    syntax: "string.Size({str})",
+    description: "戻り値:integer\n文字列変数を受け取り、その長さをグリフ数で計算します。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "var a = 'Hello World!'\nvar size = string.Size(a)\n>size = @size@\n// 文字列の長さを表示"
+  },
+  {
+    syntax: "string.Split({str})",
+    description: "戻り値:array\n文字列を受け取り、スペースがあるところで文字列の配列に分割します。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "var a = string.Split('Hello World !')\nfor i = 0 .. a.Count()-1\n  >`0,@i@,[@i@] = @a[i]@\n// 'Hello', 'World', '!' に分割"
+  },
+  {
+    syntax: "string.Split({str}, {s…})",
+    description: "戻り値:array\n文字列とセパレータを受け取り、指定されたセパレータで文字列の配列に分割します。",
+    args: [
+      { name: "str", type: "string" },
+      { name: "s…", type: "string", optional: true }
+    ],
+    example: "var a = string.Split('Hello World !', ' ', 'l')\nfor i = 0 .. a.Count()-1\n  >`0,@i@,[@i@] = @a[i]@\n// 'He', ' ', 'o', 'Wor', 'd', '!' に分割"
+  },
+  {
+    syntax: "string.Split({str}, {s…}, {bool})",
+    description: "戻り値:array\n文字列とセパレータを受け取り、指定されたセパレータで文字列の配列に分割し、空のエントリを破棄するかどうかを指定します。",
+    args: [
+      { name: "str", type: "string" },
+      { name: "s…", type: "string", optional: true },
+      { name: "bool", type: "boolean" }
+    ],
+    example: "var a\na = string.Split('Hello World !', 'l', 'r', true)\nfor i = 0 .. a.Count()-1\n  >`0,@i@,[@i@] = @a[i]@\n// 'He', 'o Wo', 'd !' に分割"
+  },
+  {
+    syntax: "string.Sub({str}, {startAt})",
+    description: "戻り値:string\n文字列変数と開始インデックスを受け取り、その位置から前方に文字列を分割します。",
+    args: [
+      { name: "str", type: "string" },
+      { name: "startAt", type: "int" }
+    ],
+    example: "var a = 'Hello World!'\nvar subString = string.Sub(a, 6)\n>substring = @subString@\n// subStringは 'World!' になる"
+  },
+  {
+    syntax: "string.Sub({str}, {startAt}, {length})",
+    description: "戻り値:string\n文字列変数、開始インデックス、長さを受け取り、開始位置から指定した長さで文字列を分割します。",
+    args: [
+      { name: "str", type: "string" },
+      { name: "startAt", type: "int" },
+      { name: "length", type: "int" }
+    ],
+    example: "var a = 'Hello World!'\nvar subString = string.Sub(a, 6, 3)\n>substring = @subString@\n// subStringは 'Wor' になる"
+  },
+  {
+    syntax: "string.ToLower({str})",
+    description: "戻り値:string\n文字列のすべての文字を小文字に変更します。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "var a = 'Foo'\na = string.ToLower(a)\n>@a@\n// 'foo' を画面に表示"
+  },
+  {
+    syntax: "string.ToUpper({str})",
+    description: "戻り値:string\n文字列のすべての文字を大文字に変更します。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "var a = 'Foo'\na = string.ToUpper(a)\n>@a@\n// 'FOO' を画面に表示"
+  },
+  {
+    syntax: "sys.cacheRemoteFiles",
+    description: "戻り値:boolean\nリモートでインポートされたファイルをラン間でキャッシュするかどうかを示します。デフォルトはtrue。falseに設定すると、場所画面からプレイ開始時にスクリプトが再ダウンロードされます。",
+    args: [],
+    example: "?key = upBegin\n  sys.cacheRemoteFiles = !sys.cacheRemoteFiles\n  ?sys.cacheRemoteFiles\n    >Remote caching ENABLED\n  :\n    >Remote caching DISABLED\n// 'up'キーでキャッシュを切り替え"
+  },
+  {
+    syntax: "sys.fileUrl",
+    description: "戻り値:string\nスクリプトをインポートする際の現在のファイルパスを取得します（読み取り専用）。デフォルト値はデバイスに依存します。",
+    args: [],
+    example: ">`0,1,fileUrl = @sys.fileUrl@\n// 現在のファイルURLを表示"
+  },
+  {
+    syntax: "sys.SetFileUrl({str})",
+    description: "戻り値:なし\n'import'または'new'コマンドで使用されるインポートスクリプトの起源を変更します。Mind Stoneでのみ呼び出し可能で、リモートURLや'local'、'remote'を受け入れます。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "sys.SetFileUrl(\n^'https://MyCoolDomain.com/scripts/')\nimport MyCombatScript\n// カスタムURLからスクリプトをインポート"
+  },
+  {
+    syntax: "sys.MindConnect()",
+    description: "戻り値:なし\n実験的機能。Mind Stoneにこの行だけがある場合、他のプログラム（例: Pythonスクリプト）からの接続を待つインターフェースを有効にします。",
+    args: [],
+    example: "sys.MindConnect()\n// Mind Stoneで外部接続を有効化"
+  },
+  {
+    syntax: "sys.isMobile",
+    description: "戻り値:bool\nユーザーがAndroidまたはiOSを使用している場合に真を返します。",
+    args: [],
+    example: "sys.isMobile\n// モバイルデバイスかチェック"
+  },
+  {
+    syntax: "sys.isPC",
+    description: "戻り値:bool\nユーザーがWin/Mac/Linuxを使用している場合に真を返します。",
+    args: [],
+    example: "sys.isPC\n// PCかチェック"
+  },
+  {
+    syntax: "sys.os",
+    description: "戻り値:string\nユーザーのオペレーティングシステムを返します（例: 'Android', 'iOS', 'Linux', 'OSX', 'Windows'）。",
+    args: [],
+    example: ">sys.os\n// OSを表示"
+  },
+  {
+    syntax: "te.language",
+    description: "戻り値:string\nプレイヤーが設定で選択した言語のコードを返します。可能な値: EN, PT-BR, ZH-CN, ZH-TW, FR, DE, RU, ES-LA, ES-EU, JP, KR, TK。",
+    args: [],
+    example: "var lang = te.language\n>Language = @lang@\n// 選択された言語を表示"
+  },
+  {
+    syntax: "te.xt({str})",
+    description: "戻り値:string\n指定した英語テキストをプレイヤーの選択言語に翻訳します。翻訳が見つからない場合は入力テキストを返します。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "var button = ui.AddButton()\nbutton.text = te.xt('Play')\n// 'Play'を翻訳してボタンに設定"
+  },
+  {
+    syntax: "te.GetTID({str})",
+    description: "戻り値:string\n指定したテキストのテキスト識別子（TID）を返します。入力テキストはプレイヤーの選択言語である必要があります。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "var tid = te.GetTID('Play')\n>`0,1,@tid@\n// 'tid_button_play' を表示"
+  },
+  {
+    syntax: "te.ToEnglish({str})",
+    description: "戻り値:string\n指定したテキストをプレイヤーの選択言語から元の英語テキストに翻訳します。翻訳が見つからない場合は入力テキストを返します。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: ">`0,1,@te.ToEnglish('Jogar')@\n// ポルトガル語設定なら 'Play' を表示"
+  },
+  {
+    syntax: "time.FormatCasual({int})",
+    description: "戻り値:string\nフレーム数を人間が読みやすい文字列形式（例: '1m 23s'）に変換します。",
+    args: [
+      { name: "int", type: "int" }
+    ],
+    example: ">`0,0,Current time =\n^ @time.FormatCasual(totaltime)@\n// 現在の時間をカジュアル形式で表示"
+  },
+  {
+    syntax: "time.FormatCasual({int}, {bool})",
+    description: "戻り値:string\nフレーム数を人間が読みやすい文字列形式（例: '1m 23s'）に変換します。2番目のパラメータ（bool）はオプションで、trueの場合は精度が最大になります。",
+    args: [
+      { name: "int", type: "int" },
+      { name: "bool", type: "boolean", optional: true }
+    ],
+    example: ">`0,0,Current time =\n^ @time.FormatCasual(totaltime, true)@\n// 現在の時間を高精度のカジュアル形式で表示"
+  },
+  {
+    syntax: "time.FormatDigital({int})",
+    description: "戻り値:string\nフレーム数を人間が読みやすい文字列形式（例: '1:23'）に変換します。",
+    args: [
+      { name: "int", type: "int" }
+    ],
+    example: ">`0,0,Current time =\n^ @time.FormatDigital(totaltime)@\n// 現在の時間をデジタル形式で表示"
+  },
+  {
+    syntax: "time.FormatDigital({int}, {bool})",
+    description: "戻り値:string\nフレーム数を人間が読みやすい文字列形式（例: '1:23'）に変換します。2番目のパラメータ（bool）はオプションで、trueの場合は精度が最大になります。",
+    args: [
+      { name: "int", type: "int" },
+      { name: "bool", type: "boolean", optional: true }
+    ],
+    example: ">`0,0,Current time =\n^ @time.FormatDigital(totaltime, true)@\n// 現在の時間を高精度のデジタル形式で表示"
+  },
+  {
+    syntax: "ui.OpenInv()",
+    description: "戻り値:なし\nインベントリ画面を開きます。",
+    args: [],
+    example: "ui.OpenInv()\n// インベントリ画面を開く"
+  },
+  {
+    syntax: "ui.OpenMind()",
+    description: "戻り値:なし\nMind Stone画面を開きます。",
+    args: [],
+    example: "ui.OpenMind()\n// Mind Stone画面を開く"
+  },
+  {
+    syntax: "ui.ShowBanner({str})",
+    description: "戻り値:なし\n最大2つのメッセージを含むアニメーションバナーを表示します。ui.ShowBanner()が呼ばれるたびにバナーのアニメーションがリスタートします。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "?time = 120\n  ui.ShowBanner('Hello World!')\n// 120フレームでバナーを表示"
+  },
+  {
+    syntax: "ui.ShowBanner({str}, {str})",
+    description: "戻り値:なし\n2つのメッセージを含むアニメーションバナーを表示します。ui.ShowBanner()が呼ばれるたびにバナーのアニメーションがリスタートします。",
+    args: [
+      { name: "str", type: "string" },
+      { name: "str", type: "string" }
+    ],
+    example: "?time = 120\n  ui.ShowBanner('Hello', 'World!')\n// 120フレームで2つのメッセージを持つバナーを表示"
+  },
+  {
+    syntax: "Type({var})",
+    description: "戻り値:string\n変数の型を評価し、文字列表現を返します。可能な型: 'string', 'int', 'bool', 'function', 'object', 'null'。",
+    args: [
+      { name: "var", type: "any" }
+    ],
+    example: "var a = 0\n?Type(a) = 'int'\n  >Variable 'a' is an integer.\n// 'a' が整数型か確認"
+  },
+  {
+    syntax: "a = []",
+    description: "戻り値:なし\n新しい配列を初期化します。",
+    args: [],
+    example: "var myArray = []\n// 新しい空の配列を作成"
+  },
+  {
+    syntax: "a[{integer}]",
+    description: "戻り値:any\n指定した位置の値を読み取ります。",
+    args: [
+      { name: "integer", type: "int" }
+    ],
+    example: "var myArray = [10, 3]\n?myArray[1] = 3\n  >Yes, the value at [1] equals 3\n// インデックス1の値が3か確認"
+  },
+  {
+    syntax: "a.Add({value})",
+    description: "戻り値:なし\n配列の末尾に新しい値またはオブジェクトを追加します。",
+    args: [
+      { name: "value", type: "any" }
+    ],
+    example: "var myArray = []\nmyArray.Add(10)\n// 配列に10を追加"
+  },
+  {
+    syntax: "a.Clear()",
+    description: "戻り値:なし\n配列からすべての要素を削除し、空にします。配列を再宣言するよりも効率的です。",
+    args: [],
+    example: "var myArray = [10, 3]\nmyArray.Clear()\n// 配列を空にする"
+  },
+  {
+    syntax: "a.Contains({value})",
+    description: "戻り値:bool\n指定した値が配列内にあるかを判定します。見つかれば真、そうでなければ偽を返します。",
+    args: [
+      { name: "value", type: "any" }
+    ],
+    example: "var myArray = [10, 3]\n?myArray.Contains(3)\n  >Yes\n// 3が配列にあるか確認"
+  },
+  {
+    syntax: "a.Count()",
+    description: "戻り値:int\n配列内の要素数を返します。",
+    args: [],
+    example: "var myArray = ['apple', 'banana']\nvar size = myArray.Count()\n>Array size = @size@\n// 配列のサイズを表示"
+  },
+  {
+    syntax: "a.Emplace({integer}, {value})",
+    description: "戻り値:なし\n指定した位置の値を新しい値で置き換えます。",
+    args: [
+      { name: "integer", type: "int" },
+      { name: "value", type: "any" }
+    ],
+    example: "var myArray = [10, 3]\nmyArray.Emplace(0, 4)\nvar value = myArray[0]\n>Value at [0] is now @value@\n// インデックス0を4に置き換え"
+  },
+  {
+    syntax: "a.IndexOf({value})",
+    description: "戻り値:int\n配列内で指定した値を探し、最初に見つかった位置を示す整数を返します。見つからない場合は-1を返します。",
+    args: [
+      { name: "value", type: "any" }
+    ],
+    example: "var myArray = [10, 3]\nvar index = myArray.IndexOf(3)\n>Found at position @index@\n// 3の位置を表示"
+  },
+  {
+    syntax: "a.Insert({integer}, {value})",
+    description: "戻り値:なし\n配列の指定した位置に新しい値またはオブジェクトを追加します。右側の要素は次の位置にシフトします。",
+    args: [
+      { name: "integer", type: "int" },
+      { name: "value", type: "any" }
+    ],
+    example: "var myArray = [10, 3]\nmyArray.Insert(1, 'apple')\n// 配列は [10, 'apple', 3] になる"
+  },
+  {
+    syntax: "a.RemoveAt({integer})",
+    description: "戻り値:なし\n配列から指定した位置の要素を削除します。ゼロベースで、右側の要素は前の位置にシフトします。",
+    args: [
+      { name: "integer", type: "int" }
+    ],
+    example: "var myArray = [1, 2, 3]\nmyArray.RemoveAt(1)\n// 配列は [1, 3] になる"
+  },
+  {
+    syntax: "a.Sort()",
+    description: "戻り値:なし\n配列の要素を昇順に整理します。異なる型のオブジェクトが含まれている場合でもソートされますが、期待される結果は保証されません。",
+    args: [],
+    example: "var myArray = ['Cherry', 2, 'Apple', 1, true, false, 'Banana', 3]\nmyArray.Sort()\nfor i = 0 .. myArray.Count() - 1\n  value = myArray[i]\n  >`0,@i@,@value@\n// 配列をソートして表示"
+  },
+  {
+    syntax: "ui.root",
+    description: "戻り値:Panel\nUIツリー全体が構築されるベースUIオブジェクトです。",
+    args: [],
+    example: "disable hud\nui.root.visible = true\n// HUDを無効化し、ルートを可視化"
+  },
+  {
+    syntax: "ui.AddAnim({string})",
+    description: "戻り値:Anim\nルートパネルにAnimオブジェクトを追加します。アニメーションスプライトシートをパラメータとして受け取ります。",
+    args: [
+      { name: "string", type: "string" }
+    ],
+    example: "?loc.begin\n  ui.AddAnim(ascii\n\\o)\n%%\n(o/\nasciiend)\n// 開始時にアニメーションを追加"
+  },
+  {
+    syntax: "ui.AddButton()",
+    description: "戻り値:Button\nルートパネルにButtonオブジェクトを追加します。",
+    args: [],
+    example: "func OnPressed()\n  > Hello World!\n\n?loc.begin\n  var button = ui.AddButton()\n  button.y = 1\n  button.text = 'Press me'\n  button.SetPressed(OnPressed)\n// ボタンを追加し、押された時にメッセージ"
+  },
+  {
+    syntax: "ui.AddPanel()",
+    description: "戻り値:Panel\nルートパネルにPanelオブジェクトを追加します。パネルは他の要素のコンテナとして重要なオブジェクト型です。",
+    args: [],
+    example: "?loc.begin\n  var p = ui.AddPanel()\n  p.color = #red\n// 赤いパネルを追加"
+  },
+  {
+    syntax: "ui.AddStyle()",
+    description: "戻り値:int\nパネルやボタンなどの矩形コンポーネントの描画に使用できる新しいスタイルを追加し、新しいスタイルのID番号を返します。同一スタイルの複数追加を防ぎます。",
+    args: [],
+    example: "var customStyle = ui.AddStyle('\n^123\n^456\n^789')\n?loc.begin\n  var p = ui.AddPanel()\n  p.style = customStyle\n// カスタムスタイルを追加して適用"
+  },
+  {
+    syntax: "ui.AddText()",
+    description: "戻り値:Text\nルートパネルにTextオブジェクトを追加します。",
+    args: [],
+    example: "?loc.begin\n  var t = ui.AddText()\n  t.text = 'Hello World!'\n// テキストを追加"
+  },
+  {
+    syntax: "ui.AddText({string})",
+    description: "戻り値:Text\nルートパネルに指定した文字列でTextオブジェクトを追加します。",
+    args: [
+      { name: "string", type: "string" }
+    ],
+    example: "?loc.begin\n  var t = ui.AddText('Hello World!')\n// 'Hello World!' のテキストを追加"
+  },
+  {
+    syntax: "ui.Clear()",
+    description: "戻り値:なし\nメインコンテナからすべてのUI要素を削除します。",
+    args: [],
+    example: "?key = backBegin\n  ui.Clear()\n// 'back'キーでUIをクリア"
+  },
+  {
+    syntax: "component.x",
+    description: "戻り値:integer\nコンポーネントのドック位置に対するX位置を示します。",
+    args: [],
+    example: "button.x = 5\n// ボタンのX位置を5に設定"
+  },
+  {
+    syntax: "component.y",
+    description: "戻り値:integer\nコンポーネントのドック位置に対するY位置を示します。",
+    args: [],
+    example: "button.y = 1\n// ボタンのY位置を1に設定"
+  },
+  {
+    syntax: "component.w",
+    description: "戻り値:integer\nコンポーネントの幅を示します。デフォルト値はオブジェクト型によって異なります。",
+    args: [],
+    example: "button.w = string.Size(button.text) + 4\n// ボタンの幅をテキストサイズ+4に設定"
+  },
+  {
+    syntax: "component.h",
+    description: "戻り値:integer\nコンポーネントの高さを示します。デフォルト値は5です。",
+    args: [],
+    example: "panel.h = panel.parent.h\n// パネルの高さを親パネルの高さに設定"
+  },
+  {
+    syntax: "component.absoluteX",
+    description: "戻り値:integer\n画面に対するコンポーネントの絶対X位置を示します（読み取り専用）。",
+    args: [],
+    example: "var t\n?loc.begin\n  var p = ui.AddPanel()\n  p.anchor = bottom_right\n  p.dock = bottom_right\n  t = ui.AddText('Foo')\n  p.Add(t)\n>`0,2,Absolute pos = @t.absoluteX@,@t.absoluteY@\n// 絶対X位置を表示"
+  },
+  {
+    syntax: "component.absoluteY",
+    description: "戻り値:integer\n画面に対するコンポーネントの絶対Y位置を示します（読み取り専用）。",
+    args: [],
+    example: "var t\n?loc.begin\n  var p = ui.AddPanel()\n  p.anchor = bottom_right\n  p.dock = bottom_right\n  t = ui.AddText('Foo')\n  p.Add(t)\n>`0,2,Absolute pos = @t.absoluteX@,@t.absoluteY@\n// 絶対Y位置を表示"
+  },
+  {
+    syntax: "component.anchor",
+    description: "戻り値:string\nコンポーネントの内部ピボットを表す自動レイアウトプロパティです。デフォルトは'center_center'。可能な値: top_left, top_center, top_right, center_left, center_center, center_right, bottom_left, bottom_center, bottom_right。",
+    args: [],
+    example: "?loc.begin\n  var p = ui.AddPanel()\n  p.anchor = top_right\n// パネルのアンカーを右上に設定"
+  },
+  {
+    syntax: "component.dock",
+    description: "戻り値:string\nコンポーネントの外部ピボットまたは親内の位置を表す自動レイアウトプロパティです。アンカーと同じ値を使用するのが一般的です。",
+    args: [],
+    example: "?loc.begin\n  var p = ui.AddPanel()\n  p.dock = top_right\n// パネルのドックを右上に設定"
+  },
+  {
+    syntax: "component.ax",
+    description: "戻り値:string\nアンカーのX部分を示します。可能な値: left, center, right。",
+    args: [],
+    example: "var p\n?loc.begin\n  p = ui.AddPanel()\n  p.ax = right\n// アンカーのXを右に設定"
+  },
+  {
+    syntax: "component.ay",
+    description: "戻り値:string\nアンカーのY部分を示します。可能な値: top, center, bottom。",
+    args: [],
+    example: "var p\n?loc.begin\n  p = ui.AddPanel()\n  p.ay = top\n// アンカーのYを上に設定"
+  },
+  {
+    syntax: "component.dx",
+    description: "戻り値:string\nドックのX部分を示します。可能な値: left, center, right。",
+    args: [],
+    example: "var p\n?loc.begin\n  p = ui.AddPanel()\n  p.dx = right\n// ドックのXを右に設定"
+  },
+  {
+    syntax: "component.dy",
+    description: "戻り値:string\nドックのY部分を示します。可能な値: top, center, bottom。",
+    args: [],
+    example: "var p\n?loc.begin\n  p = ui.AddPanel()\n  p.dy = top\n// ドックのYを上に設定"
+  },
+  {
+    syntax: "component.parent",
+    description: "戻り値:Panel\nコンポーネントの親パネルへの参照を示します（読み取り専用）。panel.Add(component)が呼ばれると親が変更されます。",
+    args: [],
+    example: "var p\n?loc.begin\n  p = ui.AddPanel()\n  p.h = p.parent.h\n// 親パネルの高さに設定"
+  },
+  {
+    syntax: "component.visible",
+    description: "戻り値:bool/string\nコンポーネントの可視性を示します。デフォルト値は'inherit'。可能な値: true（常に表示）、false（常に非表示）、inherit（親の状態に従う）。",
+    args: [],
+    example: "component.visible = true\n// コンポーネントを常に表示"
+  },
+  {
+    syntax: "component.Recycle()",
+    description: "戻り値:なし\nコンポーネントを親パネルから削除し、将来のui.Add_()呼び出しで再利用します。リサイクルされた要素への変数参照はnullにするか再割り当てが必要です。",
+    args: [],
+    example: "component.Recycle()\n// コンポーネントをリサイクル"
+  },
+  {
+    syntax: "panel.children",
+    description: "戻り値:Component[]\npanel.Add()でパネルに追加されたすべての子コンポーネントを含む配列。",
+    args: [],
+    example: "var children = panel.children\n// 子コンポーネントの配列を取得"
+  },
+  {
+    syntax: "panel.clip",
+    description: "戻り値:bool\nパネルの境界を使用して子コンポーネントの描画を制限するかどうかを示します。trueの場合、パネルの境界外の部分は描画されません。",
+    args: [],
+    example: "var p\n?loc.begin\n  p = ui.AddPanel()\n  p.w = 4\n  p.h = 3\n  var t = ui.AddText('The quick brown fox jumps\\n^ over the lazy dog.')\n  p.Add(t)\n?time%30 < 15\n  p.clip = true\n:\n  p.clip = false\n// クリッピングを切り替え"
+  },
+  {
+    syntax: "panel.color",
+    description: "戻り値:string\nパネルの色をRGB16進数形式で示します。",
+    args: [],
+    example: "panel.color = '#ff0000'\n// パネルの色を赤に設定"
+  },
+  {
+    syntax: "panel.style",
+    description: "戻り値:int\nパネルの現在のスタイルのID番号を示します。デフォルト値は1。可能な値は-8から8で、ui.AddStyle()で追加スタイルを定義できます。",
+    args: [],
+    example: "panel.style = 2\n// パネルのスタイルを2に設定"
+  },
+  {
+    syntax: "panel.Add({Component})",
+    description: "戻り値:なし\nコンポーネントをパネルに追加します。コンポーネントはパネルの子となり、パネルはその親となります。追加順序は描画順に影響します。",
+    args: [
+      { name: "Component", type: "Component" }
+    ],
+    example: "?loc.begin\n  var p = ui.AddPanel()\n  var t = ui.AddText('Hello')\n  p.Add(t)\n// パネルにテキストを追加"
+  },
+  {
+    syntax: "panel.Add({Component}, {int})",
+    description: "戻り値:なし\nコンポーネントをパネルの指定したソート位置に追加します。整数パラメータがない場合は最後の子として追加されます。",
+    args: [
+      { name: "Component", type: "Component" },
+      { name: "int", type: "int", optional: true }
+    ],
+    example: "?loc.begin\n  var p = ui.AddPanel()\n  var t = ui.AddText('Hello')\n  p.Add(t, 0)\n// パネルの先頭にテキストを追加"
+  },
+  {
+    syntax: "panel.Clear()",
+    description: "戻り値:なし\nパネルからすべてのUI要素を削除します。削除されたコンポーネントはUIシステムでリサイクルされ、将来のui.Add_()呼び出しで再利用されます。",
+    args: [],
+    example: "panel.Clear()\n// パネルの子要素をすべてクリア"
+  },
+  {
+    syntax: "panel.Remove({Component})",
+    description: "戻り値:なし\nパネルから特定のコンポーネントを削除します。削除されたコンポーネントはUIシステムでリサイクルされます。",
+    args: [
+      { name: "Component", type: "Component" }
+    ],
+    example: "panel.Remove(t)\n// 特定のコンポーネントを削除"
+  },
+  {
+    syntax: "panel.Remove({int})",
+    description: "戻り値:なし\nパネルの指定したインデックス番号のコンポーネントを削除します。削除されたコンポーネントはUIシステムでリサイクルされます。",
+    args: [
+      { name: "int", type: "int" }
+    ],
+    example: "panel.Remove(0)\n// インデックス0のコンポーネントを削除"
+  },
+  {
+    syntax: "text.align",
+    description: "戻り値:string\nボックス内のテキストの配置/調整を示します。デフォルト値は'left'。可能な値: left, center, right。",
+    args: [],
+    example: "text.align = 'center'\n// テキストを中央揃えに設定"
+  },
+  {
+    syntax: "text.color",
+    description: "戻り値:string\nテキストの色をRGB16進数形式で示します。",
+    args: [],
+    example: "text.color = '#ff0000'\n// テキストの色を赤に設定"
+  },
+  {
+    syntax: "text.lines",
+    description: "戻り値:string[]\nテキストボックスが内容をフォーマットした後の分割されたテキスト行の文字列配列を示します。色メタデータは除外されます。",
+    args: [],
+    example: "var lines = text.lines\n// テキストの行配列を取得"
+  },
+  {
+    syntax: "text.text",
+    description: "戻り値:string\nテキストボックスの完全な内容を示します。[color=#rrggbb][/color]メタデータで部分的に色付け可能です。",
+    args: [],
+    example: "?loc.begin\n  var t = ui.AddText()\n  t.text = 'Hello [color=#red]World[/color]!'\n// 'World' を赤で表示"
+  },
+  {
+    syntax: "button.text",
+    description: "戻り値:string\nボタン内に表示されるテキストを示します。",
+    args: [],
+    example: "button.text = player.name\n// ボタンにプレイヤーの名前を設定"
+  },
+  {
+    syntax: "button.tcolor",
+    description: "戻り値:string\nボタン内のテキストの色をRGB16進数形式で示します。",
+    args: [],
+    example: "button.tcolor = '#ff0000'\n// ボタンのテキスト色を赤に設定"
+  },
+  {
+    syntax: "button.bcolor",
+    description: "戻り値:string\nボタンの境界線の色をRGB16進数形式で示します。",
+    args: [],
+    example: ">@button.bcolor@\nbutton.bcolor = '#880000'\n// 境界線の色を表示し、暗赤色に設定"
+  },
+  {
+    syntax: "button.hcolor",
+    description: "戻り値:string\nボタンが押されたときのハイライト色をRGB16進数形式で示します。",
+    args: [],
+    example: "?loc.begin\n  var b = ui.AddButton()\n  b.hcolor = '#yellow'\n// ハイライト色を黄色に設定"
+  },
+  {
+    syntax: "button.sound",
+    description: "戻り値:string\nボタンが押されたときに再生される効果音を示します。デフォルトは'confirm'。",
+    args: [],
+    example: "button.sound = 'buy'\n// ボタンの押下音を'buy'に変更"
+  },
+  {
+    syntax: "button.style",
+    description: "戻り値:int\nボタンの現在のスタイルのID番号を示します。デフォルト値は1。可能な値は-8から8で、ui.AddStyle()で追加可能です。",
+    args: [],
+    example: "button.style = 3\n// ボタンのスタイルを3に設定"
+  },
+  {
+    syntax: "button.SetPressed({f})",
+    description: "戻り値:なし\nボタンが押されたときに呼び出される関数を割り当てます。関数は任意の数のパラメータを持つことができ、最初の引数はボタン自体への参照になります。",
+    args: [
+      { name: "f", type: "function" }
+    ],
+    example: "var button1\nvar button2\nfunc OnPressed(btn)\n  ?btn = button1\n    >Button1 was pressed\n  :\n    >Button2 was pressed\n\n?loc.begin\n  button1 = ui.AddButton()\n  button1.y = 1\n  button1.SetPressed(OnPressed)\n\n  button2 = ui.AddButton()\n  button2.y = 6\n  button2.SetPressed(OnPressed)\n// ボタン押下時の関数を設定"
+  },
+  {
+    syntax: "button.SetDown({f})",
+    description: "戻り値:なし\nボタンの押下が始まったとき（最初のユーザー接触）に呼び出される関数を割り当てます。",
+    args: [
+      { name: "f", type: "function" }
+    ],
+    example: "func OnDown()\n  > Down!\n\n?loc.begin\n  var button = ui.AddButton()\n  button.y = 1\n  button.text = 'Press me'\n  button.SetDown(OnDown)\n// 押下開始時の関数を設定"
+  },
+  {
+    syntax: "button.SetUp({f})",
+    description: "戻り値:なし\nボタンの押下がボタン上で終了したとき（最後のユーザー接触）に呼び出される関数を割り当てます。",
+    args: [
+      { name: "f", type: "function" }
+    ],
+    example: "func OnUp()\n  > Up!\n\n?loc.begin\n  var button = ui.AddButton()\n  button.y = 1\n  button.text = 'Press me'\n  button.SetUp(OnUp)\n// 押下終了時の関数を設定"
+  },
+  {
+    syntax: "anim.color",
+    description: "戻り値:string\nアニメーションの色をRGB16進数形式で示します。",
+    args: [],
+    example: "anim.color = '#bbbbbb'\n// アニメーションの色を灰色に設定"
+  },
+  {
+    syntax: "anim.duration",
+    description: "戻り値:int\nアニメーションの時間長さをフレーム単位で示します。",
+    args: [],
+    example: "anim.duration = 20\n// アニメーションの長さを20フレームに設定"
+  },
+  {
+    syntax: "anim.flipX",
+    description: "戻り値:bool\n真の場合、アートをピボット上で水平に反転します。",
+    args: [],
+    example: "anim.flipX = true\n// アニメーションを水平反転"
+  },
+  {
+    syntax: "anim.flipY",
+    description: "戻り値:bool\n真の場合、アートをピボット上で垂直に反転します。",
+    args: [],
+    example: "anim.flipY = true\n// アニメーションを垂直反転"
+  },
+  {
+    syntax: "anim.frame",
+    description: "戻り値:int\n現在描画中のアニメーションフレームを示します。特定のフレームに設定するために変更可能です。",
+    args: [],
+    example: "anim.frame = 5\n// アニメーションを5フレーム目に設定"
+  },
+  {
+    syntax: "anim.gamePause",
+    description: "戻り値:bool\n真の場合、プレイヤーがゲームを一時停止するとアニメーションの再生が自動的に停止し、再開時に再生が再開します。",
+    args: [],
+    example: "anim.gamePause = true\n// ゲーム一時停止に連動"
+  },
+  {
+    syntax: "anim.loop",
+    description: "戻り値:bool\n真の場合、アニメーションが終了すると最初から再開します。",
+    args: [],
+    example: "anim.loop = true\n// アニメーションをループ再生"
+  },
+  {
+    syntax: "anim.playing",
+    description: "戻り値:bool\nアニメーションが現在再生中かどうかを示します（読み取り専用）。",
+    args: [],
+    example: "?anim.playing\n  >Animation is playing\n// 再生中か確認"
+  },
+  {
+    syntax: "anim.paused",
+    description: "戻り値:bool\nアニメーションが再生中だがanim.Pause()で一時停止されているかどうかを示します（読み取り専用）。",
+    args: [],
+    example: "?anim.paused\n  >Animation is paused\n// 一時停止中か確認"
+  },
+  {
+    syntax: "anim.pivotX",
+    description: "戻り値:int\nASCIIアートが位置に対してどこに描画されるかを微調整するための追加のピボットオフセットを示します。",
+    args: [],
+    example: "anim.pivotX = 2\n// Xピボットを2に調整"
+  },
+  {
+    syntax: "anim.pivotY",
+    description: "戻り値:int\nASCIIアートが位置に対してどこに描画されるかを微調整するための追加のピボットオフセットを示します。",
+    args: [],
+    example: "anim.pivotY = -1\n// Yピボットを-1に調整"
+  },
+  {
+    syntax: "anim.playOnStart",
+    description: "戻り値:bool\n真の場合、アニメーションが可能な限り早く再生を開始します。",
+    args: [],
+    example: "anim.playOnStart = true\n// 即時再生を有効化"
+  },
+  {
+    syntax: "anim.AddLayer({string})",
+    description: "戻り値:Anim\nこのアニメーションの上に新しいASCIIスプライトを追加します。再生中はすべてのレイヤーが同期します。",
+    args: [
+      { name: "string", type: "string" }
+    ],
+    example: "var a = ui.AddAnim(asciiArtA)\nvar layer2 = a.AddLayer(asciiArtB)\nlayer2.color = '#bbbbbb'\n// レイヤーを追加し色を設定"
+  },
+  {
+    syntax: "anim.Load({string})",
+    description: "戻り値:なし\n新しいASCIIスプライトシートを割り当てます。",
+    args: [
+      { name: "string", type: "string" }
+    ],
+    example: "anim.Load(asciiArt)\n// 新しいスプライトシートをロード"
+  },
+  {
+    syntax: "anim.Pause()",
+    description: "戻り値:なし\n現在のフレームでアニメーションの再生を一時停止します。anim.Play()で再開できます。",
+    args: [],
+    example: "anim.Pause()\n// アニメーションを一時停止"
+  },
+  {
+    syntax: "anim.Play()",
+    description: "戻り値:なし\nアニメーションの再生を開始するか、一時停止していた再生を再開します。",
+    args: [],
+    example: "var dance\n?loc.begin\n  dance = ui.AddAnim(ascii\n(O/\n%%\n\\O)\nasciiend)\n  dance.duration = 20\n  dance.loop = true\n  dance.Play()\n// アニメーションを再生"
+  },
+  {
+    syntax: "anim.Stop()",
+    description: "戻り値:なし\n再生を停止し、アニメーションを最初のフレームに戻します。",
+    args: [],
+    example: "anim.Stop()\n// アニメーションを停止しリセット"
+  },
+  {
+    syntax: "canvas.blend",
+    description: "戻り値:string\nキャンバスが背後の要素と合成されるときのブレンドモードを示します。可能な値: Opaque, Multiply, Divide, Add, Subtract。デフォルトは'opaque'。",
+    args: [],
+    example: "var filter1 = ui.AddCanvas()\nfilter1.w = screen.w\nfilter1.h = screen.h\nfilter1.blend = 'multiply'\n// ブレンドモードをmultiplyに設定"
+  },
+  {
+    syntax: "canvas.Get({int}, {int})",
+    description: "戻り値:string\nキャンバスの特定の位置(x, y)のグリフを返します。",
+    args: [
+      { name: "int", type: "int" },
+      { name: "int", type: "int" }
+    ],
+    example: "var glyph = canvas.Get(0, 0)\n// (0,0)のグリフを取得"
+  },
+  {
+    syntax: "canvas.Set({str})",
+    description: "戻り値:なし\nキャンバス全体を指定したグリフで埋めます。",
+    args: [
+      { name: "str", type: "string" }
+    ],
+    example: "?loc.begin\n  var canvas = ui.AddCanvas()\n  canvas.Set('X')\n// キャンバスを'X'で埋める"
+  },
+  {
+    syntax: "canvas.Set({int}, {int}, {str})",
+    description: "戻り値:なし\nキャンバスの特定の位置(x, y)を指定したグリフに変更します。",
+    args: [
+      { name: "int", type: "int" },
+      { name: "int", type: "int" },
+      { name: "str", type: "string" }
+    ],
+    example: "?loc.begin\n  var canvas = ui.AddCanvas()\n  canvas.Set(0, 0, 'A')\n// (0,0)を'A'に設定"
+  },
+  {
+    syntax: "canvas.Set({int}, {int}, {fg}, {str})",
+    description: "戻り値:なし\nキャンバスの特定の位置(x, y)を指定した前景色(fg)とグリフに変更します。",
+    args: [
+      { name: "int", type: "int" },
+      { name: "int", type: "int" },
+      { name: "fg", type: "string" },
+      { name: "str", type: "string" }
+    ],
+    example: "?loc.begin\n  var canvas = ui.AddCanvas()\n  canvas.Set(0, 0, '#ff0000', 'A')\n// (0,0)を赤い'A'に設定"
+  },
+  {
+    syntax: "canvas.Set({int}, {int}, {fg}, {bg}, {str})",
+    description: "戻り値:なし\nキャンバスの特定の位置(x, y)を指定した前景色(fg)、背景色(bg)、グリフに変更します。",
+    args: [
+      { name: "int", type: "int" },
+      { name: "int", type: "int" },
+      { name: "fg", type: "string" },
+      { name: "bg", type: "string" },
+      { name: "str", type: "string" }
+    ],
+    example: "?loc.begin\n  var canvas = ui.AddCanvas()\n  for x = 0..canvas.w\n    for y = 0..canvas.h\n      var fg = color.Random()\n      var bg = color.Random()\n      canvas.Set(x, y, fg, bg, '?')\n// キャンバス全体をランダムな色で埋める"
+  },
+  {
+    syntax: "canvas.SetFG({color})",
+    description: "戻り値:なし\nキャンバス全体の前景色を設定します。",
+    args: [
+      { name: "color", type: "string" }
+    ],
+    example: "?loc.begin\n  var canvas = ui.AddCanvas()\n  canvas.Set('R')\n  canvas.SetFG('#red')\n// キャンバス全体を赤い'R'に設定"
+  },
+  {
+    syntax: "canvas.SetFG({int}, {int}, {color})",
+    description: "戻り値:なし\nキャンバスの特定の位置(x, y)の前景色を変更します。",
+    args: [
+      { name: "int", type: "int" },
+      { name: "int", type: "int" },
+      { name: "color", type: "string" }
+    ],
+    example: "?loc.begin\n  var canvas = ui.AddCanvas()\n  canvas.Set('X')\n  canvas.SetFG(2, 1, '#ff00ff')\n// (2,1)の前景色をマゼンタに設定"
+  },
+  {
+    syntax: "canvas.SetBG({color})",
+    description: "戻り値:なし\nキャンバス全体の背景色を設定します。",
+    args: [
+      { name: "color", type: "string" }
+    ],
+    example: "?loc.begin\n  var canvas = ui.AddCanvas()\n  canvas.Set('g')\n  canvas.SetBG('#00aa00')\n// キャンバス全体を緑の背景で'g'に設定"
+  },
+  {
+    syntax: "canvas.SetBG({int}, {int}, {color})",
+    description: "戻り値:なし\nキャンバスの特定の位置(x, y)の背景色を変更します。",
+    args: [
+      { name: "int", type: "int" },
+      { name: "int", type: "int" },
+      { name: "color", type: "string" }
+    ],
+    example: "?loc.begin\n  var canvas = ui.AddCanvas()\n  canvas.Set('X')\n  canvas.SetBG(2, 1, '#yellow')\n// (2,1)の背景色を黄色に設定"
+  }
+    ];
