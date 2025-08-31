@@ -48,37 +48,62 @@ header {
 .muted { color: var(--panel-muted); }
 code { background: #00000055; padding: 2px 6px; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 #docSearch { flex: 1; font-size: 12px; padding: 2px 4px; background: #252525; color: #ddd; border: 1px solid var(--border); border-radius: 4px; }
+#customMenu, #contextMenu { position: absolute; display: none; background: #252525; border: 1px solid #555; color: #ddd; min-width: 140px; z-index: 10000; border-radius: 4px; list-style: none; padding: 0; margin: 0; font-size: 13px; }
+#customMenu li, #contextMenu li { padding: 6px 10px; cursor: pointer; }
+#customMenu li:hover, #contextMenu li:hover { background: #444; }
 .wrap {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr minmax(0, 300px);
   grid-template-rows: auto;
-  height: 100%;
+  height: 100%; /* 追加 */
 }
+
+
 #docPanel {
   border-left: 1px solid #444;
   padding: 10px;
   background: var(--panel-bg);
-  max-width: 100%;
+  max-width: 100%; /* 横幅が画面をはみ出さないように */
   overflow: auto;
 }
+
 @media (max-width: 600px) {
   .wrap {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
+    grid-template-rows: 1fr auto; /* 上：editor 下：panel */
   }
   #editor {
-    height: calc(100vh - 50px - 50px);
+    height: calc(100vh - 50px - 50px); /* headerやボタンの高さに応じて調整 */
   }
   #docPanel {
     width: 100%;
-    max-height: calc(100vh - 50px);
+    max-height: calc(100vh - 50px); /* パネルも画面内に収める */
     overflow: auto;
     order: 2;
     border-left: none;
     border-top: 1px solid #444;
   }
 }
+
+.overlay {
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.3);
+  display: none; justify-content: center; align-items: center;
+  z-index: 99999;
+}
+.modal {
+  background: #222; border-radius: 8px; padding: 10px; min-width: 400px;
+  z-index: 100000; position: relative;
+}
+.tabs { display: flex; border-bottom: 2px solid #ccc; }
+.tab { padding: 8px 16px; cursor: pointer; border: 1px solid #ccc; border-bottom: none; background: #222; margin-right: 4px; border-radius: 6px 6px 0 0; }
+.tab.active { background: #666; font-weight: bold; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+td { border: 1px solid #aaa; padding: 8px; text-align: center; cursor: pointer; }
+td:hover { background: #f0f0f0; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs/loader.min.js"></script>
 </head>
@@ -86,7 +111,18 @@ code { background: #00000055; padding: 2px 6px; border-radius: 6px; font-family:
 <header>
   <h2>エディタ（Stone Script）</h2>
   <span class="muted">補完候補やカーソル位置に応じて右パネルに説明を表示</span>
+  <div style="display:flex; gap:8px; margin-top:6px;">
+    <button id="menuBtn" style="width:auto; padding:2px 6px;">☰ メニュー</button>
+    <button id="openBtn">表を開く</button>
+  </div>
+  <ul id="customMenu">
+    <li data-action="selectAll">すべて選択</li>
+    <li data-action="cut">切り取り</li>
+    <li data-action="copy">コピー</li>
+    <li data-action="paste">貼り付け</li>
+  </ul>
 </header>
+
 <div class="wrap">
   <div id="editor"></div>
   <aside id="docPanel">
@@ -101,10 +137,131 @@ code { background: #00000055; padding: 2px 6px; border-radius: 6px; font-family:
   </aside>
 </div>
 
-<script>
-require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs' } });
+<ul id="contextMenu">
+  <li data-action="selectAll">すべて選択</li>
+  <li data-action="cut">切り取り</li>
+  <li data-action="copy">コピー</li>
+  <li data-action="paste">貼り付け</li>
+</ul>
 
+<!-- overlay は body の末尾 -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <div class="tabs">
+      <div class="tab active" data-tab="tab1">装飾</div>
+      <div class="tab" data-tab="tab2">矢印</div>
+      <div class="tab" data-tab="tab3">罫線</div>
+      <div class="tab" data-tab="tab4">属性</div>
+      <div class="tab" data-tab="tab5">ブロック</div>
+      <div class="tab" data-tab="tab9">ギリシャ</div>
+      <div class="tab" data-tab="tab6">記号1</div>
+      <div class="tab" data-tab="tab7">記号2</div>
+      <div class="tab" data-tab="tab8">記号3</div>
+      <div class="tab" data-tab="tab10">記号4</div>      
+    </div>
+    <div class="tab-content active" id="tab1">
+      <table>
+        <tr>
+        	<td>☆</td>
+        	<td>☺️</td>
+        	<td>ʘ</td>
+        	<td>☼</td>
+        </tr>
+        <tr>
+        	<td>❤️</td>
+        	<td>♦️</td>
+        	<td>♣️</td>
+        	<td>♠️</td>
+        </tr>
+        <tr>
+        	<td>•</td>
+        	<td>◘</td>
+        	<td>⏹️</td>
+        	<td>◙</td>
+        </tr>
+        <tr>
+        	<td>♂️</td>
+        	<td>♀️</td>
+        	<td>♪</td>
+        	<td>♫</td>
+        </tr>
+      </table>
+    </div>
+    <div class="tab-content" id="tab2">
+		<table>
+		<tr><td>▶️</td><td>◀️</td><td>▲</td><td>▼</td></tr>
+		<tr><td>↑</td><td>↓</td><td>→</td><td>←</td></tr>
+		</table>
+    </div>
+    <div class="tab-content" id="tab3">
+    <table>
+<tr><td>│</td><td>┤</td><td>╡</td><td>╢</td><td>╖</td><td>╕</td><td>╣</td><td>║</td><td>╗</td><td>╝</td><td>╜</td><td>╛</td><td>┐</td></tr>
+<tr><td>└</td><td>┴</td><td>┬</td><td>├</td><td>─</td><td>┼</td><td>╞</td><td>╟</td><td>╚</td><td>╔</td><td>╩</td><td>╦</td><td>╠</td></tr>
+<tr><td>═</td><td>╬</td><td>╧</td><td>╨</td><td>╤</td><td>╥</td><td>╙</td><td>╘</td><td>╒</td><td>╓</td><td>╫</td><td>╪</td><td>┘</td><td>┌</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab4">
+    <table>
+<tr><td>❤️</td><td>∞</td><td>❄️</td><td>\\\*</td><td>δ</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab5">
+    <table>
+<tr><td>░</td><td>▒</td><td>▓</td><td>█</td><td>▄</td><td>▀</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab6">
+    <table>
+<tr><td>À</td><td>⚿</td><td>œ</td><td>§</td><td>≠</td><td>¿</td><td>¯</td><td>¡</td></tr>
+<tr><td>!</td><td>＂</td><td>#</td><td>$</td><td>%</td><td>\\\&</td><td>'</td><td>(</td></tr>
+<tr><td>)</td><td>\\\*</td><td>+</td><td>,</td><td>-</td><td>.</td><td>/</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab7">
+    <table>
+<tr><td>:</td><td>;</td><td><</td><td>=</td><td>></td><td>?</td><td>@</td><td>\\\[</td></tr>
+<tr><td>\\\\</td><td>]</td><td>^</td><td>`</td><td>{</td><td>|</td><td>}</td><td>~</td><td>´</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab8">
+    <table>
+<tr><td>Ç</td><td>ü</td><td>é</td><td>â</td><td>ä</td><td>à</td><td>å</td><td>ç</td></tr>
+<tr><td>ê</td><td>ë</td><td>è</td><td>ï</td><td>î</td><td>ì</td><td>Ä</td><td>Å</td></tr>
+<tr><td>É</td><td>æ</td><td>Æ</td><td>ô</td><td>ö</td><td>ò</td><td>û</td><td>ù</td></tr>
+<tr><td>ý</td><td>Ö</td><td>Ü</td><td>€</td><td>£</td><td>￥</td><td>₩</td><td>Á</td></tr>
+<tr><td>á</td><td>í</td><td>ó</td><td>ú</td><td>ñ</td><td>Ñ</td><td>ã</td><td>õ</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab9">
+    <table>
+<tr><td>ζ</td><td>η</td><td>ξ</td><td>λ</td><td>ψ</td><td>έ</td><td>«</td><td>»</td></tr>
+<tr><td>ρ</td><td>ι</td><td>α</td><td>β</td><td>γ</td><td>π</td><td>Σ</td><td>σ</td></tr>
+<tr><td>μ</td><td>τ</td><td>Φ</td><td>Θ</td><td>Ω</td><td>δ</td><td>∞</td><td>φ</td></tr>
+<tr><td>ε</td><td>ω</td></tr>
+</table>
+
+    </div>
+    <div class="tab-content" id="tab10">
+    <table>
+<tr><td>≡</td><td>±</td><td>≥</td><td>≤</td><td>⌐</td><td>¬</td><td>÷</td><td>≈</td></tr>
+<tr><td>°</td><td>…</td><td>·</td><td>†</td><td>☤</td><td>∆</td><td>❄️</td><td>┊</td></tr>
+</table>
+    </div>
+  </div>
+</div>
+
+<script>
+let editor;
+
+require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs' } });
 require(['vs/editor/editor.main'], function () {
+  // 言語定義
   monaco.languages.register({ id: 'stone_script' });
   monaco.languages.setMonarchTokensProvider('stone_script', {
     tokenizer: {
@@ -118,131 +275,1683 @@ require(['vs/editor/editor.main'], function () {
         [/\/\*/, 'comment', '@comment'],
         [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier']
       ],
-      comment: [
-        [/[^\/*]+/, 'comment'],
-        [/\*\//, 'comment', '@pop'],
-        [/[\/*]/, 'comment']
-      ],
-      string: [
-        [/[^\\"]+/, 'string'],
-        [/\\./, 'string.escape'],
-        [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
-      ]
+      comment: [[/[^\/*]+/, 'comment'], [/\*\//, 'comment', '@pop'], [/[\/*]/, 'comment']],
+      string: [[/[^\\"]+/, 'string'], [/\\./, 'string.escape'], [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]]
     }
   });
 
-  const editor = monaco.editor.create(document.getElementById('editor'), {
+  // DOCS
+const DOCS = {
+    "print": { title: "print", body: "文字列を出力します" },
+    "//▼": {title: "//▼TODO▼", body: "TODOコメント"},
+    "//": { title: "//", body: "行コメント\n// コメント文" },
+    "/* */": { title: "/* */", body: "ブロックコメント\n/* 複数行 */" },
+  "loc": {
+    title: "loc",
+    body: "戻り値:string\nプレイヤーが現在訪れている場所を示します。"
+  },
+  "loc.id": {
+    title: "loc.id",
+    body: "戻り値:string\n現在の場所のユニークな識別子を示します。"
+  },
+  "loc.gp": {
+    title: "loc.gp",
+    body: "戻り値:int\n現在のランで使用されている総ギアパワーを示します。"
+  },
+  "loc.name": {
+    title: "loc.name",
+    body: "戻り値:string\n現在の場所のローカライズされた名前を示します。"
+  },
+  "loc.stars": {
+    title: "loc.stars",
+    body: "戻り値:int\n現在の場所の難易度を示します。"
+  },
+  "loc.begin": {
+    title: "loc.begin",
+    body: "戻り値:bool\n場所の最初のフレーム（time = 0）でのみ真となり、ゲームシミュレーションが実行される前です。Ouroborosループ後では真になりません。変数のリセットに役立ちます。"
+  },
+  "loc.loop": {
+    title: "loc.loop",
+    body: "戻り値:bool\nOuroborosループ後のランの最初のフレームで真となります。"
+  },
+  "loc.isQuest": {
+    title: "loc.isQuest",
+    body: "戻り値:bool\n現在の場所がレジェンドやカスタムクエストの特別な場所であれば真、それ以外は偽となります。"
+  },
+  "loc.averageTime": {
+    title: "loc.averageTime",
+    body: "戻り値:int\n現在の場所の平均クリア時間を示します。最新のクリア時間が最も重み付けされ、古い時間ほど影響が少なくなります。"
+  },
+  "loc.bestTime": {
+    title: "loc.bestTime",
+    body: "戻り値:int\n現在の場所の最短クリア時間（ハイスコア）を示します。"
+  },
+  "encounter.isElite": {
+    title: "encounter.isElite",
+    body: "戻り値:bool\n現在のエンカウンターがエリートエンカウンターかどうかを示します。"
+  },
+  "encounter.eliteMod": {
+    title: "encounter.eliteMod",
+    body: "戻り値:string\n現在のエンカウンターの特別な修飾子（存在する場合）を示します。"
+  },
+  "foe": {
+    title: "foe",
+    body: "戻り値:string\nプレイヤーが現在ターゲットにしている敵を示します。"
+  },
+  "foe.id": {
+    title: "foe.id",
+    body: "戻り値:string\nプレイヤーがターゲットにしている敵のユニークなID（またはタイプ）を示します。"
+  },
+  "foe.name": {
+    title: "foe.name",
+    body: "戻り値:string\nプレイヤーがターゲットにしている敵のローカライズされた名前を示します。"
+  },
+  "foe.damage": {
+    title: "foe.damage",
+    body: "戻り値:int\nプレイヤーがターゲットにしている敵の1回ごとの攻撃ダメージを示します。"
+  },
+  "foe.distance": {
+    title: "foe.distance",
+    body: "戻り値:int\nプレイヤーとターゲットにしている敵との距離を示します。"
+  },
+  "foe.z": {
+    title: "foe.z",
+    body: "戻り値:int\nターゲットにしている敵のZ位置を示します。"
+  },
+  "foe.count": {
+    title: "foe.count",
+    body: "戻り値:int\nプレイヤーから46ユニット以内にいる敵の数を示します。"
+  },
+  "foe.GetCount()": {
+    title: "foe.GetCount()",
+    body: "戻り値:int\n指定したユニット数以内にいる敵の数を示します。"
+  },
+  "foe.hp": {
+    title: "foe.hp",
+    body: "戻り値:int\nプレイヤーがターゲットにしている敵の現在のヒットポイントを示します。"
+  },
+  "foe.maxhp": {
+    title: "foe.maxhp",
+    body: "戻り値:int\nプレイヤーがターゲットにしている敵の最大ヒットポイントを示します。"
+  },
+  "foe.armor": {
+    title: "foe.armor",
+    body: "戻り値:int\nプレイヤーがターゲットにしている敵の現在のアーマーを示します。"
+  },
+  "foe.maxarmor": {
+    title: "foe.maxarmor",
+    body: "戻り値:int\nプレイヤーがターゲットにしている敵の最大アーマーを示します。"
+  },
+  "foe.buffs.count": {
+    title: "foe.buffs.count",
+    body: "戻り値:int\nターゲットにしている敵にかかっているバフ（正の効果）の数を返します。"
+  },
+  "foe.buffs.string": {
+    title: "foe.buffs.string",
+    body: "戻り値:string\nターゲットにしている敵のすべてのバフに関する情報を合成した文字列を返します。"
+  },
+  "foe.buffs.GetCount()": {
+    title: "foe.buffs.GetCount()",
+    body: "戻り値:int\nターゲットにしている敵に特定のバフがいくつあるかを返します。"
+  },
+  "foe.buffs.GetTime()": {
+    title: "foe.buffs.GetTime()",
+    body: "戻り値:int\nターゲットにしている敵に特定のバフの持続時間を返します。"
+  },
+  "buffs.oldest": {
+    title: "buffs.oldest",
+    body: "戻り値:string\nプレイヤーにかかっている最も古いバフのIDを返します。"
+  },
+  "foe.debuffs.count": {
+    title: "foe.debuffs.count",
+    body: "戻り値:int\nターゲットにしている敵にかかっているデバフ（負の効果）の数を返します。"
+  },
+  "foe.debuffs.string": {
+    title: "foe.debuffs.string",
+    body: "戻り値:string\nターゲットにしている敵のすべてのデバフに関する情報を合成した文字列を返します。"
+  },
+  "foe.debuffs.GetCount()": {
+    title: "foe.debuffs.GetCount()",
+    body: "戻り値:int\nターゲットにしている敵に特定のデバフがいくつあるかを返します。"
+  },
+  "foe.debuffs.GetTime()": {
+    title: "foe.debuffs.GetTime()",
+    body: "戻り値:int\nターゲットにしている敵に特定のデバフの持続時間を返します。"
+  },
+  "debuffs.oldest": {
+    title: "debuffs.oldest",
+    body: "戻り値:string\nプレイヤーにかかっている最も古いデバフのIDを返します。"
+  },
+  "foe.state": {
+    title: "foe.state",
+    body: "戻り値:int\nターゲットにしている敵の現在の状態を表す数値を返します。"
+  },
+  "foe.time": {
+    title: "foe.time",
+    body: "戻り値:int\nターゲットにしている敵が現在の状態になってからの経過フレーム数を返します。"
+  },
+  "foe.level": {
+    title: "foe.level",
+    body: "戻り値:int\nターゲットにしている敵のレベル番号を返します。"
+  },
+  "harvest": {
+    title: "harvest",
+    body: "戻り値:string\n次に採取可能なオブジェクト（木や岩など）を示します。"
+  },
+  "harvest.distance": {
+    title: "harvest.distance",
+    body: "戻り値:int\nプレイヤーと最も近い採取可能オブジェクトとの距離を示します。"
+  },
+  "harvest.z": {
+    title: "harvest.z",
+    body: "戻り値:int\n最も近い採取可能オブジェクトのZ位置を示します。"
+  },
+  "input.x": {
+    title: "input.x",
+    body: "戻り値:int\n入力デバイス（マウス/タッチ）のASCIIグリッド上のX位置を示します。"
+  },
+  "input.y": {
+    title: "input.y",
+    body: "戻り値:int\n入力デバイス（マウス/タッチ）のASCIIグリッド上のY位置を示します。"
+  },
+  "item.left": {
+    title: "item.left",
+    body: "戻り値:string\n左手に装備されているアイテムを示します。"
+  },
+  "item.right": {
+    title: "item.right",
+    body: "戻り値:string\n右手に装備されているアイテムを示します。"
+  },
+  "item.left.gp": {
+    title: "item.left.gp",
+    body: "戻り値:int\n左手に装備されているアイテムのギアパワーの値を返します。"
+  },
+  "item.right.gp": {
+    title: "item.right.gp",
+    body: "戻り値:int\n右手に装備されているアイテムのギアパワーの値を返します。"
+  },
+  "item.left.id": {
+    title: "item.left.id",
+    body: "戻り値:string\n左手に装備されているアイテムのIDを返します。"
+  },
+  "item.right.id": {
+    title: "item.right.id",
+    body: "戻り値:string\n右手に装備されているアイテムのIDを返します。"
+  },
+  "item.left.state": {
+    title: "item.left.state",
+    body: "戻り値:int\n左手に装備されている武器の現在の状態を数値で示します。"
+  },
+  "item.left.time": {
+    title: "item.left.time",
+    body: "戻り値:int\n左手に装備されている武器の現在の状態での経過フレーム数を返します。"
+  },
+  "item.right.state": {
+    title: "item.right.state",
+    body: "戻り値:int\n右手に装備されている武器の現在の状態を数値で示します。"
+  },
+  "item.right.time": {
+    title: "item.right.time",
+    body: "戻り値:int\n右手に装備されている武器の現在の状態での経過フレーム数を返します。"
+  },
+  "item.potion": {
+    title: "item.potion",
+    body: "戻り値:string\n現在調合されているポーションを示します。自動補充が有効な場合'auto'を含みます。"
+  },
+  "pickup": {
+    title: "pickup",
+    body: "戻り値:string\nプレイヤーが現在ターゲットにしているピックアップを示します。"
+  },
+  "pickup.distance": {
+    title: "pickup.distance",
+    body: "戻り値:int\nプレイヤーとターゲットにしているピックアップとの距離を示します。"
+  },
+  "pickup.z": {
+    title: "pickup.z",
+    body: "戻り値:int\nターゲットにしているピックアップのZ位置を示します。"
+  },
+  "armor": {
+    title: "armor",
+    body: "戻り値:int\nプレイヤーの現在のアーマーを、小数点以下切り捨てで示します。"
+  },
+  "armor.f": {
+    title: "armor.f",
+    body: "戻り値:int\nプレイヤーの現在のアーマーの小数部分を示します。"
+  },
+  "buffs.count": {
+    title: "buffs.count",
+    body: "戻り値:int\nプレイヤーにかかっているバフ（正の効果）の数を返します。"
+  },
+  "buffs.string": {
+    title: "buffs.string",
+    body: "戻り値:string\nプレイヤーのすべてのバフに関する情報を合成した文字列を返します。"
+  },
+  "buffs.GetCount()": {
+    title: "buffs.GetCount()",
+    body: "戻り値:int\nプレイヤーに特定のバフがいくつあるかを返します。"
+  },
+  "buffs.GetTime()": {
+    title: "buffs.GetTime()",
+    body: "戻り値:int\nプレイヤーに特定のバフの持続時間を返します。"
+  },
+  "debuffs.count": {
+    title: "debuffs.count",
+    body: "戻り値:int\nプレイヤーにかかっているデバフ（負の効果）の数を返します。"
+  },
+  "debuffs.string": {
+    title: "debuffs.string",
+    body: "戻り値:string\nプレイヤーのすべてのデバフに関する情報を合成した文字列を返します。"
+  },
+  "debuffs.GetCount()": {
+    title: "debuffs.GetCount()",
+    body: "戻り値:int\nプレイヤーに特定のデバフがいくつあるかを返します。"
+  },
+  "debuffs.GetTime()": {
+    title: "debuffs.GetTime()",
+    body: "戻り値:int\nプレイヤーに特定のデバフの持続時間を返します。"
+  },
+  "hp": {
+    title: "hp",
+    body: "戻り値:int\nプレイヤーの現在のヒットポイントを示します。"
+  },
+  "maxhp": {
+    title: "maxhp",
+    body: "戻り値:int\nプレイヤーの最大ヒットポイントを示します。"
+  },
+  "maxarmor": {
+    title: "maxarmor",
+    body: "戻り値:int\nプレイヤーの最大アーマーを、小数点以下切り捨てで示します。"
+  },
+  "pos.x": {
+    title: "pos.x",
+    body: "に戻り値:int\nプレイヤーの現在のX位置を示します。"
+  },
+  "pos.y": {
+    title: "pos.y",
+    body: "戻り値:int\nプレイヤーの現在のY位置を示します。"
+  },
+  "pos.z": {
+    title: "pos.z",
+    body: "戻り値:int\nプレイヤーの現在のZ位置を示します。"
+  },
+  "ai.enabled": {
+    title: "ai.enabled",
+    body: "戻り値:bool\nAIがオンなら真、オフ（例: シネマティック中）なら偽を返します。"
+  },
+  "ai.paused": {
+    title: "ai.paused",
+    body: "戻り値:bool\nAIが一時停止中（例: 宝物待ち）なら真を返します。"
+  },
+  "ai.idle": {
+    title: "ai.idle",
+    body: "戻り値:bool\nプレイヤーがアイドル状態（攻撃完了待ちなど）なら真を返します。"
+  },
+  "ai.walking": {
+    title: "ai.walking",
+    body: "戻り値:bool\nプレイヤーが移動中なら真を返します。"
+  },
+  "bighead": {
+    title: "bighead",
+    body: "戻り値:bool\nプレイヤーがビッグヘッド（Moondial）を有効にしている場合に真を返します。"
+  },
+  "face": {
+    title: "face",
+    body: "戻り値:string\nプレイヤーの現在の表情を示します。"
+  },
+  "key": {
+    title: "key",
+    body: "戻り値:string\nカスタムゲーム入力の状態を示します。"
+  },
+  "res.stone": {
+    title: "res.stone",
+    body: "戻り値:int\nプレイヤーのインベントリにある石のリソース量を示します。"
+  },
+  "res.wood": {
+    title: "res.wood",
+    body: "戻り値:int\nプレイヤーのインベントリにある木のリソース量を示します。"
+  },
+  "res.tar": {
+    title: "res.tar",
+    body: "戻り値:int\nプレイヤーのインベントリにあるタールのリソース量を示します。"
+  },
+  "res.ki": {
+    title: "res.ki",
+    body: "戻り値:int\nプレイヤーのインベントリにあるキのリソース量を示します。"
+  },
+  "res.bronze": {
+    title: "res.bronze",
+    body: "戻り値:int\nプレイヤーのインベントリにあるブロンズのリソース量を示します。"
+  },
+  "res.crystals": {
+    title: "res.crystals",
+    body: "戻り値:int\nプレイヤーのインベントリにあるクリスタルのリソース量を示します。"
+  },
+  "player.direction": {
+    title: "player.direction",
+    body: "戻り値:int\nプレイヤーが向いている方向を示します。右なら1、左なら-1を返します。"
+  },
+  "player.framesPerMove": {
+    title: "player.framesPerMove",
+    body: "戻り値:int\nプレイヤーが1ポジション進むのにかかるフレーム数を示します。"
+  },
+  "player.name": {
+    title: "player.name",
+    body: "戻り値:string\nプレイヤーが選んだ名前を示します。"
+  },
+  "player.GetNextLegendName()": {
+    title: "player.GetNextLegendName()",
+    body: "戻り値:string\nプレイヤーがまだクリアしていない次にアンロックされるレジェンドクエストの名前を返します。"
+  },
+  "rng": {
+    title: "rng",
+    body: "戻り値:int\n0から9999までのランダムな整数を返します。"
+  },
+  "rngf": {
+    title: "rngf",
+    body: "戻り値:float\n0から1までのランダムな浮動小数点数を返します。"
+  },
+  "screen.i": {
+    title: "screen.i",
+    body: "戻り値:int\nゲーム内の画面位置を示すインデックスで、プレイヤーが右端に達してスライドすると増加します。"
+  },
+  "screen.x": {
+    title: "screen.x",
+    body: "戻り値:int\nゲーム内の画面のX位置を示します。"
+  },
+  "screen.w": {
+    title: "screen.w",
+    body: "戻り値:int\n画面のASCIIグリッドの幅を示します。"
+  },
+  "screen.h": {
+    title: "screen.h",
+    body: "戻り値:int\n画面のASCIIグリッドの高さを示します。"
+  },
+  "summon.count": {
+    title: "summon.count",
+    body: "戻り値:int\nゲーム内に現在存在する召喚された味方の数を返します。"
+  },
+  "summon.GetId()": {
+    title: "summon.GetId()",
+    body: "戻り値:string\n指定したインデックスの召喚のIDを返します。インデックスはオプションで、デフォルトは0（最初の召喚）。該当する召喚がない場合はnullを返します。"
+  },
+  "summon.GetName()": {
+    title: "summon.GetName()",
+    body: "戻り値:string\n指定したインデックスの召喚のローカライズされた名前を返します。インデックスはオプションで、デフォルトは0。該当する召喚がない場合はnullを返します。"
+  },
+  "summon.GetVar(, )": {
+    title: "summon.GetVar(, )",
+    body: "戻り値:any\n召喚のカスタム変数の値を返します。召喚の種類によって公開される変数は異なります。インデックスはオプションで、デフォルトは0。該当する召喚がない場合はnullを返します。変数名が無効な場合はエラーを表示します。"
+  },
+  "summon.GetState()": {
+    title: "summon.GetState()",
+    body: "戻り値:int\n指定したインデックスの召喚の現在の状態を表す数値を返します。インデックスはオプションで、デフォルトは0。該当する召喚がない場合は-1を返します。"
+  },
+  "summon.GetTime()": {
+    title: "summon.GetTime()",
+    body: "戻り値:int\n指定したインデックスの召喚の現在の状態での経過フレーム数を返します。インデックスはオプションで、デフォルトは0。該当する召喚がない場合は-1を返します。"
+  },
+  "totalgp": {
+    title: "totalgp",
+    body: "戻り値:int\nインベントリの総'Gear Power'を返します。アイテムの星レベルとエンチャントボーナスから計算されます。"
+  },
+  "time": {
+    title: "time",
+    body: "戻り値:int\n現在の場所のフレーム番号を返します。"
+  },
+  "totaltime": {
+    title: "totaltime",
+    body: "戻り値:int\nボスのサブロケーションがある場合に累積された現在の場所のフレーム番号を返します。"
+  },
+  "time.msbn": {
+    title: "time.msbn",
+    body: "戻り値:BigNumber\n1970-01-01T00:00:00Zからの経過ミリ秒数を表すUnix時間を返します。うるう秒は考慮されません。"
+  },
+  "time.year": {
+    title: "time.year",
+    body: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（年）を返します。"
+  },
+  "time.month": {
+    title: "time.month",
+    body: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（月）を返します。"
+  },
+  "time.day": {
+    title: "time.day",
+    body: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（日）を返します。"
+  },
+  "time.hour": {
+    title: "time.hour",
+    body: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（時）を返します。"
+  },
+  "time.minute": {
+    title: "time.minute",
+    body: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（分）を返します。"
+  },
+  "time.second": {
+    title: "time.second",
+    body: "戻り値:int\nプレイヤーのコンピュータのローカルシステム時間（秒）を返します。"
+  },
+  "utc.year": {
+    title: "utc.year",
+    body: "戻り値:int\n現在のUTC時間（年）を返します。"
+  },
+  "utc.month": {
+    title: "utc.month",
+    body: "戻り値:int\n現在のUTC時間（月）を返します。"
+  },
+  "utc.day": {
+    title: "utc.day",
+    body: "戻り値:int\n現在のUTC時間（日）を返します。"
+  },
+  "utc.hour": {
+    title: "utc.hour",
+    body: "戻り値:int\n現在のUTC時間（時）を返します。"
+  },
+  "utc.minute": {
+    title: "utc.minute",
+    body: "戻り値:int\n現在のUTC時間（分）を返します。"
+  },
+  "utc.second": {
+    title: "utc.second",
+    body: "戻り値:int\n現在のUTC時間（秒）を返します。"
+  },
+  "activate ": {
+    title: "activate ",
+    body: "戻り値:なし\nアイテムのアビリティを起動します。abilityは'potion', 'P', 'left', 'L', 'right', 'R'、またはアビリティIDを指定可能です。"
+  },
+  "brew ": {
+    title: "brew ",
+    body: "戻り値:なし\nポーション瓶を指定した材料の組み合わせで補充します。ラン開始時（time 0）でのみ実行されます。材料はstone, wood, tar, bronzeで、+で区切ります。材料名は英語または設定で選択した言語で記述可能です。"
+  },
+  "equip ": {
+    title: "equip ",
+    body: "戻り値:なし\n指定した基準に基づいてアイテムを装備します。strは最大7つの基準を指定可能。両手持ちアイテムにはこの形式を使用する必要があります。"
+  },
+  "equipL ": {
+    title: "equipL ",
+    body: "戻り値:なし\n指定した基準に最も適合するアイテムを左手で装備します。"
+  },
+  "equipR ": {
+    title: "equipR ",
+    body: "戻り値:なし\n指定した基準に最も適合するアイテムを右手で装備します。"
+  },
+  "equip @@": {
+    title: "equip @@",
+    body: "戻り値:なし\n文字列変数から基準を取得してアイテムを装備します。減算基準もサポートします。"
+  },
+  "loadout ": {
+    title: "loadout ",
+    body: "戻り値:なし\n指定した番号のロードアウトを装備します。"
+  },
+  "> ": {
+    title: "> ",
+    body: "戻り値:bool\n大なり比較です。難易度、敵の数、HPなどで使用可能です。"
+  },
+  "> @@": {
+    title: "> @@",
+    body: "戻り値:なし\n変数の値を挿入して文字列を表示します。複数の変数を1つの表示に挿入可能です。挿入するには変数名を@で囲みます。"
+  },
+  ">(abcd": {
+    title: ">(abcd",
+    body: "戻り値:なし\nプレイヤーにカスタム表情を表示します。ビッグヘッドが必要です。"
+  },
+  ">o,,[#rrggbb,]": {
+    title: ">o,,[#rrggbb,]",
+    body: "戻り値:なし\nプレイヤーの位置を基準に高度な表示を行います。XとYは座標オフセット、#rrggbbは16進数のテキスト色です。色は#white, #cyanなども使用可能。虹色は#rainFFで指定（FFは明るさ）。"
+  },
+  ">h,,[#rrggbb,]": {
+    title: ">h,,[#rrggbb,]",
+    body: "戻り値:なし\nビッグヘッドと同じレイヤーに表示します。帽子などのアクセサリーに最適です。"
+  },
+  ">`,,[#rrggbb,]": {
+    title: ">`,,[#rrggbb,]",
+    body: "戻り値:なし\n画面の左上を基準に高度な表示を行います。"
+  },
+  ">c,,[#rrggbb,]": {
+    title: ">c,,[#rrggbb,]",
+    body: "戻り値:なし\n画面中央を基準に高度な表示を行います。色はオプションです。"
+  },
+  ">f,,[#rrggbb,]": {
+    title: ">f,,[#rrggbb,]",
+    body: "戻り値:なし\nターゲットにしている敵の頭の位置を基準に高度な表示を行います。"
+  },
+  "var ": {
+    title: "var ",
+    body: "戻り値:なし\n数学的、論理的、文字列操作に使用できる変数を宣言します。ライフサイクルや動作は他の言語と異なる場合があります。"
+  },
+  "func ": {
+    title: "func ",
+    body: "戻り値:なし\n後で呼び出せる関数を宣言します。"
+  },
+  "for  = ..": {
+    title: "for  = ..",
+    body: "戻り値:なし\n変数'v'を値'a'から'b'まで反復するループを作成します。ループ内のコードは複数回実行されます。"
+  },
+  "import ": {
+    title: "import ",
+    body: "戻り値:なし\n外部スクリプトの単一コピーをロードして実行します。"
+  },
+  "new ": {
+    title: "new ",
+    body: "戻り値:any\n'import'と同様に外部スクリプトをロードして実行しますが、'new'でロードされたオブジェクトはそれぞれ独立したコピーであり、スクリプト本体は1回のみ実行されます。"
+  },
+  "disable abilities": {
+    title: "disable abilities",
+    body: "戻り値:なし\nポーションと武器のアビリティの起動を無効にします。HUDボタンもグレーアウトします。"
+  },
+  "enable abilities": {
+    title: "enable abilities",
+    body: "戻り値:なし\n以前に'disable abilities'で無効化されたアビリティの起動を復元します。"
+  },
+  "disable banner": {
+    title: "disable banner",
+    body: "戻り値:なし\n場所の開始と終了時に表示される水平バナーのレンダリングを無効にします。"
+  },
+  "enable banner": {
+    title: "enable banner",
+    body: "戻り値:なし\n水平バナーのレンダリングを復元します。"
+  },
+  "disable hud []": {
+    title: "disable hud []",
+    body: "戻り値:なし\nゲームプレイのユーザーインターフェース要素を非表示かつ無効にします。オプションで指定する要素: p=プレイヤーのHPとデバフ, f=敵のHPとデバフ, a=アビリティボタン, r=リソース, b=バナー, u=ユーティリティベルト。"
+  },
+  "enable hud []": {
+    title: "enable hud []",
+    body: "戻り値:なし\n'disable hud'で非表示にしたUI要素を復元します。オプションは'disable hud'と同じです。"
+  },
+  "disable loadout input": {
+    title: "disable loadout input",
+    body: "戻り値:なし\n入力キーによる武器ロードアウトの保存や呼び出しを無効にします。"
+  },
+  "enable loadout input": {
+    title: "enable loadout input",
+    body: "戻り値:なし\n入力キーによる武器ロードアウトの保存や呼び出しを復元します。"
+  },
+  "disable loadout print": {
+    title: "disable loadout print",
+    body: "戻り値:なし\nロードアウトが呼び出されたときに表示されるメッセージを非表示にします。"
+  },
+  "enable loadout print": {
+    title: "enable loadout print",
+    body: "戻り値:なし\nロードアウトメッセージの表示を復元します。"
+  },
+  "disable npcDialog": {
+    title: "disable npcDialog",
+    body: "戻り値:なし\nNPCの会話バブルを非表示にし、自動スキップします。"
+  },
+  "enable npcDialog": {
+    title: "enable npcDialog",
+    body: "戻り値:なし\nNPCの会話バブルを復元します。"
+  },
+  "disable pause": {
+    title: "disable pause",
+    body: "戻り値:なし\nポーズボタンのUIを非表示にします。[P]ショートカットではポーズ可能です。"
+  },
+  "enable pause": {
+    title: "enable pause",
+    body: "戻り値:なし\n'disable pause'で非表示にしたポーズボタンを復元します。"
+  },
+  "disable player": {
+    title: "disable player",
+    body: "戻り値:なし\nプレイヤーを非表示にします。戦闘には影響せず、見た目のみの変更です。"
+  },
+  "enable player": {
+    title: "enable player",
+    body: "戻り値:なし\n'disable player'で非表示にしたプレイヤーの表示を復元します。"
+  },
+  "play  []": {
+    title: "play  []",
+    body: "戻り値:なし\n効果音を再生します。ピッチはオプションで、デフォルトは100。高い値で高音、低い値で低音になります。"
+  },
+  "= ": {
+    title: "= ",
+    body: "戻り値:bool\n値が等しいか、文字列が含まれているかを比較します。"
+  },
+  "! ": {
+    title: "! ",
+    body: "戻り値:bool\nブール式の値を反転します。"
+  },
+  "& ": {
+    title: "& ",
+    body: "戻り値:bool\n論理AND演算子です。"
+  },
+  "| ": {
+    title: "| ",
+    body: "戻り値:bool\n論理OR演算子です。'&'と'|'が混在する場合、'&'が先に評価されます。"
+  },
+  "< ": {
+    title: "< ",
+    body: "戻り値:bool\n小なり比較です。"
+  },
+  ">= ": {
+    title: ">= ",
+    body: "戻り値:bool\n大なりイコール比較です。'>'と'='を組み合わせたもの。"
+  },
+  "<= ": {
+    title: "<= ",
+    body: "戻り値:bool\n小なりイコール比較です。'<'と'='を組み合わせたもの。"
+  },
+  "+ ": {
+    title: "+ ",
+    body: "戻り値:number\n2つの数値または変数を加算します。"
+  },
+  "- ": {
+    title: "- ",
+    body: "戻り値:number\n2つの数値または変数を減算します。"
+  },
+  "* ": {
+    title: "* ",
+    body: "戻り値:number\n2つの数値または変数を乗算します。"
+  },
+  "/ ": {
+    title: "/ ",
+    body: "戻り値:number\n1つの数値または変数を別の数値で除算します。整数の場合、結果は切り捨てられます。"
+  },
+  "++ ": {
+    title: "++ ",
+    body: "戻り値:なし\n変数を1増加させます。"
+  },
+  "-- ": {
+    title: "-- ",
+    body: "戻り値:なし\n変数を1減少させます。"
+  },
+  "% ": {
+    title: "% ",
+    body: "戻り値:number\nモジュロ演算子。1つの数を別の数で割った余りを返します。"
+  },
+  "( ) ": {
+    title: "( ) ",
+    body: "戻り値:なし\n演算の優先順位を指定するために使用します。"
+  },
+  "ambient": {
+    title: "ambient",
+    body: "戻り値:string\n現在アクティブなすべてのアンビエント音声IDをカンマ区切りリストで返します。"
+  },
+  "ambient.Add()": {
+    title: "ambient.Add()",
+    body: "戻り値:なし\n指定した音声IDでアンビエント音声のレイヤーを追加します。最大4レイヤー。5つ目のレイヤーを追加すると最古のレイヤーが削除されます。"
+  },
+  "ambient.Stop()": {
+    title: "ambient.Stop()",
+    body: "戻り値:なし\nすべてのアンビエント音声レイヤーをクリアします。"
+  },
+  "b.Add()": {
+    title: "b.Add()",
+    body: "戻り値:自身\nBigNumberに数を加算します（+）。"
+  },
+  "b.Sub()": {
+    title: "b.Sub()",
+    body: "戻り値:自身\nBigNumberから数を減算します（-）。"
+  },
+  "b.Mul()": {
+    title: "b.Mul()",
+    body: "戻り値:自身\nBigNumberに数を乗算します（*）。"
+  },
+  "b.Div()": {
+    title: "b.Div()",
+    body: "戻り値:自身\nBigNumberを数で除算します（/）。"
+  },
+  "b.Eq()": {
+    title: "b.Eq()",
+    body: "戻り値:bool\nBigNumberが数と等しいかを判定します（=）。"
+  },
+  "b.Gt()": {
+    title: "b.Gt()",
+    body: "戻り値:bool\nBigNumberが数より大きいかを判定します（>）。"
+  },
+  "b.Ge()": {
+    title: "b.Ge()",
+    body: "戻り値:bool\nBigNumberが数以上かを判定します（>=）。"
+  },
+  "b.Lt()": {
+    title: "b.Lt()",
+    body: "戻り値:bool\nBigNumberが数より小さいかを判定します（<）。"
+  },
+  "b.Le()": {
+    title: "b.Le()",
+    body: "戻り値:bool\nBigNumberが数以下かを判定します（<=）。"
+  },
+  "b.ToFloat()": {
+    title: "b.ToFloat()",
+    body: "戻り値:float\nBigNumberを浮動小数点数に変換します。数が大きすぎるか小さすぎる場合はエラーをスローします。"
+  },
+  "b.ToInt()": {
+    title: "b.ToInt()",
+    body: "戻り値:int\nBigNumberを整数に変換します。数が大きすぎるか小さすぎる場合はエラーをスローします。"
+  },
+  "b.ToString()": {
+    title: "b.ToString()",
+    body: "戻り値:string\nBigNumberの文字列表現を返します。保存用にシリアル化できます。"
+  },
+  "b.ToUI()": {
+    title: "b.ToUI()",
+    body: "戻り値:string\nユーザーインターフェース用の短縮された文字列表現を返します。"
+  },
+  "color.FromRGB(,,)": {
+    title: "color.FromRGB(,,)",
+    body: "戻り値:string\n3つの整数（0-255）から色を文字列に変換します。"
+  },
+  "color.ToRGB()": {
+    title: "color.ToRGB()",
+    body: "戻り値:int[3]\n文字列から3つの整数（0-255）に色を変換します。"
+  },
+  "color.Lerp(,,)": {
+    title: "color.Lerp(,,)",
+    body: "戻り値:string\n色c1からc2へ時間（パーセンテージ）tで線形補間します。"
+  },
+  "color.Random()": {
+    title: "color.Random()",
+    body: "戻り値:string\nランダムな色を返します。"
+  },
+  "draw.Bg(, , )": {
+    title: "draw.Bg(, , )",
+    body: "戻り値:なし\n特定の画面位置の背景色を設定します。"
+  },
+  "draw.Bg(, , , , )": {
+    title: "draw.Bg(, , , , )",
+    body: "戻り値:なし\n画面上の矩形領域の背景色を設定します。"
+  },
+  "draw.Box(, , , , , )": {
+    title: "draw.Box(, , , , , )",
+    body: "戻り値:なし\n指定した位置とサイズで矩形を描画します。矩形の境界は色とスタイル番号で定義されます。負のスタイル番号は矩形の中央を透明にします。注意: 現在、高度なプリントは常にボックスの上に描画されます。"
+  },
+  "draw.Clear()": {
+    title: "draw.Clear()",
+    body: "戻り値:なし\n画面全体をクリアします。"
+  },
+  "draw.GetSymbol(, )": {
+    title: "draw.GetSymbol(, )",
+    body: "戻り値:string\n画面位置(x, y)のグリフを返します。"
+  },
+  "draw.Player()": {
+    title: "draw.Player()",
+    body: "戻り値:なし\nスクリプトの特定の地点で、装備やアドオンを含むプレイヤーキャラクターを描画します。"
+  },
+  "draw.Player(,)": {
+    title: "draw.Player(,)",
+    body: "戻り値:なし\nスクリプトの特定の地点で、装備やアドオンを含むプレイヤーキャラクターを指定したオフセット(x, y)で描画します。絶対位置での描画はscreen名前空間を参照。"
+  },
+  "int.Parse()": {
+    title: "int.Parse()",
+    body: "戻り値:integer\n数値の文字列を整数値に変換します。数値でない文字列の場合はエラーをスローします。"
+  },
+  "event.GetObjectiveId()": {
+    title: "event.GetObjectiveId()",
+    body: "戻り値:string\nコミュニティまたはシーズンイベントのアクティブな目標のIDを返します。目標のインデックスを渡します（通常0, 1, 2）。"
+  },
+  "event.GetObjectiveProgress()": {
+    title: "event.GetObjectiveProgress()",
+    body: "戻り値:int\nコミュニティまたはシーズンイベントのアクティブな目標の進捗を返します。目標のインデックスを渡します（通常0, 1, 2）。"
+  },
+  "event.GetObjectiveGoal()": {
+    title: "event.GetObjectiveGoal()",
+    body: "戻り値:int\nコミュニティまたはシーズンイベントのアクティブな目標のゴールを返します。目標のインデックスを渡します（通常0, 1, 2）。"
+  },
+  "item.CanActivate()": {
+    title: "item.CanActivate()",
+    body: "戻り値:boolean\n特定のアイテムを起動できる場合は真を返します。アイテムが装備されている場合にのみ真になります。特定の基準を満たさないと起動できないアイテムもあります。item.GetCooldown()のサブセットです。"
+  },
+  "item.GetCooldown()": {
+    title: "item.GetCooldown()",
+    body: "戻り値:integer\n指定したアビリティの残りクールダウン時間（フレーム単位）を返します。無効なアビリティ文字列は-1を返します。未使用の武器アビリティも-1を返す場合があります。"
+  },
+  "item.GetCount()": {
+    title: "item.GetCount()",
+    body: "戻り値:integer\nインベントリ内のアイテムのコピー数を返します。アイテムが見つからない場合は0を返します。"
+  },
+  "item.GetLoadoutL()": {
+    title: "item.GetLoadoutL()",
+    body: "戻り値:string\n特定のロードアウトの左手のアイテムを返します。整数パラメータはクエリするロードアウト番号です。スロットにアイテムがない場合は空文字列を返します。"
+  },
+  "item.GetLoadoutR()": {
+    title: "item.GetLoadoutR()",
+    body: "戻り値:string\n特定のロードアウトの右手のアイテムを返します。整数パラメータはクエリするロードアウト番号です。スロットにアイテムがない場合は空文字列を返します。"
+  },
+  "item.GetTreasureCount()": {
+    title: "item.GetTreasureCount()",
+    body: "戻り値:integer\nインベントリ内の宝箱の現在の数を返します。"
+  },
+  "item.GetTreasureLimit()": {
+    title: "item.GetTreasureLimit()",
+    body: "戻り値:integer\nインベントリ内の宝箱の総容量（最大容量）を返します。"
+  },
+  "key.Bind(, )": {
+    title: "key.Bind(, )",
+    body: "戻り値:なし\n特定のアクションに新しいキーを割り当てます。他のアクションがそのキーを使っている場合、元のアクションからキーが放棄されます。"
+  },
+  "key.Bind(, , )": {
+    title: "key.Bind(, , )",
+    body: "戻り値:なし\n特定のアクションに2つの新しいキーを割り当てます。他のアクションがそのキーを使っている場合、元のアクションからキーが放棄されます。"
+  },
+  "key.GetKeyAct()": {
+    title: "key.GetKeyAct()",
+    body: "戻り値:string\n指定したキーに割り当てられたアクションを返します。キーが何にも割り当てられていない場合は'None'を返します。"
+  },
+  "key.GetActKey()": {
+    title: "key.GetActKey()",
+    body: "戻り値:string\n指定したアクションに割り当てられた最初のキーを返します。キーが割り当てられていない場合は'None'を返します。"
+  },
+  "key.GetActKey2()": {
+    title: "key.GetActKey2()",
+    body: "戻り値:string\n指定したアクションに割り当てられた2番目のキーを返します。2番目のキーが割り当てられていない場合は'None'を返します。"
+  },
+  "key.GetActLabel()": {
+    title: "key.GetActLabel()",
+    body: "戻り値:string\n指定したアクションに割り当てられた最初のキーを表すユーザー向けラベルを返します。現在の実装ではキーの最初の文字を返します。"
+  },
+  "key.ResetBinds()": {
+    title: "key.ResetBinds()",
+    body: "戻り値:なし\nすべてのアクションをデフォルトのキー割り当てにリセットします。"
+  },
+  "loc.Leave()": {
+    title: "loc.Leave()",
+    body: "戻り値:なし\nプレイヤーが手動で退出したかのようにランを放棄します。"
+  },
+  "loc.Pause()": {
+    title: "loc.Pause()",
+    body: "戻り値:なし\nプレイヤーがポーズボタンを押したかのようにランを一時停止します。"
+  },
+  "math.Abs()": {
+    title: "math.Abs()",
+    body: "戻り値:number\n指定した数の絶対値を返します。"
+  },
+  "math.Acos()": {
+    title: "math.Acos()",
+    body: "戻り値:number\n数のアークコサインをラジアンで返します。入力範囲は-1から1で、範囲外の場合は'NaN'を返します。"
+  },
+  "math.Asin()": {
+    title: "math.Asin()",
+    body: "戻り値:number\n数のアークサインをラジアンで返します。入力範囲は-1から1で、範囲外の場合は'NaN'を返します。"
+  },
+  "math.Atan()": {
+    title: "math.Atan()",
+    body: "戻り値:number\n数のアークタンジェントをラジアンで返します。"
+  },
+  "math.Atan2(, )": {
+    title: "math.Atan2(, )",
+    body: "戻り値:number\nx軸と原点から点(x,y)への線との角度をラジアンで返します。"
+  },
+  "math.BigNumber()": {
+    title: "math.BigNumber()",
+    body: "戻り値:BigNumber\n文字列を解析して新しいBigNumberオブジェクトを作成します。"
+  },
+  "math.Ceil()": {
+    title: "math.Ceil()",
+    body: "戻り値:number\n数を切り上げて、それより大きい最初の整数を返します。"
+  },
+  "math.CeilToInt()": {
+    title: "math.CeilToInt()",
+    body: "戻り値:integer\n数を切り上げて、それより大きい最初の整数を返します。"
+  },
+  "math.Clamp(, , )": {
+    title: "math.Clamp(, , )",
+    body: "戻り値:number\n数を'min'と'max'の範囲内に制限します。既に範囲内にある場合は変更せず返します。"
+  },
+  "math.Cos()": {
+    title: "math.Cos()",
+    body: "戻り値:number\n指定したラジアン角度のコサインを返します。"
+  },
+  "math.e": {
+    title: "math.e",
+    body: "戻り値:float\nオイラー数とも呼ばれる定数e（約2.71828）を返します。"
+  },
+  "math.Exp()": {
+    title: "math.Exp()",
+    body: "戻り値:number\neを指定したべき乗に上げた値を返します。"
+  },
+  "math.Floor()": {
+    title: "math.Floor()",
+    body: "戻り値:number\n数を切り捨てて、それより小さい最初の整数を返します。"
+  },
+  "math.FloorToInt()": {
+    title: "math.FloorToInt()",
+    body: "戻り値:integer\n数を切り捨てて、それより小さい最初の整数を返します。"
+  },
+  "math.Lerp(, , )": {
+    title: "math.Lerp(, , )",
+    body: "戻り値:number\n値aからbへ時間（パーセンテージ）tで線形補間を行います。"
+  },
+  "math.Log(, )": {
+    title: "math.Log(, )",
+    body: "戻り値:number\n指定した底での数の対数を返します。"
+  },
+  "math.Max(, )": {
+    title: "math.Max(, )",
+    body: "戻り値:number\n2つの数のうち大きい方を返します。"
+  },
+  "math.Min(, )": {
+    title: "math.Min(, )",
+    body: "戻り値:number\n2つの数のうち小さい方を返します。"
+  },
+  "math.pi": {
+    title: "math.pi",
+    body: "戻り値:float\n円周率π（約3.1415926）を返します。"
+  },
+  "math.Pow(, )": {
+    title: "math.Pow(, )",
+    body: "戻り値:number\n数を指定したべき乗に上げた値を返します。"
+  },
+  "math.Round()": {
+    title: "math.Round()",
+    body: "戻り値:number\n数を最も近い整数に丸めます。"
+  },
+  "math.RoundToInt()": {
+    title: "math.RoundToInt()",
+    body: "戻り値:integer\n数を最も近い整数に丸めます。"
+  },
+  "math.Sign()": {
+    title: "math.Sign()",
+    body: "戻り値:number\n指定した数が負の場合は-1、それ以外の場合は1を返します。"
+  },
+  "math.Sin()": {
+    title: "math.Sin()",
+    body: "戻り値:number\n指定したラジアン角度のサインを返します。"
+  },
+  "math.Sqrt()": {
+    title: "math.Sqrt()",
+    body: "戻り値:number\n数の平方根を返します。"
+  },
+  "math.Tan()": {
+    title: "math.Tan()",
+    body: "戻り値:number\n指定したラジアン角度のタンジェントを返します。"
+  },
+  "math.ToDeg()": {
+    title: "math.ToDeg()",
+    body: "戻り値:number\nラジアンの数を度に変換します。"
+  },
+  "math.ToRad()": {
+    title: "math.ToRad()",
+    body: "戻り値:number\n度の数をラジアンに変換します。"
+  },
+  "music": {
+    title: "music",
+    body: "戻り値:string\n現在再生中の音楽のIDを返します。"
+  },
+  "music.Play()": {
+    title: "music.Play()",
+    body: "戻り値:なし\n指定した音声IDで音楽を再生します。同時に再生できる音楽は1つだけです。"
+  },
+  "music.Stop()": {
+    title: "music.Stop()",
+    body: "戻り値:なし\nすべての音楽を停止します。"
+  },
+  "player.ShowScaredFace()": {
+    title: "player.ShowScaredFace()",
+    body: "戻り値:なし\nビッグヘッドが有効な場合、指定した時間だけプレイヤーの表情を怖がった顔に変更します。"
+  },
+  "screen.FromWorldX()": {
+    title: "screen.FromWorldX()",
+    body: "戻り値:integer\nX軸の値をワールドスペースからスクリーンスペースに変換します。"
+  },
+  "screen.FromWorldZ()": {
+    title: "screen.FromWorldZ()",
+    body: "戻り値:integer\nワールドスペースのZ軸の値をスクリーンスペースのY軸に変換します。"
+  },
+  "screen.ToWorldX()": {
+    title: "screen.ToWorldX()",
+    body: "戻り値:integer\nX軸の値をスクリーンスペースからワールドスペースに変換します。"
+  },
+  "screen.ToWorldZ()": {
+    title: "screen.ToWorldZ()",
+    body: "戻り値:integer\nスクリーンスペースのY軸の値をワールドスペースのZ軸に変換します。"
+  },
+  "screen.Next()": {
+    title: "screen.Next()",
+    body: "戻り値:なし\n複数画面の場所で、カメラをプレイヤーに対して1画面前方に移動します。"
+  },
+  "screen.Previous()": {
+    title: "screen.Previous()",
+    body: "戻り値:なし\n複数画面の場所で、カメラをプレイヤーに対して1画面後方に移動します。"
+  },
+  "screen.ResetOffset()": {
+    title: "screen.ResetOffset()",
+    body: "戻り値:なし\nカメラをプレイヤーに追従する状態にリセットし、screen.Next()やscreen.Previous()による変更を解除します。"
+  },
+  "storage.Delete()": {
+    title: "storage.Delete()",
+    body: "戻り値:なし\n指定したキーに存在する値を削除します。"
+  },
+  "storage.Get()": {
+    title: "storage.Get()",
+    body: "戻り値:value\n指定したキーから永続的な値を返します。"
+  },
+  "storage.Get(, )": {
+    title: "storage.Get(, )",
+    body: "戻り値:value\n指定したキーから永続的な値を返します。見つからない場合は2番目のパラメータをデフォルト値として返します。"
+  },
+  "storage.Has()": {
+    title: "storage.Has()",
+    body: "戻り値:boolean\n指定したキーが永続ストレージに存在する場合は真、そうでない場合は偽を返します。"
+  },
+  "storage.Incr()": {
+    title: "storage.Incr()",
+    body: "戻り値:integer\n指定したキーに格納された値を1増加させ、新しい値を返します。"
+  },
+  "storage.Keys()": {
+    title: "storage.Keys()",
+    body: "戻り値:array\n現在のコンテキストで利用可能なすべてのストレージキーを含む文字列の配列を取得します。"
+  },
+  "storage.Incr(, )": {
+    title: "storage.Incr(, )",
+    body: "戻り値:integer\n指定したキーに格納された値を指定した量だけ増加させ、新しい値を返します。"
+  },
+  "storage.Set(, )": {
+    title: "storage.Set(, )",
+    body: "戻り値:なし\n指定したキーに値を永続ストレージに保存します。"
+  },
+  "string.Break(, )": {
+    title: "string.Break(, )",
+    body: "戻り値:array\n文字列を指定した最大幅で複数の文字列に分割します。"
+  },
+  "string.Capitalize()": {
+    title: "string.Capitalize()",
+    body: "戻り値:string\n文字列の最初の文字を大文字に変更します。"
+  },
+  "string.Equals(, )": {
+    title: "string.Equals(, )",
+    body: "戻り値:boolean\n2つの文字列パラメータを受け取り、完全に同じ場合は真を、そうでない場合は偽を返します。大文字小文字を区別します。"
+  },
+  "string.Format(, )": {
+    title: "string.Format(, )",
+    body: "戻り値:string\nフォーマットテンプレートを他のパラメータの値で置き換え、最終的な合成文字列を返します。多くのフォーマットオプションをサポートする強力な関数です。"
+  },
+  "string.IndexOf(, )": {
+    title: "string.IndexOf(, )",
+    body: "戻り値:integer\n文字列変数と基準文字列を受け取り、文字列内で基準の位置を見つけます。見つからない場合は-1を返します。"
+  },
+  "string.IndexOf(, , )": {
+    title: "string.IndexOf(, , )",
+    body: "戻り値:integer\n文字列変数、基準文字列、開始インデックスを受け取り、開始位置から基準の位置を見つけます。見つからない場合は-1を返します。"
+  },
+  "string.Join(, )": {
+    title: "string.Join(, )",
+    body: "戻り値:string\n文字列の配列をセパレータsで結合し、単一の文字列にします。"
+  },
+  "string.Join(, , )": {
+    title: "string.Join(, , )",
+    body: "戻り値:string\n文字列の配列をセパレータsで結合し、開始インデックスから結合します。"
+  },
+  "string.Join(, , , )": {
+    title: "string.Join(, , , )",
+    body: "戻り値:string\n文字列の配列をセパレータsで結合し、開始インデックスと結合する要素数を指定します。"
+  },
+  "string.Size()": {
+    title: "string.Size()",
+    body: "戻り値:integer\n文字列変数を受け取り、その長さをグリフ数で計算します。"
+  },
+  "string.Split()": {
+    title: "string.Split()",
+    body: "戻り値:array\n文字列を受け取り、スペースがあるところで文字列の配列に分割します。"
+  },
+  "string.Split(, )": {
+    title: "string.Split(, )",
+    body: "戻り値:array\n文字列とセパレータを受け取り、指定されたセパレータで文字列の配列に分割します。"
+  },
+  "string.Split(, , )": {
+    title: "string.Split(, , )",
+    body: "戻り値:array\n文字列とセパレータを受け取り、指定されたセパレータで文字列の配列に分割し、空のエントリを破棄するかどうかを指定します。"
+  },
+  "string.Sub(, )": {
+    title: "string.Sub(, )",
+    body: "戻り値:string\n文字列変数と開始インデックスを受け取り、その位置から前方に文字列を分割します。"
+  },
+  "string.Sub(, , )": {
+    title: "string.Sub(, , )",
+    body: "戻り値:string\n文字列変数、開始インデックス、長さを受け取り、開始位置から指定した長さで文字列を分割します。"
+  },
+  "string.ToLower()": {
+    title: "string.ToLower()",
+    body: "戻り値:string\n文字列のすべての文字を小文字に変更します。"
+  },
+  "string.ToUpper()": {
+    title: "string.ToUpper()",
+    body: "戻り値:string\n文字列のすべての文字を大文字に変更します。"
+  },
+  "sys.cacheRemoteFiles": {
+    title: "sys.cacheRemoteFiles",
+    body: "戻り値:boolean\nリモートでインポートされたファイルをラン間でキャッシュするかどうかを示します。デフォルトはtrue。falseに設定すると、場所画面からプレイ開始時にスクリプトが再ダウンロードされます。"
+  },
+  "sys.fileUrl": {
+    title: "sys.fileUrl",
+    body: "戻り値:string\nスクリプトをインポートする際の現在のファイルパスを取得します（読み取り専用）。デフォルト値はデバイスに依存します。"
+  },
+  "sys.SetFileUrl()": {
+    title: "sys.SetFileUrl()",
+    body: "戻り値:なし\n'import'または'new'コマンドで使用されるインポートスクリプトの起源を変更します。Mind Stoneでのみ呼び出し可能で、リモートURLや'local'、'remote'を受け入れます。"
+  },
+  "sys.MindConnect()": {
+    title: "sys.MindConnect()",
+    body: "戻り値:なし\n実験的機能。Mind Stoneにこの行だけがある場合、他のプログラム（例: Pythonスクリプト）からの接続を待つインターフェースを有効にします。"
+  },
+  "sys.isMobile": {
+    title: "sys.isMobile",
+    body: "戻り値:bool\nユーザーがAndroidまたはiOSを使用している場合に真を返します。"
+  },
+  "sys.isPC": {
+    title: "sys.isPC",
+    body: "戻り値:bool\nユーザーがWin/Mac/Linuxを使用している場合に真を返します。"
+  },
+  "sys.os": {
+    title: "sys.os",
+    body: "戻り値:string\nユーザーのオペレーティングシステムを返します（例: 'Android', 'iOS', 'Linux', 'OSX', 'Windows'）。"
+  },
+  "te.language": {
+    title: "te.language",
+    body: "戻り値:string\nプレイヤーが設定で選択した言語のコードを返します。可能な値: EN, PT-BR, ZH-CN, ZH-TW, FR, DE, RU, ES-LA, ES-EU, JP, KR, TK。"
+  },
+  "te.xt()": {
+    title: "te.xt()",
+    body: "戻り値:string\n指定した英語テキストをプレイヤーの選択言語に翻訳します。翻訳が見つからない場合は入力テキストを返します。"
+  },
+  "te.GetTID()": {
+    title: "te.GetTID()",
+    body: "戻り値:string\n指定したテキストのテキスト識別子（TID）を返します。入力テキストはプレイヤーの選択言語である必要があります。"
+  },
+  "te.ToEnglish()": {
+    title: "te.ToEnglish()",
+    body: "戻り値:string\n指定したテキストをプレイヤーの選択言語から元の英語テキストに翻訳します。翻訳が見つからない場合は入力テキストを返します。"
+  },
+  "time.FormatCasual()": {
+    title: "time.FormatCasual()",
+    body: "戻り値:string\nフレーム数を人間が読みやすい文字列形式（例: '1m 23s'）に変換します。"
+  },
+  "time.FormatCasual(, )": {
+    title: "time.FormatCasual(, )",
+    body: "戻り値:string\nフレーム数を人間が読みやすい文字列形式（例: '1m 23s'）に変換します。2番目のパラメータ（bool）はオプションで、trueの場合は精度が最大になります。"
+  },
+  "time.FormatDigital()": {
+    title: "time.FormatDigital()",
+    body: "戻り値:string\nフレーム数を人間が読みやすい文字列形式（例: '1:23'）に変換します。"
+  },
+  "time.FormatDigital(, )": {
+    title: "time.FormatDigital(, )",
+    body: "戻り値:string\nフレーム数を人間が読みやすい文字列形式（例: '1:23'）に変換します。2番目のパラメータ（bool）はオプションで、trueの場合は精度が最大になります。"
+  },
+  "ui.OpenInv()": {
+    title: "ui.OpenInv()",
+    body: "戻り値:なし\nインベントリ画面を開きます。"
+  },
+  "ui.OpenMind()": {
+    title: "ui.OpenMind()",
+    body: "戻り値:なし\nMind Stone画面を開きます。"
+  },
+  "ui.ShowBanner()": {
+    title: "ui.ShowBanner()",
+    body: "戻り値:なし\n最大2つのメッセージを含むアニメーションバナーを表示します。ui.ShowBanner()が呼ばれるたびにバナーのアニメーションがリスタートします。"
+  },
+  "ui.ShowBanner(, )": {
+    title: "ui.ShowBanner(, )",
+    body: "戻り値:なし\n2つのメッセージを含むアニメーションバナーを表示します。ui.ShowBanner()が呼ばれるたびにバナーのアニメーションがリスタートします。"
+  },
+  "Type()": {
+    title: "Type()",
+    body: "戻り値:string\n変数の型を評価し、文字列表現を返します。可能な型: 'string', 'int', 'bool', 'function', 'object', 'null'。"
+  },
+  "a = []": {
+    title: "a = []",
+    body: "戻り値:なし\n新しい配列を初期化します。"
+  },
+  "a[]": {
+    title: "a[]",
+    body: "戻り値:any\n指定した位置の値を読み取ります。"
+  },
+  "a.Add()": {
+    title: "a.Add()",
+    body: "戻り値:なし\n配列の末尾に新しい値またはオブジェクトを追加します。"
+  },
+  "a.Clear()": {
+    title: "a.Clear()",
+    body: "戻り値:なし\n配列からすべての要素を削除し、空にします。配列を再宣言するよりも効率的です。"
+  },
+  "a.Contains()": {
+    title: "a.Contains()",
+    body: "戻り値:bool\n指定した値が配列内にあるかを判定します。見つかれば真、そうでなければ偽を返します。"
+  },
+  "a.Count()": {
+    title: "a.Count()",
+    body: "戻り値:int\n配列内の要素数を返します。"
+  },
+  "a.Emplace(, )": {
+    title: "a.Emplace(, )",
+    body: "戻り値:なし\n指定した位置の値を新しい値で置き換えます。"
+  },
+  "a.IndexOf()": {
+    title: "a.IndexOf()",
+    body: "戻り値:int\n配列内で指定した値を探し、最初に見つかった位置を示す整数を返します。見つからない場合は-1を返します。"
+  },
+  "a.Insert(, )": {
+    title: "a.Insert(, )",
+    body: "戻り値:なし\n配列の指定した位置に新しい値またはオブジェクトを追加します。右側の要素は次の位置にシフトします。"
+  },
+  "a.RemoveAt()": {
+    title: "a.RemoveAt()",
+    body: "戻り値:なし\n配列から指定した位置の要素を削除します。ゼロベースで、右側の要素は前の位置にシフトします。"
+  },
+  "a.Sort()": {
+    title: "a.Sort()",
+    body: "戻り値:なし\n配列の要素を昇順に整理します。異なる型のオブジェクトが含まれている場合でもソートされますが、期待される結果は保証されません。"
+  },
+  "ui.root": {
+    title: "ui.root",
+    body: "戻り値:Panel\nUIツリー全体が構築されるベースUIオブジェクトです。"
+  },
+  "ui.AddAnim()": {
+    title: "ui.AddAnim()",
+    body: "戻り値:Anim\nルートパネルにAnimオブジェクトを追加します。アニメーションスプライトシートをパラメータとして受け取ります。"
+  },
+  "ui.AddButton()": {
+    title: "ui.AddButton()",
+    body: "戻り値:Button\nルートパネルにButtonオブジェクトを追加します。"
+  },
+  "ui.AddPanel()": {
+    title: "ui.AddPanel()",
+    body: "戻り値:Panel\nルートパネルにPanelオブジェクトを追加します。パネルは他の要素のコンテナとして重要なオブジェクト型です。"
+  },
+  "ui.AddStyle()": {
+    title: "ui.AddStyle()",
+    body: "戻り値:int\nパネルやボタンなどの矩形コンポーネントの描画に使用できる新しいスタイルを追加し、新しいスタイルのID番号を返します。同一スタイルの複数追加を防ぎます。"
+  },
+  "ui.AddText()": {
+    title: "ui.AddText()",
+    body: "戻り値:Text\nルートパネルに指定した文字列でTextオブジェクトを追加します。"
+  },
+  "ui.Clear()": {
+    title: "ui.Clear()",
+    body: "戻り値:なし\nメインコンテナからすべてのUI要素を削除します。"
+  },
+  "component.x": {
+    title: "component.x",
+    body: "戻り値:integer\nコンポーネントのドック位置に対するX位置を示します。"
+  },
+  "component.y": {
+    title: "component.y",
+    body: "戻り値:integer\nコンポーネントのドック位置に対するY位置を示します。"
+  },
+  "component.w": {
+    title: "component.w",
+    body: "戻り値:integer\nコンポーネントの幅を示します。デフォルト値はオブジェクト型によって異なります。"
+  },
+  "component.h": {
+    title: "component.h",
+    body: "戻り値:integer\nコンポーネントの高さを示します。デフォルト値は5です。"
+  },
+  "component.absoluteX": {
+    title: "component.absoluteX",
+    body: "戻り値:integer\n画面に対するコンポーネントの絶対X位置を示します（読み取り専用）。"
+  },
+  "component.absoluteY": {
+    title: "component.absoluteY",
+    body: "戻り値:integer\n画面に対するコンポーネントの絶対Y位置を示します（読み取り専用）。"
+  },
+  "component.anchor": {
+    title: "component.anchor",
+    body: "戻り値:string\nコンポーネントの内部ピボットを表す自動レイアウトプロパティです。デフォルトは'center_center'。可能な値: top_left, top_center, top_right, center_left, center_center, center_right, bottom_left, bottom_center, bottom_right。"
+  },
+  "component.dock": {
+    title: "component.dock",
+    body: "戻り値:string\nコンポーネントの外部ピボットまたは親内の位置を表す自動レイアウトプロパティです。アンカーと同じ値を使用するのが一般的です。"
+  },
+  "component.ax": {
+    title: "component.ax",
+    body: "戻り値:string\nアンカーのX部分を示します。可能な値: left, center, right。"
+  },
+  "component.ay": {
+    title: "component.ay",
+    body: "戻り値:string\nアンカーのY部分を示します。可能な値: top, center, bottom。"
+  },
+  "component.dx": {
+    title: "component.dx",
+    body: "戻り値:string\nドックのX部分を示します。可能な値: left, center, right。"
+  },
+  "component.dy": {
+    title: "component.dy",
+    body: "戻り値:string\nドックのY部分を示します。可能な値: top, center, bottom。"
+  },
+  "component.parent": {
+    title: "component.parent",
+    body: "戻り値:Panel\nコンポーネントの親パネルへの参照を示します（読み取り専用）。panel.Add(component)が呼ばれると親が変更されます。"
+  },
+  "component.visible": {
+    title: "component.visible",
+    body: "戻り値:bool/string\nコンポーネントの可視性を示します。デフォルト値は'inherit'。可能な値: true（常に表示）、false（常に非表示）、inherit（親の状態に従う）。"
+  },
+  "component.Recycle()": {
+    title: "component.Recycle()",
+    body: "戻り値:なし\nコンポーネントを親パネルから削除し、将来のui.Add_()呼び出しで再利用します。リサイクルされた要素への変数参照はnullにするか再割り当てが必要です。"
+  },
+  "panel.children": {
+    title: "panel.children",
+    body: "戻り値:Component[]\npanel.Add()でパネルに追加されたすべての子コンポーネントを含む配列。"
+  },
+  "panel.clip": {
+    title: "panel.clip",
+    body: "戻り値:bool\nパネルの境界を使用して子コンポーネントの描画を制限するかどうかを示します。trueの場合、パネルの境界外の部分は描画されません。"
+  },
+  "panel.color": {
+    title: "panel.color",
+    body: "戻り値:string\nパネルの色をRGB16進数形式で示します。"
+  },
+  "panel.style": {
+    title: "panel.style",
+    body: "戻り値:int\nパネルの現在のスタイルのID番号を示します。デフォルト値は1。可能な値は-8から8で、ui.AddStyle()で追加スタイルを定義できます。"
+  },
+  "panel.Add()": {
+    title: "panel.Add()",
+    body: "戻り値:なし\nコンポーネントをパネルに追加します。コンポーネントはパネルの子となり、パネルはその親となります。追加順序は描画順に影響します。"
+  },
+  "panel.Add(, )": {
+    title: "panel.Add(, )",
+    body: "戻り値:なし\nコンポーネントをパネルの指定したソート位置に追加します。整数パラメータがない場合は最後の子として追加されます。"
+  },
+  "panel.Clear()": {
+    title: "panel.Clear()",
+    body: "戻り値:なし\nパネルからすべてのUI要素を削除します。削除されたコンポーネントはUIシステムでリサイクルされ、将来のui.Add_()呼び出しで再利用されます。"
+  },
+  "panel.Remove()": {
+    title: "panel.Remove()",
+    body: "戻り値:なし\nパネルの指定したインデックス番号のコンポーネントを削除します。削除されたコンポーネントはUIシステムでリサイクルされます。"
+  },
+  "text.align": {
+    title: "text.align",
+    body: "戻り値:string\nボックス内のテキストの配置/調整を示します。デフォルト値は'left'。可能な値: left, center, right。"
+  },
+  "text.color": {
+    title: "text.color",
+    body: "戻り値:string\nテキストの色をRGB16進数形式で示します。"
+  },
+  "text.lines": {
+    title: "text.lines",
+    body: "戻り値:string[]\nテキストボックスが内容をフォーマットした後の分割されたテキスト行の文字列配列を示します。色メタデータは除外されます。"
+  },
+  "text.text": {
+    title: "text.text",
+    body: "戻り値:string\nテキストボックスの完全な内容を示します。[color=#rrggbb][/color]メタデータで部分的に色付け可能です。"
+  },
+  "button.text": {
+    title: "button.text",
+    body: "戻り値:string\nボタン内に表示されるテキストを示します。"
+  },
+  "button.tcolor": {
+    title: "button.tcolor",
+    body: "戻り値:string\nボタン内のテキストの色をRGB16進数形式で示します。"
+  },
+  "button.bcolor": {
+    title: "button.bcolor",
+    body: "戻り値:string\nボタンの境界線の色をRGB16進数形式で示します。"
+  },
+  "button.hcolor": {
+    title: "button.hcolor",
+    body: "戻り値:string\nボタンが押されたときのハイライト色をRGB16進数形式で示します。"
+  },
+  "button.sound": {
+    title: "button.sound",
+    body: "戻り値:string\nボタンが押されたときに再生される効果音を示します。デフォルトは'confirm'。"
+  },
+  "button.style": {
+    title: "button.style",
+    body: "戻り値:int\nボタンの現在のスタイルのID番号を示します。デフォルト値は1。可能な値は-8から8で、ui.AddStyle()で追加可能です。"
+  },
+  "button.SetPressed()": {
+    title: "button.SetPressed()",
+    body: "戻り値:なし\nボタンが押されたときに呼び出される関数を割り当てます。関数は任意の数のパラメータを持つことができ、最初の引数はボタン自体への参照になります。"
+  },
+  "button.SetDown()": {
+    title: "button.SetDown()",
+    body: "戻り値:なし\nボタンの押下が始まったとき（最初のユーザー接触）に呼び出される関数を割り当てます。"
+  },
+  "button.SetUp()": {
+    title: "button.SetUp()",
+    body: "戻り値:なし\nボタンの押下がボタン上で終了したとき（最後のユーザー接触）に呼び出される関数を割り当てます。"
+  },
+  "anim.color": {
+    title: "anim.color",
+    body: "戻り値:string\nアニメーションの色をRGB16進数形式で示します。"
+  },
+  "anim.duration": {
+    title: "anim.duration",
+    body: "戻り値:int\nアニメーションの時間長さをフレーム単位で示します。"
+  },
+  "anim.flipX": {
+    title: "anim.flipX",
+    body: "戻り値:bool\n真の場合、アートをピボット上で水平に反転します。"
+  },
+  "anim.flipY": {
+    title: "anim.flipY",
+    body: "戻り値:bool\n真の場合、アートをピボット上で垂直に反転します。"
+  },
+  "anim.frame": {
+    title: "anim.frame",
+    body: "戻り値:int\n現在描画中のアニメーションフレームを示します。特定のフレームに設定するために変更可能です。"
+  },
+  "anim.gamePause": {
+    title: "anim.gamePause",
+    body: "戻り値:bool\n真の場合、プレイヤーがゲームを一時停止するとアニメーションの再生が自動的に停止し、再開時に再生が再開します。"
+  },
+  "anim.loop": {
+    title: "anim.loop",
+    body: "戻り値:bool\n真の場合、アニメーションが終了すると最初から再開します。"
+  },
+  "anim.playing": {
+    title: "anim.playing",
+    body: "戻り値:bool\nアニメーションが現在再生中かどうかを示します（読み取り専用）。"
+  },
+  "anim.paused": {
+    title: "anim.paused",
+    body: "戻り値:bool\nアニメーションが再生中だがanim.Pause()で一時停止されているかどうかを示します（読み取り専用）。"
+  },
+  "anim.pivotX": {
+    title: "anim.pivotX",
+    body: "戻り値:int\nASCIIアートが位置に対してどこに描画されるかを微調整するための追加のピボットオフセットを示します。"
+  },
+  "anim.pivotY": {
+    title: "anim.pivotY",
+    body: "戻り値:int\nASCIIアートが位置に対してどこに描画されるかを微調整するための追加のピボットオフセットを示します。"
+  },
+  "anim.playOnStart": {
+    title: "anim.playOnStart",
+    body: "戻り値:bool\n真の場合、アニメーションが可能な限り早く再生を開始します。"
+  },
+  "anim.AddLayer()": {
+    title: "anim.AddLayer()",
+    body: "戻り値:Anim\nこのアニメーションの上に新しいASCIIスプライトを追加します。再生中はすべてのレイヤーが同期します。"
+  },
+  "anim.Load()": {
+    title: "anim.Load()",
+    body: "戻り値:なし\n新しいASCIIスプライトシートを割り当てます。"
+  },
+  "anim.Pause()": {
+    title: "anim.Pause()",
+    body: "戻り値:なし\n現在のフレームでアニメーションの再生を一時停止します。anim.Play()で再開できます。"
+  },
+  "anim.Play()": {
+    title: "anim.Play()",
+    body: "戻り値:なし\nアニメーションの再生を開始するか、一時停止していた再生を再開します。"
+  },
+  "anim.Stop()": {
+    title: "anim.Stop()",
+    body: "戻り値:なし\n再生を停止し、アニメーションを最初のフレームに戻します。"
+  },
+  "canvas.blend": {
+    title: "canvas.blend",
+    body: "戻り値:string\nキャンバスが背後の要素と合成されるときのブレンドモードを示します。可能な値: Opaque, Multiply, Divide, Add, Subtract。デフォルトは'opaque'。"
+  },
+  "canvas.Get(, )": {
+    title: "canvas.Get(, )",
+    body: "戻り値:string\nキャンバスの特定の位置(x, y)のグリフを返します。"
+  },
+  "canvas.Set()": {
+    title: "canvas.Set()",
+    body: "戻り値:なし\nキャンバス全体を指定したグリフで埋めます。"
+  },
+  "canvas.Set(, , )": {
+    title: "canvas.Set(, , )",
+    body: "戻り値:なし\nキャンバスの特定の位置(x, y)を指定したグリフに変更します。"
+  },
+  "canvas.Set(, , , )": {
+    title: "canvas.Set(, , , )",
+    body: "戻り値:なし\nキャンバスの特定の位置(x, y)を指定した前景色(fg)とグリフに変更します。"
+  },
+  "canvas.Set(, , , , )": {
+    title: "canvas.Set(, , , , )",
+    body: "戻り値:なし\nキャンバスの特定の位置(x, y)を指定した前景色(fg)、背景色(bg)、グリフに変更します。"
+  },
+  "canvas.SetFG()": {
+    title: "canvas.SetFG()",
+    body: "戻り値:なし\nキャンバス全体の前景色を設定します。"
+  },
+  "canvas.SetFG(, , )": {
+    title: "canvas.SetFG(, , )",
+    body: "戻り値:なし\nキャンバスの特定の位置(x, y)の前景色を変更します。"
+  },
+  "canvas.SetBG()": {
+    title: "canvas.SetBG()",
+    body: "戻り値:なし\nキャンバス全体の背景色を設定します。"
+  },
+  "canvas.SetBG(, , )": {
+    title: "canvas.SetBG(, , )",
+    body: "戻り値:なし\nキャンバスの特定の位置(x, y)の背景色を変更します。"
+  }
+};
+
+
+
+  function s(label, kind, snippet, detail, doc) {
+    return { label, kind, insertText: snippet, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, detail, documentation: doc };
+  }
+
+  // editor作成
+  editor = monaco.editor.create(document.getElementById('editor'), {
     value: 'print "Hello World"\nvar x = 10\nif x {\n\tprint "ok"\n}',
     language: 'stone_script',
     theme: 'vs-dark',
     fontSize: 14,
     lineHeight: 22,
+    rulers: [40],
+    wordWrap: 'off',
     minimap: { enabled: false },
     automaticLayout: true,
     contextmenu: false,
-    suggest: { showWords: true, preview: true, showInlineDetails: true },
-    quickSuggestions: { other: true, comments: false, strings: true }
   });
 
-  let MASTER_DOCS = {};
-
-  function flattenJSON(obj, prefix = "") {
-    let result = {};
-    for (let key in obj) {
-      let path = prefix ? prefix + "." + key : key;
-      if (typeof obj[key] === "object" && obj[key] !== null) {
-        result[path] = JSON.stringify(obj[key], null, 2);
-        Object.assign(result, flattenJSON(obj[key], path));
-      } else {
-        result[path] = obj[key];
-      }
-    }
-    return result;
-  }
-
-  function getSuggestions(prefix) {
-    let keys = Object.keys(MASTER_DOCS);
-    let depth = prefix.split(".").filter(Boolean);
-    let matchPrefix = depth.join(".");
-    let candidates = new Set();
-
-    keys.forEach(k => {
-      if (k.startsWith(matchPrefix)) {
-        let parts = k.split(".");
-        if (parts.length > depth.length) {
-          candidates.add(parts[depth.length]);
+  // 補完
+monaco.languages.registerCompletionItemProvider('stone_script', {
+  triggerCharacters: ['.', '/'],
+  provideCompletionItems: (model, position) => {
+    const line = model.getLineContent(position.lineNumber).slice(0, position.column - 1);
+    const wordMatch = line.match(/[\w\.]+$/); // ドットを含めて単語とする
+    const prefix = wordMatch ? wordMatch[0] : "";
+    
+    const suggestions = Object.keys(DOCS)
+      .filter(key => key.startsWith(prefix))
+      .map(key => {
+        // スニペット判定
+        if(key === "/* */") {
+          return s('/* */', monaco.languages.CompletionItemKind.Snippet, '/*\n$0\n*/', 'コメント (ブロックコメント)', DOCS[key].body);
         }
-      }
-    });
-
-    return Array.from(candidates).map(c => ({
-      label: c,
-      kind: monaco.languages.CompletionItemKind.Property,
-      insertText: c,
-      detail: c,
-      documentation: MASTER_DOCS[matchPrefix + "." + c] || ""
-    }));
-  }
-
-  monaco.languages.registerCompletionItemProvider('stone_script', {
-    triggerCharacters: ['.', '/'],
-    provideCompletionItems: (model, position) => {
-      const textUntilPos = model.getValueInRange({
-        startLineNumber: position.lineNumber,
-        startColumn: 1,
-        endLineNumber: position.lineNumber,
-        endColumn: position.column
+        if(key === "//▼") {
+          return s('//▼TODO▼', monaco.languages.CompletionItemKind.Snippet, '/▼TODO▼\n$0\n//▲TODO▲', 'コメント (TODOコメント)', DOCS[key].body);
+        }
+        return s(key, monaco.languages.CompletionItemKind.Keyword, key, DOCS[key].title, DOCS[key].body);
       });
 
-      const match = textUntilPos.match(/([\w\.]+)$/);
-      const prefix = match ? match[1] : "";
+    return { suggestions };
+  }
+});
 
-      let suggestions = [];
-      if (prefix) {
-        suggestions = getSuggestions(prefix);
-      } else {
-        suggestions = Object.keys(MASTER_DOCS).map(k => {
-          return {
-            label: k,
-            kind: monaco.languages.CompletionItemKind.Keyword,
-            insertText: k,
-            detail: k,
-            documentation: MASTER_DOCS[k]
-          };
-        });
-      }
-      return { suggestions };
-    }
-  });
 
+  // ドキュメントパネル更新
   const docNameEl = document.getElementById('docName');
   const docBodyEl = document.getElementById('docBody');
+function updateDocPanel() {
+  const pos = editor.getPosition();
+  if (!pos) return;
 
-  function updateDocPanel() {
-    const pos = editor.getPosition();
-    if (!pos) return;
-    const word = editor.getModel().getWordAtPosition(pos)?.word;
-    if (!word) return;
+  const line = editor.getModel().getLineContent(pos.lineNumber);
+  const match = line.slice(0, pos.column - 1).match(/[\w\.]+$/);
+  const key = match ? match[0] : "";
 
-    const fullText = editor.getValue().split(/\s+/).find(t => t.endsWith(word)) || word;
-    const doc = MASTER_DOCS[fullText];
-    if (doc) {
-      docNameEl.textContent = fullText;
-      docBodyEl.textContent = doc;
-    } else {
-      docNameEl.textContent = "説明パネル";
-      docBodyEl.textContent = "説明はありません。";
-    }
+  const doc = DOCS[key];
+  if(doc){
+    docNameEl.textContent = doc.title;
+    docBodyEl.textContent = doc.body;
+  } else {
+    docNameEl.textContent = "説明パネル";
+    docBodyEl.textContent = "説明はありません。";
   }
+}
+
   editor.onDidChangeCursorPosition(updateDocPanel);
   editor.onDidChangeModelContent(updateDocPanel);
 
-  fetch("master.json")
-    .then(r => r.json())
-    .then(data => {
-      MASTER_DOCS = flattenJSON(data);
-      console.log("Loaded master.json", MASTER_DOCS);
+  // メニュー・右クリック
+  const menuBtn = document.getElementById("menuBtn");
+  const customMenu = document.getElementById("customMenu");
+  menuBtn.addEventListener("click", (e) => {
+    const rect = menuBtn.getBoundingClientRect();
+    customMenu.style.left = rect.left + "px";
+    customMenu.style.top = rect.bottom + "px";
+    customMenu.style.display = customMenu.style.display === "block" ? "none" : "block";
+    e.stopPropagation();
+  });
+  document.addEventListener("click", e => { if(!customMenu.contains(e.target) && e.target!==menuBtn) customMenu.style.display="none"; });
+  customMenu.addEventListener("click", e=>{
+    const action = e.target.dataset.action;
+    const selection = editor.getSelection();
+    const model = editor.getModel();
+    if(!action) return;
+    switch(action){
+      case "selectAll": editor.setSelection(model.getFullModelRange()); break;
+      case "cut": navigator.clipboard.writeText(model.getValueInRange(selection)); editor.executeEdits("",[{range:selection,text:""}]); break;
+      case "copy": navigator.clipboard.writeText(model.getValueInRange(selection)); break;
+      case "paste": navigator.clipboard.readText().then(text=>{ editor.executeEdits("",[{range:selection,text}]); }); break;
+    }
+    customMenu.style.display="none";
+  });
+
+  const contextMenu = document.getElementById("contextMenu");
+  editor.getDomNode().addEventListener('contextmenu', e=>{
+    e.preventDefault();
+    contextMenu.style.display="block";
+    contextMenu.style.left=e.pageX+"px";
+    contextMenu.style.top=e.pageY+"px";
+  });
+  document.addEventListener("click",()=> contextMenu.style.display="none");
+  contextMenu.addEventListener("click", e=>{
+    const action = e.target.dataset.action;
+    const selection = editor.getSelection();
+    const model = editor.getModel();
+    if(!action) return;
+    switch(action){
+      case "selectAll": editor.setSelection(model.getFullModelRange()); break;
+      case "cut": navigator.clipboard.writeText(model.getValueInRange(selection)); editor.executeEdits("",[{range:selection,text:""}]); break;
+      case "copy": navigator.clipboard.writeText(model.getValueInRange(selection)); break;
+      case "paste": navigator.clipboard.readText().then(text=>{ editor.executeEdits("",[{range:selection,text}]); }); break;
+    }
+    contextMenu.style.display="none";
+  });
+
+  // モーダル
+  const openBtn = document.getElementById("openBtn");
+  const overlay = document.getElementById("overlay");
+  const modal = document.getElementById("modal");
+  openBtn.addEventListener("click", ()=>{ overlay.style.display="flex"; });
+  document.querySelectorAll(".tab").forEach(tab=>{
+    tab.addEventListener("click", e=>{
+      document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById(tab.dataset.tab).classList.add("active");
     });
+  });
+  overlay.addEventListener("click", e=>{
+    if(e.target===overlay) overlay.style.display="none";
+  });
+  modal.querySelectorAll("td").forEach(td=>{
+    td.addEventListener("click", ()=>{
+      navigator.clipboard.writeText(td.textContent);
+      overlay.style.display="none";
+    });
+  });
+
 });
 </script>
 </body>
