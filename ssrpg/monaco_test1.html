@@ -1,442 +1,849 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<meta charset="UTF-8">
-<title>Stone Script Editor</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-:root {
-  --panel-bg: #1e1e1e;
-  --panel-fg: #ddd;
-  --panel-muted: #9aa0a6;
-  --border: #3a3a3a;
-}
-body {
-  margin: 0;
-  display: flex;
-  height: 100vh;
-  flex-direction: column;
-  background: #111;
-  color: #ddd;
-  font-family: sans-serif;
-}
-header {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  position: relative;
-}
-#editor { height: 100%; }
-#docPanel {
-  border-left: 1px solid #444;
-  padding: 10px;
-  background: var(--panel-bg);
-}
-.panelContent {
-  height: 100%;
-  overflow: auto;
-  padding: 12px 14px;
-  line-height: 1.6;
-  font-size: 14px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-.docHeader { padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
-.docName { font-weight: 700; color: #fff; }
-.muted { color: var(--panel-muted); }
-code { background: #00000055; padding: 2px 6px; border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-#docSearch { flex: 1; font-size: 12px; padding: 2px 4px; background: #252525; color: #ddd; border: 1px solid var(--border); border-radius: 4px; }
-#customMenu, #contextMenu { position: absolute; display: none; background: #252525; border: 1px solid #555; color: #ddd; min-width: 140px; z-index: 10000; border-radius: 4px; list-style: none; padding: 0; margin: 0; font-size: 13px; }
-#customMenu li, #contextMenu li { padding: 6px 10px; cursor: pointer; }
-#customMenu li:hover, #contextMenu li:hover { background: #444; }
-.wrap {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr minmax(0, 300px);
-  grid-template-rows: auto;
-  height: 100%; /* 追加 */
-}
+    <meta charset="UTF-8">
+    <title>Stone Script Editor</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        :root {
+            --panel-bg: #1e1e1e;
+            --panel-fg: #ddd;
+            --panel-muted: #9aa0a6;
+            --border: #3a3a3a;
+        }
 
+        body {
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            flex-direction: column;
+            background: #111;
+            color: #ddd;
+            font-family:monospace;
+        }
 
-#docPanel {
-  border-left: 1px solid #444;
-  padding: 10px;
-  background: var(--panel-bg);
-  max-width: 100%; /* 横幅が画面をはみ出さないように */
-  overflow: auto;
-}
+        header {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+        }
 
-@media (max-width: 600px) {
-  .wrap {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto; /* 上：editor 下：panel */
-  }
-  #editor {
-    height: calc(100vh - 50px - 50px); /* headerやボタンの高さに応じて調整 */
-  }
-  #docPanel {
-    width: 100%;
-    max-height: calc(100vh - 50px); /* パネルも画面内に収める */
-    overflow: auto;
-    order: 2;
-    border-left: none;
-    border-top: 1px solid #444;
-  }
-}
+        #editor {
+            height: 100%;
+        }
 
-.overlay {
-  position: fixed; top:0; left:0; right:0; bottom:0;
-  background: rgba(0,0,0,0.3);
-  display: none; justify-content: center; align-items: center;
-  z-index: 99999;
-}
-.modal {
-  background: #222; border-radius: 8px; padding: 10px; min-width: 400px;
-  z-index: 100000; position: relative;
-}
-.tabs { display: flex; border-bottom: 2px solid #ccc; }
-.tab { padding: 8px 16px; cursor: pointer; border: 1px solid #ccc; border-bottom: none; background: #222; margin-right: 4px; border-radius: 6px 6px 0 0; }
-.tab.active { background: #666; font-weight: bold; }
-.tab-content { display: none; }
-.tab-content.active { display: block; }
-table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-td { border: 1px solid #aaa; padding: 8px; text-align: center; cursor: pointer; }
-td:hover { background: #f0f0f0; }
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs/loader.min.js"></script>
+        #docPanel {
+            border-left: 1px solid #444;
+            padding: 10px;
+            background: var(--panel-bg);
+        }
+
+        .panelContent {
+            height: 100%;
+            overflow: auto;
+            padding: 12px 14px;
+            line-height: 1.6;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .docHeader {
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .docName {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .muted {
+            color: var(--panel-muted);
+        }
+
+        code {
+            background: #00000055;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+
+        #customMenu,
+        #contextMenu {
+            position: absolute;
+            display: none;
+            background: #252525;
+            border: 1px solid #555;
+            color: #ddd;
+            min-width: 140px;
+            z-index: 10000;
+            border-radius: 4px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 13px;
+        }
+
+        #customMenu li,
+        #contextMenu li {
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+
+        #customMenu li:hover,
+        #contextMenu li:hover {
+            background: #444;
+        }
+
+        .wrap {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr minmax(0, 300px);
+            grid-template-rows: auto;
+            height: 100%;
+            /* 追加 */
+        }
+
+        @media (max-width: 600px) {
+            .wrap {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr auto;
+                /* 上：editor 下：panel */
+            }
+
+            #editor {
+                height: calc(100vh - 50px - 50px);
+                /* headerやボタンの高さに応じて調整 */
+            }
+
+            #docPanel {
+                width: 100%;
+                max-height: calc(100vh - 50px);
+                /* パネルも画面内に収める */
+                overflow: auto;
+                order: 2;
+                border-left: none;
+                border-top: 1px solid #444;
+            }
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+        }
+
+        .modal {
+            background: #222;
+            border-radius: 8px;
+            padding: 10px;
+            min-width: 400px;
+            z-index: 100000;
+            position: relative;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #ccc;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            background: #222;
+            margin-right: 4px;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .tab.active {
+            background: #666;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        td {
+            border: 1px solid #aaa;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        td:hover {
+            background: #f0f0f0;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs/loader.min.js"></script>
 </head>
+
 <body>
-<header>
-  <h2>自作言語エディタ（Stone Script）</h2>
-  <span class="muted">補完候補やカーソル位置に応じて右パネルに説明を表示</span>
-  <div style="display:flex; gap:8px; margin-top:6px;">
-    <button id="menuBtn" style="width:auto; padding:2px 6px;">☰ メニュー</button>
-    <button id="openBtn">表を開く</button>
-  </div>
-  <ul id="customMenu">
-    <li data-action="selectAll">すべて選択</li>
-    <li data-action="cut">切り取り</li>
-    <li data-action="copy">コピー</li>
-    <li data-action="paste">貼り付け</li>
-  </ul>
-</header>
+    <header>
+        <!--  <h2>エディタ（Stone Script）</h2>-->
+        <span class="muted">補完候補やカーソル位置に応じて右パネルに説明を表示</span>
+        <div style="display:flex; gap:8px; margin-top:6px;">
+            <button id="menuBtn" style="width:auto; padding:2px 6px;">☰ メニュー</button>
+            <button id="openBtn">特殊文字</button>
+        </div>
+        <ul id="customMenu">
+            <li data-action="selectAll">すべて選択</li>
+            <li data-action="cut">切り取り</li>
+            <li data-action="copy">コピー</li>
+            <li data-action="paste">貼り付け</li>
+        </ul>
+    </header>
 
-<div class="wrap">
-  <div id="editor"></div>
-  <aside id="docPanel">
-    <div class="docHeader">
-      <span class="docName" id="docName">説明パネル</span>
-      <input type="text" id="docSearch" placeholder="検索...">
-      <span class="muted" id="docMeta">Ready</span>
+    <div class="wrap">
+        <div id="editor"></div>
+        <aside id="docPanel">
+            <div class="docHeader">
+                <span class="docName" id="docName">説明</span>
+                <span class="muted" id="docMeta"></span>
+            </div>
+            <div class="panelContent" id="docBody">補完候補（<code>Ctrl</code>+<code>Space</code>）や識別子上にカーソルを置くと説明が出ます。
+            </div>
+        </aside>
     </div>
-    <div class="panelContent" id="docBody">
-      補完候補（<code>Ctrl</code>+<code>Space</code>）や識別子上にカーソルを置くと説明が出ます。
+
+    <ul id="contextMenu">
+        <li data-action="selectAll">すべて選択</li>
+        <li data-action="cut">切り取り</li>
+        <li data-action="copy">コピー</li>
+        <li data-action="paste">貼り付け</li>
+    </ul>
+
+    <!-- overlay は body の末尾 -->
+    <div class="overlay" id="overlay">
+        <div class="modal" id="modal">
+            <div class="tabs">
+                <div class="tab active" data-tab="tab1">記号</div>
+                <div class="tab" data-tab="tab2">罫線など</div>
+                <div class="tab" data-tab="tab3">矢印</div>
+                <div class="tab" data-tab="tab4">ラテン</div>
+                <div class="tab" data-tab="tab5">ギリシャ</div>
+                <div class="tab" data-tab="tab6">ギリシャ</div>
+                <div class="tab" data-tab="tab7">特殊</div>
+                <div class="tab" data-tab="tab8">装飾</div>
+            </div>
+            <div class="tab-content active" id="tab1">
+                <table>
+                    <tr>
+                        <td>!</td><td>"</td><td>#</td><td>$</td>
+                        <td>%</td><td>&</td><td>'</td><td>(</td>
+                        <td>)</td>
+                    </tr>
+                    <tr>
+                        <td>*</td><td>+</td><td>,</td><td>-</td>
+                        <td>.</td><td>/</td><td>:</td><td>;</td>
+                        <td>=</td>
+                    </tr>
+                    <tr>
+                        <td>?</td><td>@</td><td>[</td><td>\</td>
+                        <td>]</td><td>^</td><td>{</td><td>|</td>
+                        <td>}</td>
+                    </tr>
+                    <tr>
+                        <td>~</td><td>`</td><td>§</td><td>≠</td>
+                        <td>¯</td><td>¿</td><td>_</td><td></td>
+                        <td></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="tab-content" id="tab2">
+                <table>
+                    <tr>
+                        <td>░</td><td>▒</td><td>▓</td><td>█</td>
+                        <td>▄</td><td>▀</td><td></td><td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>│</td><td>┤</td><td>╡</td><td>╢</td>
+                        <td>╖</td><td>╕</td><td>╣</td><td>║</td>
+                        <td>╗</td>
+                    </tr>
+                    <tr>
+                        <td>╝</td><td>╜</td><td>╛</td><td>╛</td>
+                        <td>┐</td><td>└</td><td>┴</td><td>┬</td>
+                        <td>├</td>
+                    </tr>
+                    <tr>
+                        <td>─</td><td>┼</td><td>╞</td><td>╟</td>
+                        <td>╚</td><td>╔</td><td>╩</td><td>╦</td>
+                        <td>╠</td>
+                    </tr>
+                    <tr>
+                        <td>═</td><td>╬</td><td>╧</td><td>╨</td>
+                        <td>╤</td><td>╥</td><td>╙</td><td>╘</td>
+                        <td>╒</td>
+                    </tr>
+                    <tr>
+                        <td>╓</td><td>╫</td><td>╪</td><td>┘</td>
+                        <td>┌</td><td></td><td></td><td></td>
+                        <td></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="tab-content" id="tab3">
+                <table>
+                    <tr>
+                        <td>│</td>
+                        <td>┤</td>
+                        <td>╡</td>
+                        <td>╢</td>
+                        <td>╖</td>
+                        <td>╕</td>
+                        <td>╣</td>
+                        <td>║</td>
+                        <td>╗</td>
+                        <td>╝</td>
+                        <td>╜</td>
+                        <td>╛</td>
+                        <td>┐</td>
+                    </tr>
+                    <tr>
+                        <td>└</td>
+                        <td>┴</td>
+                        <td>┬</td>
+                        <td>├</td>
+                        <td>─</td>
+                        <td>┼</td>
+                        <td>╞</td>
+                        <td>╟</td>
+                        <td>╚</td>
+                        <td>╔</td>
+                        <td>╩</td>
+                        <td>╦</td>
+                        <td>╠</td>
+                    </tr>
+                    <tr>
+                        <td>═</td>
+                        <td>╬</td>
+                        <td>╧</td>
+                        <td>╨</td>
+                        <td>╤</td>
+                        <td>╥</td>
+                        <td>╙</td>
+                        <td>╘</td>
+                        <td>╒</td>
+                        <td>╓</td>
+                        <td>╫</td>
+                        <td>╪</td>
+                        <td>┘</td>
+                        <td>┌</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="tab-content" id="tab4">
+                <table>
+                    <tr>
+                        <td>❤️</td>
+                        <td>∞</td>
+                        <td>❄️</td>
+                        <td>\\\*</td>
+                        <td>δ</td>
+                    </tr>
+                </table>
+
+            </div>
+            <div class="tab-content" id="tab5">
+                <table>
+                    <tr>
+                        <td>░</td>
+                        <td>▒</td>
+                        <td>▓</td>
+                        <td>█</td>
+                        <td>▄</td>
+                        <td>▀</td>
+                    </tr>
+                </table>
+
+            </div>
+            <div class="tab-content" id="tab6">
+                <table>
+                    <tr>
+                        <td>À</td>
+                        <td>⚿</td>
+                        <td>œ</td>
+                        <td>§</td>
+                        <td>≠</td>
+                        <td>¿</td>
+                        <td>¯</td>
+                        <td>¡</td>
+                    </tr>
+                    <tr>
+                        <td>!</td>
+                        <td>＂</td>
+                        <td>#</td>
+                        <td>$</td>
+                        <td>%</td>
+                        <td>\\\&</td>
+                        <td>'</td>
+                        <td>(</td>
+                    </tr>
+                    <tr>
+                        <td>)</td>
+                        <td>\\\*</td>
+                        <td>+</td>
+                        <td>,</td>
+                        <td>-</td>
+                        <td>.</td>
+                        <td>/</td>
+                    </tr>
+                </table>
+
+            </div>
+            <div class="tab-content" id="tab7">
+                <table>
+                    <tr>
+                        <td>:</td>
+                        <td>;</td>
+                        <td> </td>
+                        <td>=</td>
+                        <td>></td>
+                        <td>?</td>
+                        <td>@</td>
+                        <td>\\\[</td>
+                    </tr>
+                    <tr>
+                        <td>\\\\</td>
+                        <td>]</td>
+                        <td>^</td>
+                        <td>`</td>
+                        <td>{</td>
+                        <td>|</td>
+                        <td>}</td>
+                        <td>~</td>
+                        <td>´</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="tab-content" id="tab8">
+                <table>
+                    <tr>
+                        <td>Ç</td>
+                        <td>ü</td>
+                        <td>é</td>
+                        <td>â</td>
+                        <td>ä</td>
+                        <td>à</td>
+                        <td>å</td>
+                        <td>ç</td>
+                    </tr>
+                    <tr>
+                        <td>ê</td>
+                        <td>ë</td>
+                        <td>è</td>
+                        <td>ï</td>
+                        <td>î</td>
+                        <td>ì</td>
+                        <td>Ä</td>
+                        <td>Å</td>
+                    </tr>
+                    <tr>
+                        <td>É</td>
+                        <td>æ</td>
+                        <td>Æ</td>
+                        <td>ô</td>
+                        <td>ö</td>
+                        <td>ò</td>
+                        <td>û</td>
+                        <td>ù</td>
+                    </tr>
+                    <tr>
+                        <td>ý</td>
+                        <td>Ö</td>
+                        <td>Ü</td>
+                        <td>€</td>
+                        <td>£</td>
+                        <td>￥</td>
+                        <td>₩</td>
+                        <td>Á</td>
+                    </tr>
+                    <tr>
+                        <td>á</td>
+                        <td>í</td>
+                        <td>ó</td>
+                        <td>ú</td>
+                        <td>ñ</td>
+                        <td>Ñ</td>
+                        <td>ã</td>
+                        <td>õ</td>
+                    </tr>
+                </table>
+
+            </div>
+            <div class="tab-content" id="tab9">
+                <table>
+                    <tr>
+                        <td>ζ</td>
+                        <td>η</td>
+                        <td>ξ</td>
+                        <td>λ</td>
+                        <td>ψ</td>
+                        <td>έ</td>
+                        <td>«</td>
+                        <td>»</td>
+                    </tr>
+                    <tr>
+                        <td>ρ</td>
+                        <td>ι</td>
+                        <td>α</td>
+                        <td>β</td>
+                        <td>γ</td>
+                        <td>π</td>
+                        <td>Σ</td>
+                        <td>σ</td>
+                    </tr>
+                    <tr>
+                        <td>μ</td>
+                        <td>τ</td>
+                        <td>Φ</td>
+                        <td>Θ</td>
+                        <td>Ω</td>
+                        <td>δ</td>
+                        <td>∞</td>
+                        <td>φ</td>
+                    </tr>
+                    <tr>
+                        <td>ε</td>
+                        <td>ω</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="tab-content" id="tab10">
+                <table>
+                    <tr>
+                        <td>≡</td>
+                        <td>±</td>
+                        <td>≥</td>
+                        <td>≤</td>
+                        <td>⌐</td>
+                        <td>¬</td>
+                        <td>÷</td>
+                        <td>≈</td>
+                    </tr>
+                    <tr>
+                        <td>°</td>
+                        <td>…</td>
+                        <td>·</td>
+                        <td>†</td>
+                        <td>☤</td>
+                        <td>∆</td>
+                        <td>❄️</td>
+                        <td>┊</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
     </div>
-  </aside>
-</div>
 
-<ul id="contextMenu">
-  <li data-action="selectAll">すべて選択</li>
-  <li data-action="cut">切り取り</li>
-  <li data-action="copy">コピー</li>
-  <li data-action="paste">貼り付け</li>
-</ul>
+    <script>
+        let editor;
 
-<!-- overlay は body の末尾 -->
-<div class="overlay" id="overlay">
-  <div class="modal" id="modal">
-    <div class="tabs">
-      <div class="tab active" data-tab="tab1">装飾</div>
-      <div class="tab" data-tab="tab2">矢印</div>
-      <div class="tab" data-tab="tab3">罫線</div>
-      <div class="tab" data-tab="tab4">属性</div>
-      <div class="tab" data-tab="tab5">ブロック</div>
-      <div class="tab" data-tab="tab9">ギリシャ</div>
-      <div class="tab" data-tab="tab6">記号1</div>
-      <div class="tab" data-tab="tab7">記号2</div>
-      <div class="tab" data-tab="tab8">記号3</div>
-      <div class="tab" data-tab="tab10">記号4</div>      
-    </div>
-    <div class="tab-content active" id="tab1">
-      <table>
-        <tr>
-        	<td>☆</td>
-        	<td>☺️</td>
-        	<td>ʘ</td>
-        	<td>☼</td>
-        </tr>
-        <tr>
-        	<td>❤️</td>
-        	<td>♦️</td>
-        	<td>♣️</td>
-        	<td>♠️</td>
-        </tr>
-        <tr>
-        	<td>•</td>
-        	<td>◘</td>
-        	<td>⏹️</td>
-        	<td>◙</td>
-        </tr>
-        <tr>
-        	<td>♂️</td>
-        	<td>♀️</td>
-        	<td>♪</td>
-        	<td>♫</td>
-        </tr>
-      </table>
-    </div>
-    <div class="tab-content" id="tab2">
-		<table>
-		<tr><td>▶️</td><td>◀️</td><td>▲</td><td>▼</td></tr>
-		<tr><td>↑</td><td>↓</td><td>→</td><td>←</td></tr>
-		</table>
-    </div>
-    <div class="tab-content" id="tab3">
-    <table>
-<tr><td>│</td><td>┤</td><td>╡</td><td>╢</td><td>╖</td><td>╕</td><td>╣</td><td>║</td><td>╗</td><td>╝</td><td>╜</td><td>╛</td><td>┐</td></tr>
-<tr><td>└</td><td>┴</td><td>┬</td><td>├</td><td>─</td><td>┼</td><td>╞</td><td>╟</td><td>╚</td><td>╔</td><td>╩</td><td>╦</td><td>╠</td></tr>
-<tr><td>═</td><td>╬</td><td>╧</td><td>╨</td><td>╤</td><td>╥</td><td>╙</td><td>╘</td><td>╒</td><td>╓</td><td>╫</td><td>╪</td><td>┘</td><td>┌</td></tr>
-</table>
+        function s(label, kind, snippet, detail, doc) {
+            return { label, kind, insertText: snippet, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, detail, documentation: doc };
+        }
 
-    </div>
-    <div class="tab-content" id="tab4">
-    <table>
-<tr><td>❤️</td><td>∞</td><td>❄️</td><td>\\\*</td><td>δ</td></tr>
-</table>
+        const DOCS = {
+            "var ": { title: 'var', body: '変数宣言\nvar x = 10' },
+            "loc": { title: "loc", body: "現在位置オブジェクト" },
+            "loc.id": { title: "loc.id", body: "現在位置のID" },
+            "loc.gp": { title: "loc.gp", body: "現在位置の座標情報" },
+            ".SetBG": { title: ".SetBG(r,g,b)", body: "背景色を設定します\n例: canvas.SetBG(255,255,255)" },
+            ".SetFG": { title: ".SetFG(r,g)", body: "前景色を設定します\n例: canvas.SetFG(0,0)" },
+            ".Add": { title: ".Add(value)", body: "配列やリストに値を追加します\n例: list.Add(5)" }
+        };
 
-    </div>
-    <div class="tab-content" id="tab5">
-    <table>
-<tr><td>░</td><td>▒</td><td>▓</td><td>█</td><td>▄</td><td>▀</td></tr>
-</table>
+        const COMMON_METHODS = [
+            { label: ".SetBG", insertText: "SetBG($1,$2,$3)", detail: DOCS[".SetBG"].title, documentation: DOCS[".SetBG"].body },
+            { label: ".SetFG", insertText: "SetFG($1,$2)", detail: DOCS[".SetFG"].title, documentation: DOCS[".SetFG"].body },
+            { label: ".Add", insertText: "Add($1)", detail: DOCS[".Add"].title, documentation: DOCS[".Add"].body }
+        ];
 
-    </div>
-    <div class="tab-content" id="tab6">
-    <table>
-<tr><td>À</td><td>⚿</td><td>œ</td><td>§</td><td>≠</td><td>¿</td><td>¯</td><td>¡</td></tr>
-<tr><td>!</td><td>＂</td><td>#</td><td>$</td><td>%</td><td>\\\&</td><td>'</td><td>(</td></tr>
-<tr><td>)</td><td>\\\*</td><td>+</td><td>,</td><td>-</td><td>.</td><td>/</td></tr>
-</table>
+        const Snipet_method = {
+            "item.GetCooldown": { title: "item.GetCooldown()", insertText: "item.GetCooldown(\"$1\")", body: "引数のアイテムのクールダウン(int)を返す" },
+        }
 
-    </div>
-    <div class="tab-content" id="tab7">
-    <table>
-<tr><td>:</td><td>;</td><td><</td><td>=</td><td>></td><td>?</td><td>@</td><td>\\\[</td></tr>
-<tr><td>\\\\</td><td>]</td><td>^</td><td>`</td><td>{</td><td>|</td><td>}</td><td>~</td><td>´</td></tr>
-</table>
 
-    </div>
-    <div class="tab-content" id="tab8">
-    <table>
-<tr><td>Ç</td><td>ü</td><td>é</td><td>â</td><td>ä</td><td>à</td><td>å</td><td>ç</td></tr>
-<tr><td>ê</td><td>ë</td><td>è</td><td>ï</td><td>î</td><td>ì</td><td>Ä</td><td>Å</td></tr>
-<tr><td>É</td><td>æ</td><td>Æ</td><td>ô</td><td>ö</td><td>ò</td><td>û</td><td>ù</td></tr>
-<tr><td>ý</td><td>Ö</td><td>Ü</td><td>€</td><td>£</td><td>￥</td><td>₩</td><td>Á</td></tr>
-<tr><td>á</td><td>í</td><td>ó</td><td>ú</td><td>ñ</td><td>Ñ</td><td>ã</td><td>õ</td></tr>
-</table>
 
-    </div>
-    <div class="tab-content" id="tab9">
-    <table>
-<tr><td>ζ</td><td>η</td><td>ξ</td><td>λ</td><td>ψ</td><td>έ</td><td>«</td><td>»</td></tr>
-<tr><td>ρ</td><td>ι</td><td>α</td><td>β</td><td>γ</td><td>π</td><td>Σ</td><td>σ</td></tr>
-<tr><td>μ</td><td>τ</td><td>Φ</td><td>Θ</td><td>Ω</td><td>δ</td><td>∞</td><td>φ</td></tr>
-<tr><td>ε</td><td>ω</td></tr>
-</table>
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs' } });
+        require(['vs/editor/editor.main'], function () {
+            monaco.languages.register({ id: 'stone_script' });
+            monaco.languages.setMonarchTokensProvider('stone_script', {
+                tokenizer: {
+                    root: [
+                        [/\b(var|for|func|return|print)\b/, 'keyword'],
+                        [/[:?^]/, 'keyword'],
+                        [/"([^"\\]|\\.)*$/, 'string.invalid'],
+                        [/"/, { token: 'string.quote', bracket: '@open', next: '@string' }],
+                        [/[0-9]+/, 'number'],
+                        [/\/\/.*$/, 'comment'],
+                        [/\/\*/, 'comment', '@comment'],
+                        [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier']
+                    ],
+                    comment: [[/[^\/*]+/, 'comment'], [/\*\//, 'comment', '@pop'], [/[\/*]/, 'comment']],
+                    string: [[/[^\\"]+/, 'string'], [/\\./, 'string.escape'], [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]]
+                }
+            });
 
-    </div>
-    <div class="tab-content" id="tab10">
-    <table>
-<tr><td>≡</td><td>±</td><td>≥</td><td>≤</td><td>⌐</td><td>¬</td><td>÷</td><td>≈</td></tr>
-<tr><td>°</td><td>…</td><td>·</td><td>†</td><td>☤</td><td>∆</td><td>❄️</td><td>┊</td></tr>
-</table>
-    </div>
-  </div>
-</div>
 
-<script>
-// Monaco Editor 初期化
-require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.0/min/vs' } });
-require(['vs/editor/editor.main'], function () {
-  monaco.languages.register({ id: 'stone_script' });
-  monaco.languages.setMonarchTokensProvider('stone_script', {
-    tokenizer: {
-      root: [
-        [/\b(var|if|else|for|function|return|print)\b/, 'keyword'],
-        [/"([^"\\]|\\.)*$/, 'string.invalid'],
-        [/"/, { token: 'string.quote', bracket: '@open', next: '@string' }],
-        [/[0-9]+/, 'number'],
-        [/\/\/.*$/, 'comment'],
-        [/[a-zA-Z_][a-zA-Z0-9_]*/, 'identifier']
-      ],
-      string: [
-        [/[^\\"]+/, 'string'],
-        [/\\./, 'string.escape'],
-        [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
-      ]
-    }
-  });
+            monaco.editor.defineTheme('myDarkTheme', {
+                base: 'vs-dark', // ベースはダークテーマ
+                inherit: true,   // vs-darkのスタイルを継承する
+                rules: [
+                    { token: 'keyword', foreground: '569CD6' },        // キーワード → 青
+                    { token: 'string', foreground: 'FF6347' },         // 文字列 → オレンジ
+                    { token: 'comment', foreground: '6A9955' },        // コメント → 緑
+                    { token: 'number', foreground: 'D69D85' },         // 数値 → ライトグリーン
+                    { token: 'identifier', foreground: 'FFFFFF' },     // シンボル → ライトブルー
+                    { token: 'operator', foreground: 'D4D4D4' },       // 演算子 → グレー
+                    { token: 'delimiter', foreground: 'D4D4D4' },      // 区切り記号 → グレー
+                ],
+                colors: {
+                }
+            });
 
-  const DOCS = {
-    print: { title: 'print', body: '文字列を出力します\n例:\nprint "Hello World"' },
-    if: { title: 'if', body: '条件分岐\nif condition { ... } else { ... }' },
-    var: { title: 'var', body: '変数宣言\nvar x = 10' },
-    function: { title: 'function', body: '関数定義\nfunction name(params) { ... }' },
-    return: { title: 'return', body: '値を返す\nreturn x + 1' },
-    for: { title: 'for', body: '反復処理\nfor i = 0..10 { ... }' }
-  };
+            editor = monaco.editor.create(document.getElementById('editor'), {
+                value: '123 _____1_________2_________3_______"4"\n\n',
+                language: 'stone_script',
+                theme: 'myDarkTheme',
+                fontSize: 14,
+                lineHeight: 22,
+                rulers: [40],
+                wordWrap: 'off',
+                minimap: { enabled: false },
+                automaticLayout: true,
+                contextmenu: false,
+            });
 
-  function s(label, kind, snippet, detail, doc) {
-    return { label, kind, insertText: snippet, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, detail, documentation: doc };
-  }
+            function isCursorInString(model, position) {
+                const line = model.getLineContent(position.lineNumber);
+                const textBeforeCursor = line.slice(0, position.column - 1);
+                const quoteCount = (textBeforeCursor.match(/"/g) || []).length;
+                return quoteCount % 2 === 1;
+            }
 
-  monaco.languages.registerCompletionItemProvider('stone_script', {
-    provideCompletionItems: () => ({
-      suggestions: [
-        s('print', monaco.languages.CompletionItemKind.Function, 'print "$1"', '文字を出力', DOCS.print.body),
-        s('if', monaco.languages.CompletionItemKind.Keyword, 'if $1 {\n\t$0\n}', '条件分岐', DOCS.if.body),
-        s('var', monaco.languages.CompletionItemKind.Keyword, 'var ${1:name} = $0', '変数宣言', DOCS.var.body),
-        s('function', monaco.languages.CompletionItemKind.Function, 'function ${1:name}(${2:params}) {\n\t$0\n}', '関数定義', DOCS.function.body),
-        s('return', monaco.languages.CompletionItemKind.Keyword, 'return $0', '値を返す', DOCS.return.body),
-        s('for', monaco.languages.CompletionItemKind.Keyword, 'for ${1:i} = ${2:0}..${3:10} {\n\t$0\n}', '反復処理', DOCS.for.body)
-      ]
-    })
-  });
+            monaco.languages.registerCompletionItemProvider('stone_script', {
+                triggerCharacters: ['.', '/', '"'],
+                provideCompletionItems: (model, position) => {
+                    const line = model.getLineContent(position.lineNumber).slice(0, position.column - 1);
+                    const lastChar = line.slice(-1);
+                    const ALL_DOCS = { ...DOCS, ...Snipet_method };
 
-  const editor = monaco.editor.create(document.getElementById('editor'), {
-    value: 'print "Hello World"\nvar x = 10\nif x {\n\tprint "ok"\n}',
-    language: 'stone_script',
-    theme: 'vs-dark',
-    fontSize: 14,
-    lineHeight: 22,
-    rulers: [40],
-    wordWrap: 'off',
-    minimap: { enabled: false },
-    automaticLayout: true,
-    contextmenu: false,
-    suggest: { showWords: true, preview: true, showInlineDetails: true },
-    quickSuggestions: { other: true, comments: false, strings: true }
-  });
+                    if (isCursorInString(model, position)) {
+                        // 文字列内の直前文字列を取得
+                        const strMatch = line.match(/"([^"]*)$/);
+                        const prefix = strMatch ? strMatch[1] : "";
 
-  // ドキュメントパネル更新
-  const docNameEl = document.getElementById('docName');
-  const docBodyEl = document.getElementById('docBody');
-  function updateDocPanel() {
-    const pos = editor.getPosition();
-    if(!pos) return;
-    const word = editor.getModel().getWordAtPosition(pos)?.word;
-    const doc = DOCS[word];
-    if(doc){
-      docNameEl.textContent = doc.title;
-      docBodyEl.textContent = doc.body;
-    } else {
-      docNameEl.textContent = "説明パネル";
-      docBodyEl.textContent = "説明はありません。";
-    }
-  }
-  editor.onDidChangeCursorPosition(updateDocPanel);
-  editor.onDidChangeModelContent(updateDocPanel);
+                        const suggestions = Object.keys(ALL_DOCS)
+                            .filter(key => key.startsWith(prefix))
+                            .map(key => ({
+                                label: key,
+                                kind: monaco.languages.CompletionItemKind.Text,
+                                insertText: key,
+                                detail: ALL_DOCS[key].title,
+                                documentation: ALL_DOCS[key].body
+                            }));
+                        return { suggestions };
+                    }
 
-  // メニュー機能
-  const menuBtn = document.getElementById("menuBtn");
-  const customMenu = document.getElementById("customMenu");
-  menuBtn.addEventListener("click", (e) => {
-    const rect = menuBtn.getBoundingClientRect();
-    customMenu.style.left = rect.left + "px";
-    customMenu.style.top = rect.bottom + "px";
-    customMenu.style.display = customMenu.style.display === "block" ? "none" : "block";
-    e.stopPropagation();
-  });
-  document.addEventListener("click", e => {
-    if (!customMenu.contains(e.target) && e.target !== menuBtn) customMenu.style.display = "none";
-  });
-  customMenu.addEventListener("click", e => {
-    const action = e.target.dataset.action;
-    const selection = editor.getSelection();
-    const model = editor.getModel();
-    if(!action) return;
-    switch(action){
-      case "selectAll": editor.setSelection(model.getFullModelRange()); break;
-      case "cut":
-        navigator.clipboard.writeText(model.getValueInRange(selection));
-        editor.executeEdits("", [{ range: selection, text: "" }]);
-        break;
-      case "copy":
-        navigator.clipboard.writeText(model.getValueInRange(selection));
-        break;
-      case "paste":
-        navigator.clipboard.readText().then(text=>{ editor.executeEdits("", [{ range: selection, text }]); });
-        break;
-    }
-    customMenu.style.display = "none";
-  });
 
-  // 右クリックメニュー
-  const contextMenu = document.getElementById("contextMenu");
-  editor.getDomNode().addEventListener('contextmenu', e => {
-    e.preventDefault();
-    contextMenu.style.display = "block";
-    contextMenu.style.left = e.pageX + "px";
-    contextMenu.style.top = e.pageY + "px";
-  });
-  document.addEventListener("click", () => contextMenu.style.display="none");
-  contextMenu.addEventListener("click", e=>{
-    const action = e.target.dataset.action;
-    const selection = editor.getSelection();
-    const model = editor.getModel();
-    if(!action) return;
-    switch(action){
-      case "selectAll": editor.setSelection(model.getFullModelRange()); break;
-      case "cut":
-        navigator.clipboard.writeText(model.getValueInRange(selection));
-        editor.executeEdits("", [{ range: selection, text: "" }]);
-        break;
-      case "copy":
-        navigator.clipboard.writeText(model.getValueInRange(selection));
-        break;
-      case "paste":
-        navigator.clipboard.readText().then(text=>{ editor.executeEdits("", [{ range: selection, text }]); });
-        break;
-    }
-    contextMenu.style.display = "none";
-  });
-});
+                    if (lastChar === "/" || line.endsWith("/")) {
+                        const suggestions = ["//", "/* */", "//▼"].map(key => {
+                            if (key === "/* */") return s('/* */', monaco.languages.CompletionItemKind.Snippet, '*\n$0\n*/', 'ブロックコメント', '複数行コメント');
+                            if (key === "//▼") return s('//▼TODO▼', monaco.languages.CompletionItemKind.Snippet, '/▼TODO▼\n$0\n//▲TODO▲', 'TODOコメント', 'TODO用コメント');
+                            return s(key, monaco.languages.CompletionItemKind.Keyword, key, 'コメント', 'コメント行');
+                        });
+                        return { suggestions };
+                    }
 
-// 表モーダル
-const openBtn = document.getElementById("openBtn");
-const overlay = document.getElementById("overlay");
-const modal = document.getElementById("modal");
-openBtn.addEventListener("click", () => { overlay.style.display = "flex"; });
+                    if (lastChar === ".") {
+                        const suggestions = COMMON_METHODS.map(m => ({
+                            label: m.label,
+                            kind: monaco.languages.CompletionItemKind.Method,
+                            insertText: m.insertText,
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            detail: m.detail,
+                            documentation: m.documentation
+                        }));
+                        return { suggestions };
+                    }
 
-// タブ切り替え
-document.querySelectorAll(".tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-    tab.classList.add("active");
-    document.getElementById(tab.dataset.tab).classList.add("active");
-  });
-});
+                    const wordMatch = line.match(/[\w\.]+$/);
+                    const prefix = wordMatch ? wordMatch[0] : "";
+                    const startColumn = position.column - prefix.length; // 置き換え開始位置
 
-// tdクリックでコピー
-document.querySelectorAll(".tab-content").forEach(tabContent => {
-  tabContent.addEventListener("click", (e) => {
-    const td = e.target.closest("td");
-    if(td){
-      navigator.clipboard.writeText(td.innerText).then(() => {
-        console.log(`コピーしました: ${td.innerText}`);
-        overlay.style.display = "none";
-      });
-    }
-  });
-});
+                    const suggestions = Object.keys(ALL_DOCS)
+                        .filter(key => key.startsWith(prefix))
+                        .map(key => {
+                            const range = new monaco.Range(
+                                position.lineNumber,
+                                startColumn,
+                                position.lineNumber,
+                                position.column
+                            );
 
-// モーダル外クリックで閉じる
-overlay.addEventListener("click", (e) => {
-  if(!modal.contains(e.target)) overlay.style.display = "none";
-});
-</script>
+                            return {
+                                label: key,
+                                kind: monaco.languages.CompletionItemKind.Keyword,
+                                insertText: ALL_DOCS[key].insertText || key,
+                                insertTextRules: ALL_DOCS[key].insertText ? monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet : undefined,
+                                detail: ALL_DOCS[key].title,
+                                documentation: ALL_DOCS[key].body,
+                                range // ←ここで既存文字列を置き換える
+                            };
+                        });
+
+                    return { suggestions };
+
+                }
+            });
+
+            const docNameEl = document.getElementById('docName');
+            const docBodyEl = document.getElementById('docBody');
+            function updateDocPanel() {
+                const pos = editor.getPosition();
+                if (!pos) return;
+                const line = editor.getModel().getLineContent(pos.lineNumber);
+                const beforeCursor = line.slice(0, pos.column - 1);
+
+                let key = "";
+
+                if (isCursorInString(editor.getModel(), pos)) {
+                    // 文字列内のカーソルなら、直前の文字列を取得
+                    const strMatch = beforeCursor.match(/"([^"]*)$/);
+                    key = strMatch ? strMatch[1] : "";
+                } else {
+                    let match = beforeCursor.match(/([\w\.]+)\s*(?=\()/);
+                    if (match) key = match[1];
+                    else { match = beforeCursor.match(/[\w\.]+$/); if (match) key = match[0]; }
+                }
+
+                let doc = DOCS[key] || Snipet_method[key];
+                if (!doc && key.includes(".")) {
+                    const parts = key.split(".");
+                    const lastKey = parts[parts.length - 1];
+                    if (DOCS[lastKey]) doc = DOCS[lastKey];
+                    else if (DOCS["." + lastKey]) doc = DOCS["." + lastKey];
+                }
+
+                if (doc) {
+                    docNameEl.textContent = doc.title;
+                    docBodyEl.textContent = doc.body;
+                } else {
+                    docNameEl.textContent = "説明";
+                    docBodyEl.textContent = "説明はありません。";
+                }
+            }
+
+
+            editor.onDidChangeCursorPosition(updateDocPanel);
+            editor.onDidChangeModelContent(updateDocPanel);
+            editor.onDidChangeCursorPosition(() => {
+                const pos = editor.getPosition();
+                if (isCursorInString(editor.getModel(), pos)) {
+                    // 安全な呼び出し
+                    editor.getAction('editor.action.triggerSuggest').run();
+                }
+            });
+
+
+            // メニュー、右クリック
+            const menuBtn = document.getElementById("menuBtn");
+            const customMenu = document.getElementById("customMenu");
+            menuBtn.addEventListener("click", e => {
+                const rect = menuBtn.getBoundingClientRect();
+                customMenu.style.left = rect.left + "px";
+                customMenu.style.top = rect.bottom + "px";
+                customMenu.style.display = customMenu.style.display === "block" ? "none" : "block";
+                e.stopPropagation();
+            });
+            document.addEventListener("click", e => { if (!customMenu.contains(e.target) && e.target !== menuBtn) customMenu.style.display = "none"; });
+            customMenu.addEventListener("click", e => {
+                const action = e.target.dataset.action;
+                const selection = editor.getSelection();
+                const model = editor.getModel();
+                if (!action) return;
+                switch (action) {
+                    case "selectAll": editor.setSelection(model.getFullModelRange()); break;
+                    case "cut": navigator.clipboard.writeText(model.getValueInRange(selection)); editor.executeEdits("", [{ range: selection, text: "" }]); break;
+                    case "copy": navigator.clipboard.writeText(model.getValueInRange(selection)); break;
+                    case "paste": navigator.clipboard.readText().then(text => editor.executeEdits("", [{ range: selection, text }])); break;
+                }
+                customMenu.style.display = "none";
+            });
+
+            const contextMenu = document.getElementById("contextMenu");
+            editor.getDomNode().addEventListener('contextmenu', e => {
+                e.preventDefault();
+                contextMenu.style.display = "block";
+                contextMenu.style.left = e.pageX + "px";
+                contextMenu.style.top = e.pageY + "px";
+            });
+            document.addEventListener("click", () => contextMenu.style.display = "none");
+            contextMenu.addEventListener("click", e => {
+                const action = e.target.dataset.action;
+                const selection = editor.getSelection();
+                const model = editor.getModel();
+                if (!action) return;
+                switch (action) {
+                    case "selectAll": editor.setSelection(model.getFullModelRange()); break;
+                    case "cut": navigator.clipboard.writeText(model.getValueInRange(selection)); editor.executeEdits("", [{ range: selection, text: "" }]); break;
+                    case "copy": navigator.clipboard.writeText(model.getValueInRange(selection)); break;
+                    case "paste": navigator.clipboard.readText().then(text => editor.executeEdits("", [{ range: selection, text }])); break;
+                }
+                contextMenu.style.display = "none";
+            });
+
+            const openBtn = document.getElementById("openBtn");
+            const overlay = document.getElementById("overlay");
+            const modal = document.getElementById("modal");
+            openBtn.addEventListener("click", () => { overlay.style.display = "flex"; });
+            document.querySelectorAll(".tab").forEach(tab => {
+                tab.addEventListener("click", e => {
+                    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+                    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+                    tab.classList.add("active");
+                    document.getElementById(tab.dataset.tab).classList.add("active");
+                });
+            });
+            overlay.addEventListener("click", e => { if (e.target === overlay) overlay.style.display = "none"; });
+            modal.querySelectorAll("td").forEach(td => {
+                td.addEventListener("click", () => {
+                    navigator.clipboard.writeText(td.textContent);
+                    overlay.style.display = "none";
+                });
+            });
+        });
+    </script>
 </body>
+
 </html>
