@@ -1,0 +1,83 @@
+?loc=water
+ disable hud
+ ui.root.visible=true
+ setbg()
+
+func setbg()
+ var sutenum=0
+/*
+ for i=0..80
+  for j=0..22
+   ?i%2=j%2
+    draw.Bg(i,j,#222)
+*/
+var flg=0
+//▼KeyBind▼//////////////////////////////
+var keyarr=［］
+?key=begin
+ keyarr.Clear()
+ keyarr.Add(［input.x,input.y］)
+:?key=end
+ ?keyarr.Count()=1
+  keyarr.Add(［input.x,input.y］)
+  step()
+  flg=1
+func step()
+ ?keyarr.Count()<2
+  return 0
+ :
+  ?math.Abs(keyarr［1］［0］-keyarr［0］［0］)>
+^math.Abs(keyarr［1］［1］-keyarr［0］［1］)
+   ?keyarr［1］［0］>keyarr［0］［0］
+    return ＂→＂
+   :
+    return ＂←＂
+  :?math.Abs(keyarr［1］［0］-keyarr［0］［0］)<
+^math.Abs(keyarr［1］［1］-keyarr［0］［1］)
+   ?keyarr［1］［1］>keyarr［0］［1］
+    return ＂↓＂
+   :
+    return ＂↑＂
+  :
+   return ＂-＂
+
+>`5,5,step:@step()@ keyarr=@keyarr.Count()@
+?keyarr.Count()>0
+ for i=0..keyarr.Count()-1
+  >`50,@5+i@,@keyarr［i］［0］@:@keyarr［i］［1］@
+
+//▲KeyBind▲//////////////////////////////
+?flg=1
+ move()
+ flg=0
+
+var px=40
+var py=10
+>`@px@,@py@,A
+var enm=［［9,9］,［9,9］,［9,9］,［9,9］,［9,9］］
+for i=0..enm.Count()-1
+ >`@enm［i］［0］@,@enm［i］［1］@,B
+func move()
+//MY//////////////////
+ ?step()=＂↑＂
+  py=py-1
+ ?step()=＂↓＂
+  py++
+ ?step()=＂→＂
+  px++
+ ?step()=＂←＂
+  px--
+//OPP/////////////////
+ for i=0..enm.Count()-1
+  var n=rng%4
+  ?n=0
+   enm［i］.Emplace(1,enm［i］［1］+1)
+  :?n=1
+   enm［i］.Emplace(0,enm［i］［0］+1)
+  :?n=2
+   enm［i］.Emplace(1,enm［i］［1］-1)
+  :?n=3
+   enm［i］.Emplace(0,enm［i］［0］-1)
+
+>`60,5,n:@n@
+/////////////////////////////////////////
