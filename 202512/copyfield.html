@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Copy Blocks with TOC</title>
+<style>
+  :root{
+    --bg:#0f1724;
+    --panel:#0b1220;
+    --accent:#7c3aed;
+    --muted:#94a3b8;
+    --fg:#e6eef6;
+  }
+
+  body{
+    margin:0;
+    padding:20px;
+    background:linear-gradient(180deg,#041124 0%, #071032 100%);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN",sans-serif;
+    color:var(--fg);
+  }
+
+  /* 目次 */
+  #toc{
+    background:rgba(255,255,255,0.05);
+    padding:16px;
+    border-radius:10px;
+    margin-bottom:30px;
+  }
+  #toc h2{
+    margin-top:0;
+  }
+  #toc a{
+    color:#a5b4fc;
+    text-decoration:none;
+  }
+  #toc a:hover{
+    color:white;
+  }
+
+  /* ブロック本体 */
+  .block{
+    background:rgba(255,255,255,0.04);
+    border-radius:10px;
+    padding:16px;
+    margin-bottom:20px;
+    box-shadow:0 4px 20px rgba(2,6,23,0.45);
+  }
+
+  .block-title{
+    font-weight:bold;
+    margin-bottom:8px;
+    font-size:16px;
+    color:var(--fg);
+  }
+
+  .copy-btn{
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.08);
+    padding:6px 12px;
+    border-radius:8px;
+    color:var(--muted);
+    cursor:pointer;
+    transition:0.2s;
+    margin-bottom:10px;
+  }
+  .copy-btn:hover{
+    color:white;
+    background:rgba(124,58,237,0.35);
+  }
+
+  textarea{
+    width:100%;
+    height:160px;
+    background:var(--panel);
+    color:var(--fg);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:8px;
+    padding:12px;
+    font-size:14px;
+    line-height:1.5;
+    resize:vertical;
+    box-sizing:border-box;
+    font-family:ui-monospace,Menlo,monospace;
+  }
+
+/* textarea の見た目を input にも完全適用する */
+input.code-field {
+  width: 100%;
+  height: 45px; /* 1行の高さ（お好みで調整可） */
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  box-sizing: border-box;
+  font-family: ui-monospace, Menlo, monospace;
+  min-height: calc(14px * 1.5 + 24px); /* 行高 + padding */
+}
+
+  .to-top{
+    margin-top:10px;
+    display:inline-block;
+    padding:6px 12px;
+    background:rgba(255,255,255,0.05);
+    color:var(--muted);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:8px;
+    text-decoration:none;
+    transition:0.2s;
+  }
+  .to-top:hover{
+    color:white;
+    background:rgba(124,58,237,0.35);
+  }
+</style>
+</head>
+<body>
+
+<!-- トップへのアンカー -->
+<div id="top"></div>
+
+<!-- 🔽 目次（ここに自分で項目を追加しやすい） -->
+<div id="toc">
+  <h2>目次</h2>
+  <ul>
+
+  </ul>
+</div>
+
+<!-- ▼▼▼--- ブロック本体（好きなだけ複製可能） ---▼▼▼ -->
+
+<!--▼▼ここから▼▼-->
+<div class="block" id="double_blade">
+  <div class="block-title">堕神_2画面</div>
+  <h5>定義</h5>
+  <button class="copy-btn" onclick="copyText(this)">コピー</button>
+  <textarea>
+//▼▼=====blade=====▼▼
+var btime=0
+func double_blade()
+ ?item.GetCooldown("blade")<=0
+  ?foe.distance<20
+   Screen.Next()
+   btime++
+  ?btime>25
+   equip blade
+   activate R
+   btime=0
+   Screen.ResetOffset()
+//▲▲=====blade=====▲▲
+  </textarea>
+  <br>
+  <br>
+  <h5>呼び出し</h5>
+  <button class="copy-btn" onclick="copyText(this)">コピー</button>
+<textarea>double_blade()</textarea>
+
+  <a class="to-top" href="#top">トップに戻る ↑</a>
+</div>
+<!--▲▲ここまで▲▲-->
+
+
+<div class="block" id="func-sample">
+  <div class="block-title">関数の例</div>
+  <button class="copy-btn" onclick="copyText(this)">コピー</button>
+  <textarea>
+// block #2
+function greet(name){
+  return "Hello, " + name;
+}
+  </textarea>
+  <br>
+  <a class="to-top" href="#top">トップに戻る ↑</a>
+</div>
+
+<div class="block" id="link-sample">
+  <div class="block-title">リンクの例</div>
+  <button class="copy-btn" onclick="copyText(this)">コピー</button>
+  <textarea>
+// block #3
+Here is a URL → https://example.com
+  </textarea>
+  <br>
+  <a class="to-top" href="#top">トップに戻る ↑</a>
+</div>
+<!-- ▲▲▲--- ここまで複製可能 ---▲▲▲ -->
+
+<!--██████████コピー用██████████-->
+<!--▼▼ここから▼▼-->
+<div class="block" id="█コピー用█">
+  <div class="block-title"> █████ </div>
+  <h5>定義</h5>
+  <button class="copy-btn" onclick="copyText(this)">コピー</button>
+  <textarea>
+█████
+  </textarea>
+  <br>
+  <br>
+  <h5>呼び出し</h5>
+  <button class="copy-btn" onclick="copyText(this)">コピー</button>
+  <textarea> █████ </textarea>
+  <a class="to-top" href="#top">トップに戻る ↑</a>
+</div>
+<!--▲▲ここまで▲▲-->
+
+<!--▼▼ここから▼▼-->
+<div class="block" id="█コピー用█">
+  <div class="block-title"> █████ </div>
+  <button class="copy-btn" onclick="copyText(this)">コピー</button>
+  <textarea>
+█████
+  </textarea>
+  <br>
+  <a class="to-top" href="#top">トップに戻る ↑</a>
+</div>
+<!--▲▲ここまで▲▲-->
+<!--██████████コピー用██████████-->
+
+<script>
+// --- コピー機能（既存） ---
+function copyText(btn){
+  const field = btn.nextElementSibling; // textarea または input
+
+  if (field.tagName === "TEXTAREA") {
+    field.select();
+  } else {
+    field.select();
+  }
+
+  navigator.clipboard.writeText(field.value).then(()=>{
+    btn.textContent = "コピーしました！";
+    setTimeout(()=> btn.textContent="コピー", 1200);
+  });
+}
+
+
+// --- 🔽 目次を自動生成するスクリプト ---
+document.addEventListener("DOMContentLoaded", () => {
+  const tocList = document.querySelector("#toc ul");
+  tocList.innerHTML = "";  // 既存の li を消す
+
+  document.querySelectorAll(".block").forEach(block => {
+    const id = block.id;
+    const title = block.querySelector(".block-title")?.textContent || id;
+
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = "#" + id;
+    a.textContent = title;
+
+    li.appendChild(a);
+    tocList.appendChild(li);
+  });
+});
+// --- 🔽 textarea を 1行なら input に自動変換 ---
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".block textarea").forEach(textarea => {
+    const lines = textarea.value.trim().split("\n");
+
+    // 1行だけなら input に変換
+    if (lines.length === 1) {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = lines[0];
+
+      // textarea のクラスを引き継ぎつつ、code-field を明示的に付ける
+      input.className = textarea.className + " code-field";
+
+      textarea.replaceWith(input);
+    }
+  });
+});
+document.querySelectorAll(".block textarea").forEach(t => {
+  t.setAttribute("readonly", true);
+});
+
+</script>
+
+</body>
+</html>
