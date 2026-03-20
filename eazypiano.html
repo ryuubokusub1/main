@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ピアノ</title>
+
+<style>
+body{
+  background:#222;
+  color:white;
+  text-align:center;
+  font-family:sans-serif;
+}
+
+.piano{
+  position:relative;
+  width:480px;
+  margin:40px auto;
+}
+
+.white{
+  width:60px;
+  height:260px;
+  background:white;
+  border:1px solid #333;
+  display:inline-block;
+  box-sizing:border-box;
+  position:relative;
+  cursor:pointer;
+}
+
+.white:active{background:#ddd;}
+
+.black{
+  width:40px;
+  height:160px;
+  background:black;
+  position:absolute;
+  top:0;
+  z-index:2;
+  cursor:pointer;
+}
+
+.black:active{background:#444;}
+
+.label{
+  position:absolute;
+  bottom:5px;
+  width:100%;
+  text-align:center;
+  font-size:14px;
+  color:black;
+}
+
+.black .label{
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🎹 ド→ド</h2>
+<div id="piano1" class="piano"></div>
+
+<h2>🎹 ラ→ラ</h2>
+<div id="piano2" class="piano"></div>
+
+<script>
+
+const audio = new (window.AudioContext || window.webkitAudioContext)()
+
+// 押されている音を保存
+const activeNotes = {}
+
+function start(freq){
+
+  if(audio.state==="suspended"){
+    audio.resume()
+  }
+
+  if(activeNotes[freq]) return
+
+  const osc = audio.createOscillator()
+  const gain = audio.createGain()
+
+  osc.type="sine"
+  osc.frequency.value=freq
+
+  osc.connect(gain)
+  gain.connect(audio.destination)
+
+  gain.gain.setValueAtTime(0.4,audio.currentTime)
+
+  osc.start()
+
+  activeNotes[freq]={osc,gain}
+}
+
+function stop(freq){
+
+  const note=activeNotes[freq]
+  if(!note) return
+
+  note.gain.gain.exponentialRampToValueAtTime(
+    0.001,
+    audio.currentTime+0.1
+  )
+
+  note.osc.stop(audio.currentTime+0.1)
+
+  delete activeNotes[freq]
+}
+
+function createPiano(target, white, black){
+
+  const piano=document.getElementById(target)
+
+  white.forEach(n=>{
+
+    const key=document.createElement("div")
+    key.className="white"
+
+    const label=document.createElement("div")
+    label.className="label"
+    label.textContent=n.label
+
+    key.appendChild(label)
+
+    key.onmousedown=()=>start(n.freq)
+    key.onmouseup=()=>stop(n.freq)
+    key.onmouseleave=()=>stop(n.freq)
+
+    key.ontouchstart=(e)=>{
+      e.preventDefault()
+      start(n.freq)
+    }
+
+    key.ontouchend=(e)=>{
+      e.preventDefault()
+      stop(n.freq)
+    }
+
+    piano.appendChild(key)
+  })
+
+  black.forEach(n=>{
+
+    const key=document.createElement("div")
+    key.className="black"
+    key.style.left=n.pos+"px"
+
+    const label=document.createElement("div")
+    label.className="label"
+    label.textContent=n.label
+
+    key.appendChild(label)
+
+    key.onmousedown=()=>start(n.freq)
+    key.onmouseup=()=>stop(n.freq)
+    key.onmouseleave=()=>stop(n.freq)
+
+    key.ontouchstart=(e)=>{
+      e.preventDefault()
+      start(n.freq)
+    }
+
+    key.ontouchend=(e)=>{
+      e.preventDefault()
+      stop(n.freq)
+    }
+
+    piano.appendChild(key)
+  })
+}
+
+
+// ド→ド
+createPiano(
+"piano1",
+[
+{label:"ド",freq:261.63},
+{label:"レ",freq:293.66},
+{label:"ミ",freq:329.63},
+{label:"ファ",freq:349.23},
+{label:"ソ",freq:392},
+{label:"ラ",freq:440},
+{label:"シ",freq:493.88},
+{label:"ド",freq:523.25}
+],
+[
+{label:"ド#",freq:277.18,pos:40},
+{label:"ミ♭",freq:311.13,pos:100},
+{label:"ファ#",freq:369.99,pos:220},
+{label:"ラ♭",freq:415.30,pos:280},
+{label:"シ♭",freq:466.16,pos:340}
+]
+)
+
+
+// ラ→ラ
+createPiano(
+"piano2",
+[
+{label:"ラ",freq:220},
+{label:"シ",freq:246.94},
+{label:"ド",freq:261.63},
+{label:"レ",freq:293.66},
+{label:"ミ",freq:329.63},
+{label:"ファ",freq:349.23},
+{label:"ソ",freq:392},
+{label:"ラ",freq:440}
+],
+[
+{label:"ラ#",freq:233.08,pos:40},
+{label:"ド#",freq:277.18,pos:160},
+{label:"レ#",freq:311.13,pos:220},
+{label:"ファ#",freq:369.99,pos:340},
+{label:"ソ#",freq:415.30,pos:400}
+]
+)
+
+</script>
+
+</body>
+</html>
