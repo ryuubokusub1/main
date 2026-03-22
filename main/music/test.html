@@ -1,722 +1,444 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>音楽ノート</title>
-<script type="text/javascript" src="abcjs-basic-min.js"></script>
-<link rel="stylesheet" href="abcjs-audio.css" media="all" type="text/css" />
+<title>楽典まとめ</title>
+
+<style>
+
+body{
+    font-family: "Hiragino Kaku Gothic ProN","Meiryo",sans-serif;
+    background:#f5f6f8;
+    margin:0;
+    line-height:1.8;
+}
+
+/* 全体 */
+
+.container{
+    max-width:900px;
+    margin:auto;
+    background:white;
+    padding:40px;
+}
+
+/* タイトル */
+
+h1{
+    border-bottom:4px solid #444;
+    padding-bottom:10px;
+}
+
+h2{
+    border-left:6px solid #666;
+    padding-left:10px;
+    margin-top:60px;
+}
+
+h3{
+    margin-top:40px;
+}
+
+/* 目次 */
+
+.toc{
+    background:#fafafa;
+    border:1px solid #ddd;
+    padding:20px;
+    margin:30px 0;
+}
+
+.toc h2{
+    border:none;
+    margin-top:0;
+}
+
+.toc ul{
+    padding-left:20px;
+}
+
+.toc a{
+    text-decoration:none;
+    color:#333;
+}
+
+/* 会話ブロック */
+
+.chat{
+    display:flex;
+    margin:20px 0;
+}
+
+.avatar{
+    width:50px;
+    height:50px;
+    border-radius:50%;
+    background:#ccc;
+    margin-right:10px;
+}
+
+.bubble{
+    background:#f0f0f0;
+    padding:12px 16px;
+    border-radius:10px;
+}
+
+/* まとめボックス */
+
+.box{
+    border-left:6px solid;
+    padding:15px 20px;
+    margin:30px 0;
+    background:#fafafa;
+}
+
+.green{ border-color:#2ecc71; }
+.orange{ border-color:#f39c12; }
+.blue{ border-color:#3498db; }
+
+/* コード */
+
+code{
+    background:#eee;
+    padding:2px 6px;
+    border-radius:4px;
+}
+
+pre{
+    background:#222;
+    color:#eee;
+    padding:20px;
+    overflow:auto;
+}
+
+/* スマホ */
+
+@media(max-width:700px){
+
+.container{
+padding:20px;
+}
+
+}
+
+/* 鍵盤 */
+
+.piano{
+position:relative;
+display:inline-block;
+height:160px;
+}
+
+/* 白鍵 */
+
+.white{
+width:60px;
+height:160px;
+background:white;
+border:1px solid #333;
+display:inline-block;
+position:relative;
+box-sizing:border-box;
+cursor:pointer;
+}
+
+.white:active{
+background:#ddd;
+}
+
+/* 黒鍵 */
+
+.black{
+width:40px;
+height:100px;
+background:black;
+position:absolute;
+top:0;
+z-index:2;
+cursor:pointer;
+}
+
+.black:active{
+background:#444;
+}
+
+/* 音名 */
+
+.label{
+position:absolute;
+bottom:5px;
+left:0;
+right:0;
+text-align:center;
+font-size:12px;
+color:#333;
+}
+
+</style>
 </head>
 
+
 <body>
-<style>
-@charset "UTF-8";
 
-.kabuse {
-position: relative;
-/*
-  background: #ffd98a;
-*/
-padding: 2px 5px 2px 25px;
+<div class="container">
 
-font-size: 20px;
-color: #474747;
+<h1>楽典の超基本：御三家コード</h1>
 
-left: Dm;
+<p>
+まずは <b>ドレミファソラシド</b> から考えます。<br>
+これは <b>ハ長調（Cメジャー）</b> という音のパレットです。
+</p>
 
-/*
-  border-radius: 0 10px 10px 0;
-*/
-}
 
-.kabuse-before {
-content: "";
-display: inline-block;
-
-line-height: 40px;
-
-position: absolute;
-
-padding: 0;
-font-weight: 900;
-
-text-align: center;
-
-height: 40px;
-
-left: 1.2em;
-
-top: 50%;
-
-transform: translateY(-50%);
-}
-
-
-@page {
-size: A4;
-margin: 0;
-}
-
-body {
-margin: 0;
-font-family: Arial, sans-serif;
-}
-
-.page_a4 {
-page-break-before: always;
-page-break-inside: avoid;
-position: relative;
-width: 210mm;
-height: 297mm;
-margin: 0 auto;
-background-color: #FFFFFF;
-box-shadow: 0 0 5mm rgba(0, 0, 0, 0.1);
-padding: 15mm;
-box-sizing: border-box;
-}
-
-h1 {
-font-size: 24px;
-margin-top: 0;
-}
-
-p {
-font-size: 16px;
-line-height: 1.5;
-}
-
-/*↑A4ページ区切り*/
-
-
-.husen {
-padding: 0.4em 0.5em;
-/*文字の上下 左右の余白*/
-color: #494949;
-/*文字色*/
-background: #f4f4f4;
-/*背景色*/
-border-left: solid 5px #7db4e6;
-/*左線*/
-border-bottom: solid 3px #d7d7d7;
-/*下線*/
-}
-
-.underline {
-/*線の種類（実線） 太さ 色*/
-border-bottom: solid 3px black;
-}
-
-.underline_double {
-/*線の種類（二重線）太さ 色*/
-border-bottom: double 5px #FFC778;
-}
-
-.background {
-background: #c2edff;
-/*背景色*/
-padding: 0.5em;
-/*文字まわり（上下左右）の余白*/
-}
-
-.outline {
-color: #364e96;
-/*文字色*/
-border: solid 3px #364e96;
-/*線色*/
-padding: 0.5em;
-/*文字周りの余白*/
-border-radius: 0.5em;
-/*角丸*/
-}
-
-.pero {
-position: relative;
-background: #dfefff;
-box-shadow: 0px 0px 0px 5px #dfefff;
-/*border: dashed 2px white;*/
-padding: 0.2em 0.5em;
-color: #454545;
-}
-
-.pero:after {
-position: absolute;
-content: '';
-left: -7px;
-top: -7px;
-border-width: 0 0 15px 15px;
-border-style: solid;
-border-color: #fff #fff #a8d4ff;
-box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.15);
-}
-
-.stretchLine {
-position: relative;
-display: inline-block;
-padding: 0 55px;
-}
-
-.stretchLine:before,
-.stretchLine:after {
-content: '';
-position: absolute;
-top: 50%;
-display: inline-block;
-width: 45px;
-height: 1px;
-background-color: black;
-}
-
-.stretchLine:before {
-left: 0;
-}
-
-.stretchLine:after {
-right: 0;
-}
-
-.stretchLine_double {
-position: relative;
-display: inline-block;
-padding: 0 55px;
-}
-
-.stretchLine_double:before,
-.stretchLine_double:after {
-content: '';
-position: absolute;
-top: 50%;
-display: inline-block;
-width: 45px;
-height: 2px;
-border-top: solid 1px black;
-border-bottom: solid 1px black;
-}
-
-.stretchLine_double:before {
-left: 0;
-}
-
-.stretchLine_double:after {
-right: 0;
-}
-
-.cross {
-position: relative;
-padding: 0.25em Dm;
-border-top: solid 2px black;
-border-bottom: solid 2px black;
-}
-
-.cross:before,
-.cross:after {
-content: '';
-position: absolute;
-top: -7px;
-width: 2px;
-height: -webkit-calc(100% + 14px);
-height: calc(100% + 14px);
-background-color: black;
-}
-
-.cross:before {
-left: 7px;
-}
-
-.cross:after {
-right: 7px;
-}
-
-.circlebar {
-position: relative;
-background: #ffd98a;
-padding: 2px 5px 2px 25px;
-font-size: 20px;
-color: #474747;
-left: Dm;
-border-radius: 0 10px 10px 0;
-}
-
-.circlebar-before {
-content: "";
-display: inline-block;
-line-height: 40px;
-position: absolute;
-padding: 0;
-color: white;
-background: #ffa337;
-font-weight: 900;
-width: 40px;
-text-align: center;
-height: 40px;
-line-height: 40px;
-left: -1.35em;
-top: 50%;
-transform: translateY(-50%);
-border: 3px solid white;
-border-radius: 50%;
-}
-
-.graphic {
-position: relative;
-/*相対位置*/
-padding-left: 1.5em;
-/*アイコン分のスペース*/
-line-height: 1.4;
-/*行高*/
-color: black;
-/*文字色*/
-}
-
-.graphic:before {
-content: "●";
-/*●★■◆▲くらい？*/
-font-weight: 900;
-position: absolute;
-/*絶対位置*/
-font-size: 1.4em;
-/*サイズ*/
-left: 0;
-/*アイコンの位置*/
-top: -0.2em;
-/*アイコンの位置*/
-}
-
-.graphic:before {
-color: #a1ceff;
-}
-
-.circle {
-position: relative;
-color: #333;
-text-shadow: 0 0 2px white;
-}
-
-.circle:before {
-content: "";
-position: absolute;
-background: #9de5ff;
-width: 50px;
-height: 50px;
-border-radius: 50%;
-top: 50%;
-/* border: dashed 1px white; */
-left: -15px;
--webkit-transform: translateY(-50%);
-transform: translateY(-50%);
-z-index: -1;
-}
-
-.point {
-position: relative;
-color: black;
-background: #ddeeff;
-line-height: 1.4;
-padding: 0.25em 0.5em;
-margin: 2em 0 0.5em;
-border-radius: 0 5px 5px 5px;
-}
-
-.point:after {
-/*タブ*/
-position: absolute;
-font-weight: 900;
-content: 'Point';
-background: #2299ff;
-color: #fff;
-left: 0px;
-bottom: 100%;
-border-radius: 5px 5px 0 0;
-padding: 3px 7px 1px;
-font-size: 0.9rem;
-line-height: 1;
-letter-spacing: 0.05em
-}
-
-.reason {
-position: relative;
-color: black;
-background: #ffff99;
-line-height: 1.4;
-padding: 0.25em 0.5em;
-margin: 2em 0 0.5em;
-border-radius: 0 5px 5px 5px;
-}
-
-.reason:after {
-/*タブ*/
-position: absolute;
-font-weight: 900;
-content: 'Reason';
-background: #ffcc00;
-color: #fff;
-left: 0px;
-bottom: 100%;
-border-radius: 5px 5px 0 0;
-padding: 3px 7px 1px;
-font-size: 0.9rem;
-line-height: 1;
-letter-spacing: 0.05em
-}
-
-.example {
-position: relative;
-color: black;
-background: #99ffcc;
-line-height: 1.4;
-padding: 0.25em 0.5em;
-margin: 2em 0 0.5em;
-border-radius: 0 5px 5px 5px;
-}
-
-.example:after {
-/*タブ*/
-position: absolute;
-font-weight: 900;
-content: 'Example';
-background: #44aa55;
-color: #fff;
-left: 0px;
-bottom: 100%;
-border-radius: 5px 5px 0 0;
-padding: 3px 7px 1px;
-font-size: 0.9rem;
-line-height: 1;
-letter-spacing: 0.05em
-}
-
-.bwcolor {
-position: relative;
-color: black;
-background: #bebebe;
-line-height: 1.4;
-padding: 0.25em 0.5em;
-margin: 2em 0 0.5em;
-border-radius: 0 5px 5px 5px;
-}
-
-.bwcolor:after {
-/*タブ*/
-position: absolute;
-font-weight: 900;
-content: 'Point';
-background: #667788;
-color: #fff;
-left: 0px;
-bottom: 100%;
-border-radius: 5px 5px 0 0;
-padding: 3px 7px 1px;
-font-size: 0.9rem;
-line-height: 1;
-letter-spacing: 0.05em
-}
-
-.blocknumber {
-position: relative;
-background: #fD#8ff;
-padding: 0.25em 0.5em;
-border-left: solid 2em #5c9ee7;
-}
-
-.blocknumber-before {
-content: "";
-position: absolute;
-padding: 0em;
-color: white;
-font-weight: 900;
-left: -1.65em;
-top: 50%;
--webkit-transform: translateY(-50%);
-transform: translateY(-50%);
-}
-
-
-
-/*会話*/
-/* 吹き出しを作る*/
-.balloon {
-margin-bottom: 2em;
-position: relative;
-}
-
-.balloon:before,
-.balloon:after {
-clear: both;
-content: "";
-display: block;
-}
-
-.balloon figure {
-width: 60px;
-height: 60px;
-}
-
-.balloon-image-left {
-float: left;
-margin-right: 20px;
-}
-
-.balloon-image-right {
-float: right;
-margin-left: 20px;
-}
-
-.balloon figure img {
-width: 100%;
-height: 100%;
-border: 1px solid #aaa;
-border-radius: 50%;
-margin: 0;
-}
-
-.balloon-image-description {
-padding: 5px 0 0;
-font-size: 10px;
-text-align: center;
-}
-
-.balloon-text-right,
-.balloon-text-left {
-position: relative;
-padding: 10px;
-border: 1px solid;
-border-radius: 10px;
-max-width: -webkit-calc(100% - 120px);
-max-width: calc(100% - 120px);
-display: inline-block;
-}
-
-.balloon-text-right {
-border-color: #aaa;
-}
-
-.balloon-text-left {
-border-color: #aaa;
-}
-
-.balloon-text-right {
-float: left;
-}
-
-.balloon-text-left {
-float: right;
-}
-
-.balloon p {
-margin: 0 0 20px;
-}
-
-.balloon p:last-child {
-margin-bottom: 0;
-}
-
-/* 三角部分 */
-.balloon-text-right:before {
-position: absolute;
-content: '';
-border: 10px solid transparent;
-border-right: 10px solid #aaa;
-top: 15px;
-left: -20px;
-}
-
-.balloon-text-right:after {
-position: absolute;
-content: '';
-border: 10px solid transparent;
-border-right: 10px solid #fff;
-top: 15px;
-left: -19px;
-}
-
-.balloon-text-left:before {
-position: absolute;
-content: '';
-border: 10px solid transparent;
-border-left: 10px solid #aaa;
-top: 15px;
-right: -20px;
-}
-
-.balloon-text-left:after {
-position: absolute;
-content: '';
-border: 10px solid transparent;
-border-left: 10px solid #fff;
-top: 15px;
-right: -19px;
-}
-
-/* 考え毎 */
-.think .balloon-text-right,
-.think .balloon-text-left {
-border-radius: 30px;
-}
-
-.think .balloon-text-right:before {
-border: 1px solid #aaa;
-border-radius: 50%;
-width: 8px;
-height: 8px;
-top: 15px;
-left: -12px;
-}
-
-.think .balloon-text-right:after {
-border: 1px solid #aaa;
-border-radius: 50%;
-width: 4px;
-height: 4px;
-top: 20px;
-left: -19px;
-}
-
-.think .balloon-text-left:before {
-border: 1px solid #aaa;
-border-radius: 50%;
-width: 8px;
-height: 8px;
-top: 15px;
-right: -12px;
-}
-
-.think .balloon-text-left:after {
-border: 1px solid #aaa;
-border-radius: 50%;
-width: 4px;
-height: 4px;
-top: 20px;
-right: -19px;
-}
-
-/* ... 以前のスタイル ... */
-
-.accordion {
-margin-bottom: 20px;
-border: 1px solid #dcdcdc;
-border-radius: 5px;
-}
-
-.accordion-title {
-padding: 10px 20px;
-cursor: pointer;
-background-color: #f5f5f5;
-border-bottom: 1px solid #dcdcdc;
-}
-
-.accordion-content {
-display: none;
-padding: 20px;
-}
-</style>
-
-
-
-<h1 align="center">
-<div class="stretchLine_double ">
-音楽ノート
-</div>
-</h1>
-
-
-
+<!-- 目次 -->
+<div class="toc">
 <h2>目次</h2>
-<p>new!!</p>
-
-<p>終わり</p>
-
-
-<br><br>
-<div class="pero">
-序盤は会話形式で進めようと思います。<br>
-<br>
-ここに書かれている内容について、真偽の責任は負いません。<br>
-折に触れて眺めるもよし、反面教師として活用するもよし、倉庫で寝かせて熟成させるもよし。<br>
-訂正箇所やご意見・ご感想など いただければ幸いです。<br>
-<br>
-作成環境などは最後に書いてあります。
-<br><br>
-<b>更新履歴</b><br>
-8/22 調号の表追加・標語表のレイアウト修正<br>
-TODO 標語表、余裕ができたので単語追加したい これまでの表もodtからhtmlに変換して追加<br>
-標語表の特殊文字修正！
-<br>
-8/24 習慣のレイアウト修正,abcjs導入,リンク付き目次導入<br>
-TODO 標語表、余裕ができたので単語追加したい これまでの表もodtからhtmlに変換して追加<br>
-標語表の特殊文字修正！<br>
-習慣のページ区切り・abcjsのページ区切り
+<ul id="tocList"></ul>
 </div>
 
 
-<h2>
-<span class="circlebar">
-資料編
-<span class="circlebar-before">00</span class="circlebar-before">
-</span>
-</h2>
-<!--画面右から話しかける-->
-<div class="balloon">
-<figure class="balloon-image-right">
-<img src="./character/s1-2L.png" alt="画像名">
-<figcaption class="balloon-image-description">
-生徒
-</figcaption>
-</figure>
-<div class="balloon-text-left">
+<h2>1. ハ長調とは</h2>
+
 <p>
-まずは資料編ですね。<br>
-なんで自己紹介より先に資料編になるのでしょうか？
-
-</p>
-</div>
-</div>
-<!--画面右から話しかける-->
-<!--画面左から話しかける-->
-<div class="balloon">
-<figure class="balloon-image-left">
-<img src="./character/t1-4S.png" alt="画像名">
-<figcaption class="balloon-image-description">
-先生
-</figcaption>
-</figure>
-<div class="balloon-text-right">
-<p>
-何でだろうねぇ……<br>
-パッと見返しやすいようにってことかもしれないね。
-</p>
-</div>
-</div>
-<!--画面左から話しかける-->
-<!--画面左から考える-->
-<div class="balloon think">
-<figure class="balloon-image-left">
-<img src="./character/t1-4S.png" alt="画像名">
-<figcaption class="balloon-image-description">
-先生
-</figcaption>
-</figure>
-<div class="balloon-text-right">
-<p>
-ここに載っている内容は<br>
-急いで覚えなくて大丈夫だよ。
+ハ長調は次の音で出来ています。
 </p>
 
+<pre>
+ド レ ミ ファ ソ ラ シ
+</pre>
+
+<div class="chat">
+<div class="avatar"></div>
+<div class="bubble">
+まずは鍵盤を忘れて、文字だけで考えてみよう！
 </div>
 </div>
-<!--画面左から考える-->
-<div class="pero">
-お急ぎの方<br>
-・ポップスは日英伊<br>
-・クラシックは日英独伊<br>
+
+
+<h2>2. 御三家コード</h2>
+
+<p>
+長調では <b>1・4・5</b> の音が重要です。
+</p>
+
+<pre>
+ド　ファ　ソ
+</pre>
+
+
+<h3>トニック</h3>
+
+<pre>
+ド(レ)ミ(ファ)ソ
+↓
+ドミソ
+↓
+C
+</pre>
+
+
+<h3>サブドミナント</h3>
+
+<pre>
+ファ(ソ)ラ(シ)ド
+↓
+ファラド
+↓
+F
+</pre>
+
+
+<h3>ドミナント</h3>
+
+<pre>
+ソ(ラ)シ(ド)レ
+↓
+ソシレ
+↓
+G
+</pre>
+
+
+<div class="box green">
+<b>共通メモ</b>
+
+<ul>
+<li>調 = 音のパレット</li>
+<li>調は「主音」と「長調 / 短調」で決まる</li>
+<li>1・4・5が重要</li>
+</ul>
+</div>
+
+
+<div class="box orange">
+<b>ハ長調のまとめ</b>
+
+<ul>
+<li>音：ドレミファソラシ</li>
+<li>重要音：ド / ファ / ソ</li>
+<li>C / F / G</li>
+</ul>
+</div>
+
+
+<div class="box blue">
+<b>イ短調のまとめ</b>
+
+<ul>
+<li>音：ラシドレミファソ</li>
+<li>重要音：ラ / レ / ミ</li>
+<li>Am / Dm / Em</li>
+</ul>
+</div>
+
+
+<h2>3. コード進行</h2>
+
+<p>
+曲は多くの場合
+</p>
+
+<pre>
+トニック → サブドミナント → ドミナント → トニック
+</pre>
+
+<p>
+という流れになります。
+</p>
+
+</div>
+
+<h2>ドから1オクターブ</h2>
+
+<div class="piano">
+
+<div class="white" data-note="C4"><div class="label">ド</div></div>
+<div class="white" data-note="D4"><div class="label">レ</div></div>
+<div class="white" data-note="E4"><div class="label">ミ</div></div>
+<div class="white" data-note="F4"><div class="label">ファ</div></div>
+<div class="white" data-note="G4"><div class="label">ソ</div></div>
+<div class="white" data-note="A4"><div class="label">ラ</div></div>
+<div class="white" data-note="B4"><div class="label">シ</div></div>
+<div class="white" data-note="C5"><div class="label">ド</div></div>
+
+<div class="black" style="left:45px" data-note="C#4"></div>   <!-- C# -->
+<div class="black" style="left:105px" data-note="D#4"></div>  <!-- D# -->
+<div class="black" style="left:240px" data-note="F#4"></div>  <!-- F# -->
+<div class="black" style="left:305px" data-note="G#4"></div>  <!-- G# -->
+<div class="black" style="left:365px" data-note="A#4"></div>  <!-- A# -->
+
+</div>
+
+
+<h2>ラから1オクターブ</h2>
+
+<div class="piano">
+
+<div class="white" data-note="A3"><div class="label">ラ</div></div>
+<div class="white" data-note="B3"><div class="label">シ</div></div>
+<div class="white" data-note="C4"><div class="label">ド</div></div>
+<div class="white" data-note="D4"><div class="label">レ</div></div>
+<div class="white" data-note="E4"><div class="label">ミ</div></div>
+<div class="white" data-note="F4"><div class="label">ファ</div></div>
+<div class="white" data-note="G4"><div class="label">ソ</div></div>
+<div class="white" data-note="A4"><div class="label">ラ</div></div>
+
+<div class="black" style="left:45px" data-note="A#3"></div>
+<div class="black" style="left:175px" data-note="C#4"></div>
+<div class="black" style="left:235px" data-note="D#4"></div>
+<div class="black" style="left:375px" data-note="F#4"></div>
+<div class="black" style="left:430px" data-note="G#4"></div>
+
 </div>
 
 
 
 <script>
-	var scoreObj = document.getElementsByClassName("score");
-	for( var i in scoreObj ){
-		ABCJS.renderAbc( scoreObj[i], scoreObj[i].innerHTML );
-	}
-</script>
-</body>
 
+/* 目次自動生成 */
+
+const headings = document.querySelectorAll("h2");
+const toc = document.getElementById("tocList");
+
+headings.forEach((h,i)=>{
+
+const id = "section"+i;
+h.id=id;
+
+const li=document.createElement("li");
+const a=document.createElement("a");
+
+a.href="#"+id;
+a.textContent=h.textContent;
+
+li.appendChild(a);
+toc.appendChild(li);
+
+});
+
+
+/* 周波数 */
+
+const notes = {
+
+C4:261.63,
+"C#4":277.18,
+D4:293.66,
+"D#4":311.13,
+E4:329.63,
+F4:349.23,
+"F#4":369.99,
+G4:392.00,
+"G#4":415.30,
+A4:440.00,
+"A#4":466.16,
+B4:493.88,
+C5:523.25,
+
+A3:220.00,
+"A#3":233.08,
+B3:246.94,
+G4:392,
+"F#4":369.99
+
+};
+
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const ctx = new AudioContext();
+
+function play(freq){
+
+const osc = ctx.createOscillator();
+const gain = ctx.createGain();
+
+osc.frequency.value = freq;
+osc.type="sine";
+
+osc.connect(gain);
+gain.connect(ctx.destination);
+
+gain.gain.setValueAtTime(0.3,ctx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1);
+
+osc.start();
+osc.stop(ctx.currentTime+1);
+
+}
+
+document.querySelectorAll("[data-note]").forEach(key=>{
+
+key.onclick=()=>{
+
+const note=key.dataset.note;
+const freq=notes[note];
+
+if(freq) play(freq);
+
+};
+
+});
+</script>
+
+
+</body>
 </html>
