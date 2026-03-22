@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<title>音楽ノート</title>
+<script type="text/javascript" src="abcjs-basic-min.js"></script>
+<link rel="stylesheet" href="abcjs-audio.css" media="all" type="text/css" />
+</head>
+
+<body>
+<style>
+@charset "UTF-8";
+
+.kabuse {
+position: relative;
+/*
+  background: #ffd98a;
+*/
+padding: 2px 5px 2px 25px;
+
+font-size: 20px;
+color: #474747;
+
+left: Dm;
+
+/*
+  border-radius: 0 10px 10px 0;
+*/
+}
+
+.kabuse-before {
+content: "";
+display: inline-block;
+
+line-height: 40px;
+
+position: absolute;
+
+padding: 0;
+font-weight: 900;
+
+text-align: center;
+
+height: 40px;
+
+left: 1.2em;
+
+top: 50%;
+
+transform: translateY(-50%);
+}
+
+
+@page {
+size: A4;
+margin: 0;
+}
+
+body {
+margin: 0;
+font-family: Arial, sans-serif;
+}
+
+.page_a4 {
+page-break-before: always;
+page-break-inside: avoid;
+position: relative;
+width: 210mm;
+height: 297mm;
+margin: 0 auto;
+background-color: #FFFFFF;
+box-shadow: 0 0 5mm rgba(0, 0, 0, 0.1);
+padding: 15mm;
+box-sizing: border-box;
+}
+
+h1 {
+font-size: 24px;
+margin-top: 0;
+}
+
+p {
+font-size: 16px;
+line-height: 1.5;
+}
+
+/*↑A4ページ区切り*/
+
+
+.husen {
+padding: 0.4em 0.5em;
+/*文字の上下 左右の余白*/
+color: #494949;
+/*文字色*/
+background: #f4f4f4;
+/*背景色*/
+border-left: solid 5px #7db4e6;
+/*左線*/
+border-bottom: solid 3px #d7d7d7;
+/*下線*/
+}
+
+.underline {
+/*線の種類（実線） 太さ 色*/
+border-bottom: solid 3px black;
+}
+
+.underline_double {
+/*線の種類（二重線）太さ 色*/
+border-bottom: double 5px #FFC778;
+}
+
+.background {
+background: #c2edff;
+/*背景色*/
+padding: 0.5em;
+/*文字まわり（上下左右）の余白*/
+}
+
+.outline {
+color: #364e96;
+/*文字色*/
+border: solid 3px #364e96;
+/*線色*/
+padding: 0.5em;
+/*文字周りの余白*/
+border-radius: 0.5em;
+/*角丸*/
+}
+
+.pero {
+position: relative;
+background: #dfefff;
+box-shadow: 0px 0px 0px 5px #dfefff;
+/*border: dashed 2px white;*/
+padding: 0.2em 0.5em;
+color: #454545;
+}
+
+.pero:after {
+position: absolute;
+content: '';
+left: -7px;
+top: -7px;
+border-width: 0 0 15px 15px;
+border-style: solid;
+border-color: #fff #fff #a8d4ff;
+box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.15);
+}
+
+.stretchLine {
+position: relative;
+display: inline-block;
+padding: 0 55px;
+}
+
+.stretchLine:before,
+.stretchLine:after {
+content: '';
+position: absolute;
+top: 50%;
+display: inline-block;
+width: 45px;
+height: 1px;
+background-color: black;
+}
+
+.stretchLine:before {
+left: 0;
+}
+
+.stretchLine:after {
+right: 0;
+}
+
+.stretchLine_double {
+position: relative;
+display: inline-block;
+padding: 0 55px;
+}
+
+.stretchLine_double:before,
+.stretchLine_double:after {
+content: '';
+position: absolute;
+top: 50%;
+display: inline-block;
+width: 45px;
+height: 2px;
+border-top: solid 1px black;
+border-bottom: solid 1px black;
+}
+
+.stretchLine_double:before {
+left: 0;
+}
+
+.stretchLine_double:after {
+right: 0;
+}
+
+.cross {
+position: relative;
+padding: 0.25em Dm;
+border-top: solid 2px black;
+border-bottom: solid 2px black;
+}
+
+.cross:before,
+.cross:after {
+content: '';
+position: absolute;
+top: -7px;
+width: 2px;
+height: -webkit-calc(100% + 14px);
+height: calc(100% + 14px);
+background-color: black;
+}
+
+.cross:before {
+left: 7px;
+}
+
+.cross:after {
+right: 7px;
+}
+
+.circlebar {
+position: relative;
+background: #ffd98a;
+padding: 2px 5px 2px 25px;
+font-size: 20px;
+color: #474747;
+left: Dm;
+border-radius: 0 10px 10px 0;
+}
+
+.circlebar-before {
+content: "";
+display: inline-block;
+line-height: 40px;
+position: absolute;
+padding: 0;
+color: white;
+background: #ffa337;
+font-weight: 900;
+width: 40px;
+text-align: center;
+height: 40px;
+line-height: 40px;
+left: -1.35em;
+top: 50%;
+transform: translateY(-50%);
+border: 3px solid white;
+border-radius: 50%;
+}
+
+.graphic {
+position: relative;
+/*相対位置*/
+padding-left: 1.5em;
+/*アイコン分のスペース*/
+line-height: 1.4;
+/*行高*/
+color: black;
+/*文字色*/
+}
+
+.graphic:before {
+content: "●";
+/*●★■◆▲くらい？*/
+font-weight: 900;
+position: absolute;
+/*絶対位置*/
+font-size: 1.4em;
+/*サイズ*/
+left: 0;
+/*アイコンの位置*/
+top: -0.2em;
+/*アイコンの位置*/
+}
+
+.graphic:before {
+color: #a1ceff;
+}
+
+.circle {
+position: relative;
+color: #333;
+text-shadow: 0 0 2px white;
+}
+
+.circle:before {
+content: "";
+position: absolute;
+background: #9de5ff;
+width: 50px;
+height: 50px;
+border-radius: 50%;
+top: 50%;
+/* border: dashed 1px white; */
+left: -15px;
+-webkit-transform: translateY(-50%);
+transform: translateY(-50%);
+z-index: -1;
+}
+
+.point {
+position: relative;
+color: black;
+background: #ddeeff;
+line-height: 1.4;
+padding: 0.25em 0.5em;
+margin: 2em 0 0.5em;
+border-radius: 0 5px 5px 5px;
+}
+
+.point:after {
+/*タブ*/
+position: absolute;
+font-weight: 900;
+content: 'Point';
+background: #2299ff;
+color: #fff;
+left: 0px;
+bottom: 100%;
+border-radius: 5px 5px 0 0;
+padding: 3px 7px 1px;
+font-size: 0.9rem;
+line-height: 1;
+letter-spacing: 0.05em
+}
+
+.reason {
+position: relative;
+color: black;
+background: #ffff99;
+line-height: 1.4;
+padding: 0.25em 0.5em;
+margin: 2em 0 0.5em;
+border-radius: 0 5px 5px 5px;
+}
+
+.reason:after {
+/*タブ*/
+position: absolute;
+font-weight: 900;
+content: 'Reason';
+background: #ffcc00;
+color: #fff;
+left: 0px;
+bottom: 100%;
+border-radius: 5px 5px 0 0;
+padding: 3px 7px 1px;
+font-size: 0.9rem;
+line-height: 1;
+letter-spacing: 0.05em
+}
+
+.example {
+position: relative;
+color: black;
+background: #99ffcc;
+line-height: 1.4;
+padding: 0.25em 0.5em;
+margin: 2em 0 0.5em;
+border-radius: 0 5px 5px 5px;
+}
+
+.example:after {
+/*タブ*/
+position: absolute;
+font-weight: 900;
+content: 'Example';
+background: #44aa55;
+color: #fff;
+left: 0px;
+bottom: 100%;
+border-radius: 5px 5px 0 0;
+padding: 3px 7px 1px;
+font-size: 0.9rem;
+line-height: 1;
+letter-spacing: 0.05em
+}
+
+.bwcolor {
+position: relative;
+color: black;
+background: #bebebe;
+line-height: 1.4;
+padding: 0.25em 0.5em;
+margin: 2em 0 0.5em;
+border-radius: 0 5px 5px 5px;
+}
+
+.bwcolor:after {
+/*タブ*/
+position: absolute;
+font-weight: 900;
+content: 'Point';
+background: #667788;
+color: #fff;
+left: 0px;
+bottom: 100%;
+border-radius: 5px 5px 0 0;
+padding: 3px 7px 1px;
+font-size: 0.9rem;
+line-height: 1;
+letter-spacing: 0.05em
+}
+
+.blocknumber {
+position: relative;
+background: #fD#8ff;
+padding: 0.25em 0.5em;
+border-left: solid 2em #5c9ee7;
+}
+
+.blocknumber-before {
+content: "";
+position: absolute;
+padding: 0em;
+color: white;
+font-weight: 900;
+left: -1.65em;
+top: 50%;
+-webkit-transform: translateY(-50%);
+transform: translateY(-50%);
+}
+
+
+
+/*会話*/
+/* 吹き出しを作る*/
+.balloon {
+margin-bottom: 2em;
+position: relative;
+}
+
+.balloon:before,
+.balloon:after {
+clear: both;
+content: "";
+display: block;
+}
+
+.balloon figure {
+width: 60px;
+height: 60px;
+}
+
+.balloon-image-left {
+float: left;
+margin-right: 20px;
+}
+
+.balloon-image-right {
+float: right;
+margin-left: 20px;
+}
+
+.balloon figure img {
+width: 100%;
+height: 100%;
+border: 1px solid #aaa;
+border-radius: 50%;
+margin: 0;
+}
+
+.balloon-image-description {
+padding: 5px 0 0;
+font-size: 10px;
+text-align: center;
+}
+
+.balloon-text-right,
+.balloon-text-left {
+position: relative;
+padding: 10px;
+border: 1px solid;
+border-radius: 10px;
+max-width: -webkit-calc(100% - 120px);
+max-width: calc(100% - 120px);
+display: inline-block;
+}
+
+.balloon-text-right {
+border-color: #aaa;
+}
+
+.balloon-text-left {
+border-color: #aaa;
+}
+
+.balloon-text-right {
+float: left;
+}
+
+.balloon-text-left {
+float: right;
+}
+
+.balloon p {
+margin: 0 0 20px;
+}
+
+.balloon p:last-child {
+margin-bottom: 0;
+}
+
+/* 三角部分 */
+.balloon-text-right:before {
+position: absolute;
+content: '';
+border: 10px solid transparent;
+border-right: 10px solid #aaa;
+top: 15px;
+left: -20px;
+}
+
+.balloon-text-right:after {
+position: absolute;
+content: '';
+border: 10px solid transparent;
+border-right: 10px solid #fff;
+top: 15px;
+left: -19px;
+}
+
+.balloon-text-left:before {
+position: absolute;
+content: '';
+border: 10px solid transparent;
+border-left: 10px solid #aaa;
+top: 15px;
+right: -20px;
+}
+
+.balloon-text-left:after {
+position: absolute;
+content: '';
+border: 10px solid transparent;
+border-left: 10px solid #fff;
+top: 15px;
+right: -19px;
+}
+
+/* 考え毎 */
+.think .balloon-text-right,
+.think .balloon-text-left {
+border-radius: 30px;
+}
+
+.think .balloon-text-right:before {
+border: 1px solid #aaa;
+border-radius: 50%;
+width: 8px;
+height: 8px;
+top: 15px;
+left: -12px;
+}
+
+.think .balloon-text-right:after {
+border: 1px solid #aaa;
+border-radius: 50%;
+width: 4px;
+height: 4px;
+top: 20px;
+left: -19px;
+}
+
+.think .balloon-text-left:before {
+border: 1px solid #aaa;
+border-radius: 50%;
+width: 8px;
+height: 8px;
+top: 15px;
+right: -12px;
+}
+
+.think .balloon-text-left:after {
+border: 1px solid #aaa;
+border-radius: 50%;
+width: 4px;
+height: 4px;
+top: 20px;
+right: -19px;
+}
+
+/* ... 以前のスタイル ... */
+
+.accordion {
+margin-bottom: 20px;
+border: 1px solid #dcdcdc;
+border-radius: 5px;
+}
+
+.accordion-title {
+padding: 10px 20px;
+cursor: pointer;
+background-color: #f5f5f5;
+border-bottom: 1px solid #dcdcdc;
+}
+
+.accordion-content {
+display: none;
+padding: 20px;
+}
+</style>
+
+
+<section class="page_a4">
+<h1 align="center">
+<div class="stretchLine_double ">
+音楽ノート
+</div>
+</h1>
+
+</section>
+<section class="page_a4">
+<h2>目次</h2>
+<p>new!!</p>
+
+<p>終わり</p>
+</section>
+
+<br><br>
+<div class="pero">
+序盤は会話形式で進めようと思います。<br>
+<br>
+ここに書かれている内容について、真偽の責任は負いません。<br>
+折に触れて眺めるもよし、反面教師として活用するもよし、倉庫で寝かせて熟成させるもよし。<br>
+訂正箇所やご意見・ご感想など いただければ幸いです。<br>
+<br>
+作成環境などは最後に書いてあります。
+<br><br>
+<b>更新履歴</b><br>
+8/22 調号の表追加・標語表のレイアウト修正<br>
+TODO 標語表、余裕ができたので単語追加したい これまでの表もodtからhtmlに変換して追加<br>
+標語表の特殊文字修正！
+<br>
+8/24 習慣のレイアウト修正,abcjs導入,リンク付き目次導入<br>
+TODO 標語表、余裕ができたので単語追加したい これまでの表もodtからhtmlに変換して追加<br>
+標語表の特殊文字修正！<br>
+習慣のページ区切り・abcjsのページ区切り
+</div>
+
+<section class="page_a4">
+<h2>
+<span class="circlebar">
+資料編
+<span class="circlebar-before">00</span class="circlebar-before">
+</span>
+</h2>
+<!--画面右から話しかける-->
+<div class="balloon">
+<figure class="balloon-image-right">
+<img src="./character/s1-2L.png" alt="画像名">
+<figcaption class="balloon-image-description">
+生徒
+</figcaption>
+</figure>
+<div class="balloon-text-left">
+<p>
+まずは資料編ですね。<br>
+なんで自己紹介より先に資料編になるのでしょうか？
+
+</p>
+</div>
+</div>
+<!--画面右から話しかける-->
+<!--画面左から話しかける-->
+<div class="balloon">
+<figure class="balloon-image-left">
+<img src="./character/t1-4S.png" alt="画像名">
+<figcaption class="balloon-image-description">
+先生
+</figcaption>
+</figure>
+<div class="balloon-text-right">
+<p>
+何でだろうねぇ……<br>
+パッと見返しやすいようにってことかもしれないね。
+</p>
+</div>
+</div>
+<!--画面左から話しかける-->
+<!--画面左から考える-->
+<div class="balloon think">
+<figure class="balloon-image-left">
+<img src="./character/t1-4S.png" alt="画像名">
+<figcaption class="balloon-image-description">
+先生
+</figcaption>
+</figure>
+<div class="balloon-text-right">
+<p>
+ここに載っている内容は<br>
+急いで覚えなくて大丈夫だよ。
+</p>
+
+</div>
+</div>
+<!--画面左から考える-->
+<div class="pero">
+お急ぎの方<br>
+・ポップスは日英伊<br>
+・クラシックは日英独伊<br>
+</div>
+
+
+</section>
+<script>
+	var scoreObj = document.getElementsByClassName("score");
+	for( var i in scoreObj ){
+		ABCJS.renderAbc( scoreObj[i], scoreObj[i].innerHTML );
+	}
+</script>
+</body>
+
+</html>
