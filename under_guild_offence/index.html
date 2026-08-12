@@ -76,6 +76,24 @@
       </div>
     </div>
   </div>
+<!-- 目標シナジー検索パネル -->
+      <h3>目標シナジー検索（6体編成）</h3>
+      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <select id="target-synergy-select" style="flex: 2;">
+          <!-- JSでシナジー一覧を挿入 -->
+        </select>
+        <input type="number" id="target-synergy-count" value="1" min="1" max="6" style="width: 50px;">
+        <button class="btn" onclick="addTargetSynergy()">追加</button>
+      </div>
+
+      <!-- 設定した目標一覧 -->
+      <div id="target-synergies-list" style="margin-bottom: 12px;"></div>
+
+      <button class="btn" onclick="searchCombinations()" style="width: 100%; background: #28a745;">条件を満たす組み合わせを検索</button>
+
+      <!-- 検索結果表示領域 -->
+      <div id="search-results" style="margin-top: 12px;"></div>
+
 
   <script>
     // --- マスタデータ定義 ---
@@ -316,6 +334,150 @@
         });
         synthesisContainer.innerHTML = craftHtml;
       }
+    }
+    // 目標シナジーのリスト保存用
+    let targetSynergies = [];
+
+    // 初期化時にドロップダウンへシナジー一覧をセット
+    window.addEventListener('DOMContentLoaded', () => {
+      const select = document.getElementById('target-synergy-select');
+      sub4Master.forEach(syn => {
+        const opt = document.createElement('option');
+        opt.value = syn.name;
+        opt.innerText = syn.name;
+        select.appendChild(opt);
+      });
+    });
+
+    // 目標シナジーの追加
+    function addTargetSynergy() {
+      const name = document.getElementById('target-synergy-select').value;
+      const count = parseInt(document.getElementById('target-synergy-count').value, 10);
+      
+      if (!name || isNaN(count)) return;
+
+      // 重複チェック
+      const existing = targetSynergies.find(t => t.name === name);
+      if (existing) {
+        existing.count = count;
+      } else {
+        targetSynergies.push({ name, count });
+      }
+      renderTargetSynergies();
+    }
+
+    // 目標シナジーの削除
+    function removeTargetSynergy(name) {
+      targetSynergies = targetSynergies.filter(t => t.name !== name);
+      renderTargetSynergies();
+    }
+
+    // 目標シナジー描画
+    function renderTargetSynergies() {
+      const container = document.getElementById('target-synergies-list');
+      if (targetSynergies.length === 0) {
+        container.innerHTML = '<p style="color:#888; font-size:12px;">目標条件が設定されていません</p>';
+        return;
+      }
+
+      let html = '';
+      targetSynergies.forEach(t => {
+        html += `
+          <span style="display:inline-block; background:#e9ecef; padding:4px 8px; border-radius:4px; font-size:13px; margin-right:4px; margin-bottom:4px;">
+            ${t.name} : ${t.count}以上 
+            <b style="color:red; cursor:pointer; margin-left:4px;" onclick="removeTargetSynergy('${t.name}')">×</b>
+          </span>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    // 組み合わせ検索処理 (コアロジック)
+    function searchCombinations() {
+      const resultsContainer = document.getElementById('search-results');
+      if (targetSynergies.length === 0) {
+        resultsContainer.innerHTML = '<p style="color:red;">目標シナジーを1つ以上追加してください。</p>';
+        return;
+      }
+
+      // 1. ノーマルキャラの抽出（合成結果に存在しないキャラ）
+      const legendarySet = new Set(sub2Master.map(r => r.result));
+      const normalChars = sub1Master.filter(c => !legendarySet.has(c.name));
+
+      const includeLegendary = document.getElementById('include-legendary').checked;
+      const matchedCombinations = [];
+
+      // 2. 6体の組み合わせを生成（再帰関数）
+      function combine(startIndex, currentCombo) {
+        if (currentCombo.length === 6) {
+          if (checkCondition(currentCombo, includeLegendary)) {
+            matchedCombinations.push([...currentCombo]);
+          }
+          return;
+        }
+
+        for (let i = startIndex; i < normalChars.length; i++) {
+          currentCombo.push(normalChars[i]);
+          combine(i + 1, currentCombo); // 重複なしで選ぶ場合
+          currentCombo.pop();
+        }
+      }
+
+      combine(0, []);
+
+      // 3. 結果の描画
+      if (matchedCombinations.length === 0) {
+        resultsContainer.innerHTML = '<p style="color:#888;">条件を満たす6体の組み合わせは見つかりませんでした。</p>';
+      } else {
+        let html = `<p style="font-weight:bold; color:#28a745;">ヒット数: ${matchedCombinations.length} 件</p>`;
+        // 件数が多い場合は上位20件程度を表示
+        const displayList = matchedCombinations.slice(0, 20);
+        
+        displayList.forEach((combo, index) => {
+          const names = combo.map(c => c.name).join(', ');
+          html += `
+            <div class="card" style="font-size:13px;">
+              <b>パターン ${index + 1}:</b> ${names}
+            </div>
+          `;
+        });
+
+        if (matchedCombinations.length > 20) {
+          html += `<p style="font-size:12px; color:#666;">※結果が多いため上位20件を表示しています。</p>`;
+        }
+        resultsContainer.innerHTML = html;
+      }
+    }
+
+    // 条件判定用関数
+    function checkCondition(combo, includeLegendary) {
+      const selectedSet = new Set(combo.map(c => c.name));
+      let targetNames = combo.map(c => c.name);
+
+      // 伝説も含める場合は合成可能な伝説キャラを追加
+      if (includeLegendary) {
+        sub2Master.forEach(recipe => {
+          if (recipe.materials.every(mat => selectedSet.has(mat))) {
+            targetNames.push(recipe.result);
+          }
+        });
+      }
+
+      // シナジー数の集計
+      const counts = {};
+      targetNames.forEach(charName => {
+        const charData = sub1Master.find(c => c.name === charName);
+        if (charData && charData.attributes) {
+          charData.attributes.forEach(attr => {
+            counts[attr] = (counts[attr] || 0) + 1;
+          });
+        }
+      });
+
+      // 設定した目標シナジーを全て満たしているかチェック
+      return targetSynergies.every(target => {
+        return (counts[target.name] || 0) >= target.count;
+      });
     }
   </script>
 </body>
