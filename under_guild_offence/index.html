@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>傭兵シナジー＆合成計算ツール</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; background-color: #f9f9f9; color: #333; }
+    h2, h3 { border-bottom: 2px solid #0056b3; padding-bottom: 5px; color: #0056b3; }
+    .container { display: flex; gap: 20px; flex-wrap: wrap; }
+    .panel { flex: 1; min-width: 320px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    
+    /* テーブル装飾 */
+    table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 14px; }
+    th { background-color: #e9ecef; }
+    select { width: 100%; padding: 6px; box-sizing: border-box; }
+    
+    /* ボタン装飾 */
+    .btn { padding: 6px 12px; background: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .btn:hover { background: #003d80; }
+    .btn-del { background: #dc3545; padding: 4px 8px; font-size: 12px; }
+    .btn-del:hover { background: #bd2130; }
+
+    /* 結果カード */
+    .card { background: #f1f3f5; border-left: 4px solid #0056b3; padding: 10px; margin-bottom: 8px; border-radius: 0 4px 4px 0; }
+    .card-title { font-weight: bold; font-size: 15px; margin-bottom: 4px; }
+    .card-desc { font-size: 13px; color: #555; }
+    .badge { display: inline-block; background: #28a745; color: white; border-radius: 10px; padding: 2px 8px; font-size: 11px; margin-left: 6px; }
+    .materials-list { font-size: 12px; color: #666; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <h2>傭兵計算システム</h2>
+
+  <div class="container">
+    <!-- 左パネル：所持キャラ入力 -->
+    <div class="panel">
+      <h3>所持キャラクター選択</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">No</th>
+            <th>キャラクター名</th>
+
+          </tr>
+        </thead>
+        <tbody id="character-table">
+          <!-- JSで動的に追加されます -->
+        </tbody>
+      </table>
+      <!--
+      <button class="btn" onclick="addRow()">+ キャラクターを追加</button>
+      -->
+    </div>
+
+<!-- 右パネル：自動計算結果 -->
+    <div class="panel">
+      <h3>発動シナジー一覧</h3>
+      
+      <!-- ★ここにチェックボックスを追加 -->
+      <div style="margin-bottom: 12px; font-size: 14px;">
+        <label style="cursor: pointer; user-select: none;">
+          <input type="checkbox" id="include-legendary" onchange="calculate()" checked>
+          伝説キャラクターをシナジー計算に含める
+        </label>
+      </div>
+
+      <div id="synergy-results">
+        <p style="color: #888;">キャラクターを選択してください。</p>
+      </div>
+
+      <h3>作成可能な合成キャラ</h3>
+      <div id="synthesis-results">
+        <p style="color: #888;">作成可能な合成レシピはありません。</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- マスタデータ定義 ---
+    const sub1Master = [
+      { name: "ナイト", attributes: ["勇猛", "多種族"] },
+      { name: "ゴブリン", attributes: ["意志", "レインボー・ロボティクス"] },
+      { name: "アーチャー", attributes: ["援護射撃", "連射"] },
+      { name: "スライム", attributes: ["ライフリンク", "活力ポーション"] },
+      { name: "ファイアスピリット", attributes: ["意志", "豊富なオーク樽", "闇のエネルギー", "連射"] },
+      { name: "オーク", attributes: ["突撃部隊", "死霊", "多種族"] },
+      { name: "スピアナイト", attributes: ["巨人の足跡", "突撃部隊"] },
+      { name: "スケルトンソルジャー", attributes: ["衛生兵"] },
+      { name: "アイススピリット", attributes: ["意志", "ライフリンク", "祝福", "時計の針"] },
+      { name: "ゴースト", attributes: ["触手", "天使の羽"] },
+      { name: "ビーンズブラウト", attributes: ["活力ポーション", "連射"] },
+      { name: "カビ", attributes: ["勇猛", "巨人の足跡", "ヴァンパイア", "ミステリー"] },
+      { name: "パラディン", attributes: ["勇猛", "祝福", "時計の針", "天使の羽"] },
+      { name: "モアイ像", attributes: ["活力ポーション", "援軍"] },
+      { name: "塵を生む羊", attributes: ["祝福", "援護射撃", "時計の針", "天使の羽"] },
+      { name: "飼いならされたピラニア", attributes: ["ヴァンパイア", "死霊"] },
+      { name: "爆弾マシン", attributes: ["豊富なオーク樽", "レインボー・ロボティクス"] },
+      { name: "鬼火", attributes: ["死霊"] },
+      { name: "エレクトリックロボット", attributes: ["ライフリンク", "豊富なオーク樽", "援軍", "レインボー・ロボティクス", "ミステリー"] },
+      { name: "三角イカ", attributes: ["触手", "闇のエネルギー", "ヴァンパイア", "ミステリー"] },
+      { name: "突撃カブトムシ", attributes: ["援軍", "突撃部隊"] },
+      { name: "太陽の審判者", attributes: ["豊富なオーク樽", "活力ポーション", "時計の針", "天使の羽"] },
+      { name: "孤独のウェアウルフ", attributes: ["勇猛", "触手", "ヴァンパイア", "多種族"] },
+      { name: "ベビーリザード", attributes: ["勇猛", "触手", "巨人の足跡", "多種族"] },
+      { name: "ウサギの墓荒らし", attributes: ["豊富なオーク樽", "衛生兵", "援軍"] },
+      { name: "三角頭の処刑者", attributes: ["ライフリンク", "ヴァンパイア", "死霊"] },
+      { name: "ハンター", attributes: ["援護射撃", "連射"] },
+      { name: "ハンマーナイト", attributes: ["意志", "衛生兵", "突撃部隊"] },
+      { name: "呪われしウォーロック", attributes: ["衛生兵", "時計の針", "多種族"] },
+      { name: "ヴォイド", attributes: ["活力ポーション", "時計の針", "鳥系"] },
+      { name: "プリースト", attributes: ["衛生兵", "援軍", "天使の羽"] },
+      { name: "アイアンクラッドチャージャー", attributes: ["勇猛", "巨人の足跡", "突撃部隊"] },
+      { name: "おバカツリー", attributes: ["祝福", "援軍", "時計の針", "多種族"] },
+      { name: "大砲を持った豚", attributes: ["ライフリンク", "援護射撃", "レインボー・ロボティクス"] },
+      { name: "スプラウトロックゴーレム", attributes: ["触手", "巨人の足跡", "突撃部隊"] },
+      { name: "カニファイター", attributes: ["意志", "豊富なオーク樽", "活力ポーション", "突撃部隊"] },
+      { name: "トゲ付きアイアンクラッドドワーフ", attributes: ["意志", "祝福", "突撃部隊", "死霊"] },
+      { name: "小さくても最強のミイラ", attributes: ["ライフリンク", "闇のエネルギー", "援護射撃", "多種族"] },
+      { name: "ネコゴースト", attributes: ["衛生兵", "援軍", "レインボー・ロボティクス", "ミステリー"] },
+      { name: "キョンシー", attributes: ["巨人の足跡", "ヴァンパイア", "時計の針", "死霊"] },
+      { name: "ファイターベア", attributes: ["祝福", "ヴァンパイア", "時計の針", "多種族"] },
+      { name: "ドュームスカル", attributes: ["闇のエネルギー", "援護射撃", "死霊", "ミステリー"] },
+      { name: "キャノンロボット", attributes: ["勇猛", "援護射撃", "レインボー・ロボティクス"] },
+      { name: "ミサイルマニア", attributes: ["衛生兵", "援護射撃", "レインボー・ロボティクス", "連射"] },
+      { name: "狂ったペンギン", attributes: ["意志", "レインボー・ロボティクス", "連射", "鳥系"] },
+      { name: "フレイムヒドラ", attributes: ["触手", "連射", "ミステリー"] },
+      { name: "予測不能キツツキ", attributes: ["時計の針", "ミステリー", "鳥系"] },
+      { name: "マルハナバチ", attributes: ["豊富なオーク樽", "多種族", "連射", "天使の羽"] },
+      { name: "おバカな鶏", attributes: ["天使の羽", "鳥系"] },
+      { name: "古代ルーン傭兵", attributes: [] }
+    ];
+
+    const sub2Master = [
+      { materials: ["オーク", "オーク", "オーク"], result: "太陽の審判者" },
+      { materials: ["ナイト", "オーク", "ゴブリン"], result: "孤独のウェアウルフ" },
+      { materials: ["ゴブリン", "ゴブリン", "ゴブリン"], result: "ベビーリザード" },
+      { materials: ["ゴブリン", "ファイアスピリット", "オーク"], result: "ウサギの墓荒らし" },
+      { materials: ["ナイト", "ナイト", "ナイト"], result: "三角頭の処刑者" },
+      { materials: ["アーチャー", "アーチャー", "アーチャー"], result: "ハンター" },
+      { materials: ["スライム", "スライム", "スライム"], result: "ハンマーナイト" },
+      { materials: ["ゴブリン", "ゴブリン", "スケルトンソルジャー"], result: "呪われしウォーロック" },
+      { materials: ["スライム", "アイススピリット", "アイススピリット"], result: "ヴォイド" },
+      { materials: ["モアイ像", "モアイ像", "ナイト"], result: "プリースト" },
+      { materials: ["パラディン", "パラディン", "突撃カブトムシ"], result: "アイアンクラッドチャージャー" },
+      { materials: ["ビーンズブラウト", "ビーンズブラウト", "ビーンズブラウト"], result: "おバカツリー" },
+      { materials: ["スライム", "スライム", "アーチャー"], result: "大砲を持った豚" },
+      { materials: ["モアイ像", "モアイ像", "モアイ像"], result: "スプラウトロックゴーレム" },
+      { materials: ["ナイト", "飼いならされたピラニア", "飼いならされたピラニア"], result: "カニファイター" },
+      { materials: ["カビ", "カビ", "スピアナイト"], result: "トゲ付きアイアンクラッドドワーフ" },
+      { materials: ["鬼火", "鬼火", "鬼火"], result: "小さくても最強のミイラ" },
+      { materials: ["ゴースト", "ゴースト", "ゴースト"], result: "ネコゴースト" },
+      { materials: ["ゴースト", "スケルトンソルジャー", "スケルトンソルジャー"], result: "キョンシー" },
+      { materials: ["飼いならされたピラニア", "飼いならされたピラニア", "飼いならされたピラニア"], result: "ファイターベア" },
+      { materials: ["スケルトンソルジャー", "スケルトンソルジャー", "スケルトンソルジャー"], result: "ドュームスカル" },
+      { materials: ["爆弾マシン", "爆弾マシン", "爆弾マシン"], result: "キャノンロボット" },
+      { materials: ["エレクトリックロボット", "爆弾マシン", "爆弾マシン"], result: "ミサイルマニア" },
+      { materials: ["アーチャー", "爆弾マシン", "爆弾マシン"], result: "狂ったペンギン" },
+      { materials: ["ビーンズブラウト", "ビーンズブラウト", "鬼火"], result: "フレイムヒドラ" },
+      { materials: ["突撃カブトムシ", "突撃カブトムシ", "突撃カブトムシ"], result: "予測不能キツツキ" },
+      { materials: ["塵を生む羊", "塵を生む羊", "スピアナイト"], result: "マルハナバチ" },
+      { materials: ["スピアナイト", "スピアナイト", "スピアナイト"], result: "おバカな鶏" },
+      { materials: ["三角イカ", "鬼火", "ゴースト", "モアイ像"], result: "古代ルーン傭兵" }
+    ];
+
+    const sub4Master = [
+      { name: "勇猛", effect: "全傭兵の攻撃力+150%/+300%" },
+      { name: "意志", effect: "英雄の攻撃力+100%/+200%" },
+      { name: "ライフリンク", effect: "傭兵の復活時間が20％/40%短縮されます" },
+      { name: "触手", effect: "英雄の攻撃対象数+1/+2" },
+      { name: "豊富なオーク樽", effect: "マップに生成されるオーク樽の数が1/2個増加します。" },
+      { name: "衛生兵", effect: "3秒ごとにヒーロー周囲の全傭兵がHPを5%/10%回復します。シナジー2段階時、範囲内に傭兵がいない場合はヒーローがHPを2%回復します。" },
+      { name: "巨人の足跡", effect: "9/6秒ごとに、英雄周囲の敵が2秒間スタンします。" },
+      { name: "祝福", effect: "モンスター討伐時、経験値ドロップ率が2%/4%増加します。" },
+      { name: "闇のエネルギー", effect: "10/7秒ごとに英雄の周囲にブラックホールが生成され、通常モンスターを引き寄せます。ブラックホールの影響を受けた敵は、すべての追加ダメージを50%多く受けます。" },
+      { name: "援護射撃", effect: "遠距離傭兵の射程+1/2、遠距離ユニットの会心率+3%/15%" },
+      { name: "ヴァンパイア", effect: "このシナジーを持つ傭兵は、モンスター討伐時に最大HPの4%/8%を回復します。" },
+      { name: "活力ポーション", effect: "ポーションのドロップ率が1%/2%増加します。" },
+      { name: "援軍", effect: "ウェーブ切替時、50%/75%の確率でランダムなレア傭兵1体を獲得します。" },
+      { name: "突撃部隊", effect: "近接傭兵のHP+100%/250%、近接ユニットの会心率+10%/20%" },
+      { name: "時計の針", effect: "英雄を中心に機械の針が生成され、接触した敵に300%/450%のダメージを与え、5%/10%の確率で2秒スタンさせます。" },
+      { name: "死霊", effect: "英雄の攻撃力の200%/400%のダメージを与える魂の投射体を+・ｘ方向に8発放ち、モンスターを倒すと英雄のHPを0.1%/0.5%回復します。" },
+      { name: "レインボー・ロボティクス", effect: "傭兵を合成するたびに、全傭兵の攻撃速度が10秒間50/150%上昇します（重複不可）" },
+      { name: "多種族", effect: "召喚された傭兵の種類ごとに全傭兵攻撃力+15/35%" },
+      { name: "連射", effect: "このシナジー傭兵の弾数+1/2" },
+      { name: "ミステリー", effect: "傭兵選択画面に3/7%でミステリー傭兵出現。3体合成でランダム伝説傭兵召喚" },
+      { name: "天使の羽", effect: "召喚・復活した傭兵は4/8秒間無敵" },
+      { name: "鳥系", effect: "マップにかかしが4体出現。鳥系傭兵がモンスターを倒すたびに全傭兵攻撃力が+3/5%(最大300/600%)鳥系がかかしを破壊時、1秒スタンし攻撃バフ-5%" }
+    ];
+
+    const tbody = document.getElementById('character-table');
+
+    // --- 画面初期化 ---
+    window.onload = () => {
+      // 初期状態で3行追加
+      for (let i = 0; i < 6; i++) {
+        addRow();
+      }
+    };
+
+    // --- テーブル行の追加 ---
+    function addRow() {
+      const rowCount = tbody.children.length + 1;
+      const tr = document.createElement('tr');
+      
+      // キャラ選択用のドロップダウン生成
+      let optionsHtml = '<option value="">-- 選択してください --</option>';
+      sub1Master.forEach(char => {
+        optionsHtml += `<option value="${char.name}">${char.name}</option>`;
+      });
+
+      tr.innerHTML = `
+        <td>${rowCount}</td>
+        <td><select class="char-select" onchange="calculate()">${optionsHtml}</select></td>
+      `;
+      tbody.appendChild(tr);
+      renumberRows();
+    }
+
+    // --- テーブル行の削除 ---
+    function removeRow(btn) {
+//      btn.closest('tr').remove();
+//      renumberRows();
+//      calculate();
+    }
+
+    // --- 行番号の再振り直し ---
+    function renumberRows() {
+      Array.from(tbody.children).forEach((tr, index) => {
+        tr.children[0].innerText = index + 1;
+      });
+    }
+
+// --- 自動計算ロジック（コア処理） ---
+    function calculate() {
+      // 1. 選択されたキャラのリストを取得（空欄除外）
+      const selects = document.querySelectorAll('.char-select');
+      const selectedChars = Array.from(selects)
+        .map(s => s.value)
+        .filter(val => val !== "");
+
+      // 2. 作成可能な合成先（伝説キャラ）の判定 (Sub2)
+      const selectedSet = new Set(selectedChars);
+      const availableCrafts = [];
+
+      sub2Master.forEach(recipe => {
+        // レシピに必要な素材がすべて揃っているか判定
+        const canCraft = recipe.materials.every(mat => selectedSet.has(mat));
+        if (canCraft) {
+          availableCrafts.push(recipe);
+        }
+      });
+
+      // 3. シナジー計算対象キャラクターの決定
+      // チェックボックスがONなら「直接選択したキャラ」＋「作成可能な伝説キャラ」を対象にする
+      const includeLegendary = document.getElementById('include-legendary').checked;
+      
+      let targetCharNames = [...selectedChars];
+      if (includeLegendary) {
+        // 作成可能な伝説キャラの名前を追加
+        const legendaryNames = availableCrafts.map(c => c.result);
+        targetCharNames = targetCharNames.concat(legendaryNames);
+      }
+
+      // 4. シナジーの集計
+      const synergyCounts = {};
+      targetCharNames.forEach(charName => {
+        const charData = sub1Master.find(c => c.name === charName);
+        if (charData && charData.attributes) {
+          charData.attributes.forEach(attr => {
+            synergyCounts[attr] = (synergyCounts[attr] || 0) + 1;
+          });
+        }
+      });
+
+      // 5. 発動シナジーの描画
+      const synergyContainer = document.getElementById('synergy-results');
+      const activeSynergies = Object.keys(synergyCounts);
+
+      if (activeSynergies.length === 0) {
+        synergyContainer.innerHTML = '<p style="color: #888;">キャラクターを選択してください。</p>';
+      } else {
+        let html = '';
+        activeSynergies.forEach(synName => {
+          const count = synergyCounts[synName];
+          const synData = sub4Master.find(s => s.name === synName);
+          const effectText = synData ? synData.effect : "効果テキストなし";
+
+          html += `
+            <div class="card">
+              <div class="card-title">
+                ${synName}
+                <span class="badge">${count}体</span>
+              </div>
+              <div class="card-desc">${effectText}</div>
+            </div>
+          `;
+        });
+        synergyContainer.innerHTML = html;
+      }
+
+      // 6. 合成可能結果の描画
+      const synthesisContainer = document.getElementById('synthesis-results');
+      if (availableCrafts.length === 0) {
+        synthesisContainer.innerHTML = '<p style="color: #888;">作成可能な合成レシピはありません。</p>';
+      } else {
+        let craftHtml = '';
+        availableCrafts.forEach(craft => {
+          craftHtml += `
+            <div class="card" style="border-left-color: #28a745;">
+              <div class="card-title">完成：${craft.result}</div>
+              <div class="materials-list">必要素材: ${craft.materials.join(' + ')}</div>
+            </div>
+          `;
+        });
+        synthesisContainer.innerHTML = craftHtml;
+      }
+    }
+  </script>
+</body>
+</html>
