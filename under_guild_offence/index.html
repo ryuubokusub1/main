@@ -2,101 +2,326 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>傭兵シナジー＆合成計算ツール</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>傭兵シナジー＆合成計算ツール | Fluent Design</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons for fluent icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Custom Fluent Design styling -->
   <style>
-    body { font-family: sans-serif; margin: 20px; background-color: #f9f9f9; color: #333; }
-    h2, h3 { border-bottom: 2px solid #0056b3; padding-bottom: 5px; color: #0056b3; }
-    .container { display: flex; gap: 20px; flex-wrap: wrap; }
-    .panel { flex: 1; min-width: 320px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    
-    /* テーブル装飾 */
-    table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 14px; }
-    th { background-color: #e9ecef; }
-    select { width: 100%; padding: 6px; box-sizing: border-box; }
-    
-    /* ボタン装飾 */
-    .btn { padding: 6px 12px; background: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    .btn:hover { background: #003d80; }
-    .btn-del { background: #dc3545; padding: 4px 8px; font-size: 12px; }
-    .btn-del:hover { background: #bd2130; }
+    @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;600;700&display=swap');
 
-    /* 結果カード */
-    .card { background: #f1f3f5; border-left: 4px solid #0056b3; padding: 10px; margin-bottom: 8px; border-radius: 0 4px 4px 0; }
-    .card-title { font-weight: bold; font-size: 15px; margin-bottom: 4px; }
-    .card-desc { font-size: 13px; color: #555; }
-    .badge { display: inline-block; background: #28a745; color: white; border-radius: 10px; padding: 2px 8px; font-size: 11px; margin-left: 6px; }
-    .materials-list { font-size: 12px; color: #666; margin-top: 4px; }
+    :root {
+      --fluent-primary: #0078d4;
+      --fluent-primary-hover: #005a9e;
+      --fluent-primary-active: #004578;
+      --fluent-bg-subtle: #f3f3f3;
+      --fluent-card-bg: rgba(255, 255, 255, 0.75);
+      --fluent-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+      --fluent-text-main: #1c1c1c;
+      --fluent-text-secondary: #5d5d5d;
+      --fluent-border: rgba(0, 0, 0, 0.08);
+      --fluent-border-strong: rgba(0, 0, 0, 0.14);
+    }
+
+    body {
+      font-family: 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      background: linear-gradient(135deg, #eef2f8 0%, #e6edf5 50%, #f4f7fa 100%);
+      background-attachment: fixed;
+      color: var(--fluent-text-main);
+      min-height: 100vh;
+    }
+
+    .fluent-acrylic {
+      background: var(--fluent-card-bg);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--fluent-border);
+      box-shadow: var(--fluent-shadow);
+      border-radius: 12px;
+      transition: all 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
+    }
+
+    .fluent-card {
+      background: #ffffff;
+      border: 1px solid var(--fluent-border);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .fluent-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+      border-color: var(--fluent-border-strong);
+    }
+
+    .btn-fluent-primary {
+      background-color: var(--fluent-primary);
+      color: #ffffff;
+      font-weight: 600;
+      border-radius: 6px;
+      padding: 0.5rem 1.25rem;
+      transition: all 0.15s ease-in-out;
+      border: 1px solid transparent;
+      box-shadow: 0 2px 4px rgba(0, 120, 212, 0.2);
+    }
+    .btn-fluent-primary:hover {
+      background-color: var(--fluent-primary-hover);
+      box-shadow: 0 4px 8px rgba(0, 120, 212, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-fluent-secondary {
+      background-color: #fcfcfc;
+      color: var(--fluent-text-main);
+      border: 1px solid var(--fluent-border-strong);
+      font-weight: 500;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      transition: all 0.15s ease-in-out;
+    }
+    .btn-fluent-secondary:hover {
+      background-color: #f3f3f3;
+      border-color: #b0b0b0;
+    }
+
+    .btn-fluent-success {
+      background-color: #107c41;
+      color: #ffffff;
+      font-weight: 600;
+      border-radius: 6px;
+      padding: 0.6rem 1.25rem;
+      transition: all 0.15s ease-in-out;
+      box-shadow: 0 2px 4px rgba(16, 124, 65, 0.2);
+    }
+    .btn-fluent-success:hover {
+      background-color: #0e6e39;
+      box-shadow: 0 4px 8px rgba(16, 124, 65, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .fluent-input, .fluent-select {
+      background-color: #ffffff;
+      border: 1px solid var(--fluent-border-strong);
+      border-bottom: 2px solid #8a8a8a;
+      border-radius: 4px;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.875rem;
+      color: var(--fluent-text-main);
+      transition: all 0.15s ease;
+      outline: none;
+    }
+    .fluent-input:focus, .fluent-select:focus {
+      border-bottom-color: var(--fluent-primary);
+      background-color: #ffffff;
+      box-shadow: 0 2px 4px rgba(0, 120, 212, 0.1);
+    }
+
+    .fluent-checkbox {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid #606060;
+      border-radius: 4px;
+      background-color: #fff;
+      display: inline-grid;
+      place-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .fluent-checkbox::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      transform: scale(0);
+      transition: 120ms transform ease-in-out;
+      box-shadow: inset 1em 1em #fff;
+      transform-origin: center;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+    .fluent-checkbox:checked {
+      background-color: var(--fluent-primary);
+      border-color: var(--fluent-primary);
+    }
+    .fluent-checkbox:checked::before {
+      transform: scale(1);
+    }
+
+    .fluent-badge-accent {
+      background-color: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid rgba(3, 105, 161, 0.2);
+      padding: 0.15rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.02);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.18);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(0,0,0,0.3);
+    }
   </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
 
-  <h2>傭兵計算システム</h2>
+  <div class="max-w-7xl mx-auto space-y-6">
 
-  <div class="container">
-    <!-- 左パネル：所持キャラ入力 -->
-    <div class="panel">
-      <h3>所持キャラクター選択</h3>
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 50px;">No</th>
-            <th>キャラクター名</th>
+    <!-- Header Bar -->
+    <header class="fluent-acrylic p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-sky-600 text-white flex items-center justify-center shadow-md">
+          <i class="ph ph-sword text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-slate-800">傭兵計算システム</h1>
+          <p class="text-xs text-slate-500">Mercenary Synergy & Synthesis Calculator</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 text-xs font-medium text-slate-500 bg-white/60 px-3 py-1.5 rounded-full border border-black/5">
+        <i class="ph ph-sparkle text-sky-600"></i>
+        <span>Fluent Design System</span>
+      </div>
+    </header>
 
-          </tr>
-        </thead>
-        <tbody id="character-table">
-          <!-- JSで動的に追加されます -->
-        </tbody>
-      </table>
-      <!--
-      <button class="btn" onclick="addRow()">+ キャラクターを追加</button>
-      -->
+    <!-- Main Dynamic Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left Column: Dynamic Character Slots -->
+      <section class="lg:col-span-5 fluent-acrylic p-6 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between pb-4 mb-4 border-b border-black/5">
+            <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <i class="ph ph-users-three text-sky-600"></i> 所持キャラクター選択
+            </h2>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-500 font-semibold">編成人数:</span>
+              <select id="party-size-select" class="fluent-select py-1 px-2 text-xs font-bold text-sky-700" onchange="updatePartySize()">
+                <option value="6" selected>6体編成</option>
+                <option value="7">7体編成</option>
+                <option value="8">8体編成</option>
+                <option value="9">9体編成</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Character Slots Container -->
+          <div class="space-y-3">
+            <div class="grid grid-cols-12 text-xs font-semibold text-slate-500 px-2 pb-1">
+              <span class="col-span-2 text-center">枠番</span>
+              <span class="col-span-10">キャラクター名</span>
+            </div>
+
+            <div id="character-slots-container" class="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+              <!-- JS dynamically generates character slots -->
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-black/5 bg-white/50 p-3 rounded-lg border border-black/5">
+          <label class="flex items-center gap-3 cursor-pointer user-select-none">
+            <input type="checkbox" id="include-legendary" class="fluent-checkbox" onchange="calculate()" checked>
+            <span class="text-sm font-medium text-slate-700">伝説キャラクターをシナジー計算に自動合成含める</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Right Column: Results & Active Synergies / Synthesis -->
+      <section class="lg:col-span-7 space-y-6">
+
+        <!-- Active Synergies -->
+        <div class="fluent-acrylic p-6">
+          <div class="flex items-center justify-between pb-3 mb-4 border-b border-black/5">
+            <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <i class="ph ph-lightning text-amber-500"></i> 発動シナジー一覧
+            </h2>
+          </div>
+          <div id="synergy-results" class="grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[100px] max-h-[300px] overflow-y-auto pr-1">
+            <p class="col-span-full text-slate-400 text-sm flex items-center gap-2 py-6 justify-center">
+              <i class="ph ph-info text-lg"></i> キャラクターを選択してください。
+            </p>
+          </div>
+        </div>
+
+        <!-- Craftable Synthesis Recipes -->
+        <div class="fluent-acrylic p-6">
+          <div class="flex items-center justify-between pb-3 mb-4 border-b border-black/5">
+            <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <i class="ph ph-brackets-curly text-emerald-600"></i> 作成可能な合成キャラ
+            </h2>
+          </div>
+          <div id="synthesis-results" class="space-y-2.5 min-h-[80px] max-h-[200px] overflow-y-auto pr-1">
+            <p class="text-slate-400 text-sm flex items-center gap-2 py-4 justify-center">
+              <i class="ph ph-ghost text-lg"></i> 作成可能な合成レシピはありません。
+            </p>
+          </div>
+        </div>
+
+      </section>
     </div>
 
-<!-- 右パネル：自動計算結果 -->
-    <div class="panel">
-      <h3>発動シナジー一覧</h3>
-      
-      <!-- ★ここにチェックボックスを追加 -->
-      <div style="margin-bottom: 12px; font-size: 14px;">
-        <label style="cursor: pointer; user-select: none;">
-          <input type="checkbox" id="include-legendary" onchange="calculate()" checked>
-          伝説キャラクターをシナジー計算に含める
-        </label>
+    <!-- Bottom Panel: Dynamic Synergy Target Search -->
+    <section class="fluent-acrylic p-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-black/5 gap-2">
+        <div>
+          <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+            <i class="ph ph-magnifying-glass-plus text-sky-600"></i>
+            <span id="target-search-heading">目標シナジー検索（6体編成）</span>
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">指定した編成人数（6〜9体）で特定のシナジーを発動できる最適な組み合わせを高速検索します。</p>
+        </div>
       </div>
 
-      <div id="synergy-results">
-        <p style="color: #888;">キャラクターを選択してください。</p>
+      <!-- Add Target Control Row -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4 items-center">
+        <div class="md:col-span-7">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">対象シナジー</label>
+          <select id="target-synergy-select" class="fluent-select w-full"></select>
+        </div>
+        <div class="md:col-span-3">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">必要発動数</label>
+          <div class="flex items-center gap-2">
+            <input type="number" id="target-synergy-count" value="1" min="1" max="9" class="fluent-input w-full text-center font-bold">
+            <span class="text-xs text-slate-500 font-medium whitespace-nowrap">体以上</span>
+          </div>
+        </div>
+        <div class="md:col-span-2 flex items-end">
+          <button class="btn-fluent-secondary w-full flex items-center justify-center gap-1.5" onclick="addTargetSynergy()">
+            <i class="ph ph-plus-circle text-base"></i> 追加
+          </button>
+        </div>
       </div>
 
-      <h3>作成可能な合成キャラ</h3>
-      <div id="synthesis-results">
-        <p style="color: #888;">作成可能な合成レシピはありません。</p>
+      <!-- Targets Chips Container -->
+      <div class="mb-5 bg-white/40 p-3 rounded-lg border border-black/5 min-h-[50px] flex items-center">
+        <div id="target-synergies-list" class="flex flex-wrap gap-2 w-full"></div>
       </div>
-    </div>
+
+      <!-- Search Trigger Button -->
+      <button class="btn-fluent-success w-full flex items-center justify-center gap-2 text-base py-3" onclick="searchCombinations()">
+        <i class="ph ph-magnifying-glass font-bold text-lg"></i>
+        <span id="search-btn-label">条件を満たす組み合わせを検索</span>
+      </button>
+
+      <!-- Search Results Container -->
+      <div id="search-results" class="mt-5 space-y-2"></div>
+    </section>
+
   </div>
-<!-- 目標シナジー検索パネル -->
-      <h3>目標シナジー検索（6体編成）</h3>
-      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-        <select id="target-synergy-select" style="flex: 2;">
-          <!-- JSでシナジー一覧を挿入 -->
-        </select>
-        <input type="number" id="target-synergy-count" value="1" min="1" max="6" style="width: 50px;">
-        <button class="btn" onclick="addTargetSynergy()">追加</button>
-      </div>
-
-      <!-- 設定した目標一覧 -->
-      <div id="target-synergies-list" style="margin-bottom: 12px;"></div>
-
-      <button class="btn" onclick="searchCombinations()" style="width: 100%; background: #28a745;">条件を満たす組み合わせを検索</button>
-
-      <!-- 検索結果表示領域 -->
-      <div id="search-results" style="margin-top: 12px;"></div>
-
 
   <script>
-    // --- マスタデータ定義 ---
+    // --- Master Data ---
     const sub1Master = [
       { name: "ナイト", attributes: ["勇猛", "多種族"] },
       { name: "ゴブリン", attributes: ["意志", "レインボー・ロボティクス"] },
@@ -105,7 +330,7 @@
       { name: "ファイアスピリット", attributes: ["意志", "豊富なオーク樽", "闇のエネルギー", "連射"] },
       { name: "オーク", attributes: ["突撃部隊", "死霊", "多種族"] },
       { name: "スピアナイト", attributes: ["巨人の足跡", "突撃部隊"] },
-      { name: "スケルトンソルジャー", attributes: ["衛生兵"] },
+      { name: "スケルトンソルジャー", attributes: ["衛生兵", "死霊"] },
       { name: "アイススピリット", attributes: ["意志", "ライフリンク", "祝福", "時計の針"] },
       { name: "ゴースト", attributes: ["触手", "天使の羽"] },
       { name: "ビーンズブラウト", attributes: ["活力ポーション", "連射"] },
@@ -207,81 +432,95 @@
       { name: "鳥系", effect: "マップにかかしが4体出現。鳥系傭兵がモンスターを倒すたびに全傭兵攻撃力が+3/5%(最大300/600%)鳥系がかかしを破壊時、1秒スタンし攻撃バフ-5%" }
     ];
 
-    const tbody = document.getElementById('character-table');
+    let currentPartySize = 6;
+    let targetSynergies = [];
 
-    // --- 画面初期化 ---
     window.onload = () => {
-      // 初期状態で3行追加
-      for (let i = 0; i < 6; i++) {
-        addRow();
-      }
+      updatePartySlots(6);
+
+      const select = document.getElementById('target-synergy-select');
+      sub4Master.forEach(syn => {
+        const opt = document.createElement('option');
+        opt.value = syn.name;
+        opt.innerText = syn.name;
+        select.appendChild(opt);
+      });
+      renderTargetSynergies();
     };
 
-    // --- テーブル行の追加 ---
-    function addRow() {
-      const rowCount = tbody.children.length + 1;
-      const tr = document.createElement('tr');
+    function updatePartySize() {
+      const size = parseInt(document.getElementById('party-size-select').value, 10);
+      currentPartySize = size;
       
-      // キャラ選択用のドロップダウン生成
-      let optionsHtml = '<option value="">-- 選択してください --</option>';
+      document.getElementById('target-search-heading').innerText = `目標シナジー検索（${size}体編成）`;
+      document.getElementById('target-synergy-count').max = size;
+      if (parseInt(document.getElementById('target-synergy-count').value, 10) > size) {
+        document.getElementById('target-synergy-count').value = size;
+      }
+
+      updatePartySlots(size);
+      calculate();
+    }
+
+    function updatePartySlots(size) {
+      const container = document.getElementById('character-slots-container');
+      const existingValues = Array.from(document.querySelectorAll('.char-select')).map(s => s.value);
+      
+      container.innerHTML = '';
+
+      let optionsHtml = '<option value="">-- 未選択 --</option>';
       sub1Master.forEach(char => {
         optionsHtml += `<option value="${char.name}">${char.name}</option>`;
       });
 
-      tr.innerHTML = `
-        <td>${rowCount}</td>
-        <td><select class="char-select" onchange="calculate()">${optionsHtml}</select></td>
-      `;
-      tbody.appendChild(tr);
-      renumberRows();
+      for (let i = 0; i < size; i++) {
+        const div = document.createElement('div');
+        div.className = 'grid grid-cols-12 gap-2 items-center';
+
+        const val = existingValues[i] || '';
+
+        div.innerHTML = `
+          <div class="col-span-2 text-center text-xs font-bold text-slate-400 bg-black/5 py-2 rounded">
+            #${i + 1}
+          </div>
+          <div class="col-span-10">
+            <select class="char-select fluent-select w-full" onchange="calculate()">
+              ${optionsHtml}
+            </select>
+          </div>
+        `;
+        container.appendChild(div);
+
+        if (val) {
+          container.children[i].querySelector('select').value = val;
+        }
+      }
     }
 
-    // --- テーブル行の削除 ---
-    function removeRow(btn) {
-//      btn.closest('tr').remove();
-//      renumberRows();
-//      calculate();
-    }
-
-    // --- 行番号の再振り直し ---
-    function renumberRows() {
-      Array.from(tbody.children).forEach((tr, index) => {
-        tr.children[0].innerText = index + 1;
-      });
-    }
-
-// --- 自動計算ロジック（コア処理） ---
     function calculate() {
-      // 1. 選択されたキャラのリストを取得（空欄除外）
       const selects = document.querySelectorAll('.char-select');
       const selectedChars = Array.from(selects)
         .map(s => s.value)
         .filter(val => val !== "");
 
-      // 2. 作成可能な合成先（伝説キャラ）の判定 (Sub2)
       const selectedSet = new Set(selectedChars);
       const availableCrafts = [];
 
       sub2Master.forEach(recipe => {
-        // レシピに必要な素材がすべて揃っているか判定
         const canCraft = recipe.materials.every(mat => selectedSet.has(mat));
         if (canCraft) {
           availableCrafts.push(recipe);
         }
       });
 
-      // 3. シナジー計算対象キャラクターの決定
-      // チェックボックスがONなら「直接選択したキャラ」＋「作成可能な伝説キャラ」を対象にする
       const includeLegendary = document.getElementById('include-legendary').checked;
-      
       let targetCharNames = [...selectedChars];
+
       if (includeLegendary) {
-        // 作成可能な伝説キャラの名前を追加
         const legendaryNames = availableCrafts.map(c => c.result);
         targetCharNames = targetCharNames.concat(legendaryNames);
       }
 
-      // 4. シナジーの集計
       const synergyCounts = {};
       targetCharNames.forEach(charName => {
         const charData = sub1Master.find(c => c.name === charName);
@@ -292,12 +531,14 @@
         }
       });
 
-      // 5. 発動シナジーの描画
       const synergyContainer = document.getElementById('synergy-results');
       const activeSynergies = Object.keys(synergyCounts);
 
       if (activeSynergies.length === 0) {
-        synergyContainer.innerHTML = '<p style="color: #888;">キャラクターを選択してください。</p>';
+        synergyContainer.innerHTML = `
+          <p class="col-span-full text-slate-400 text-sm flex items-center gap-2 py-6 justify-center">
+            <i class="ph ph-info text-lg"></i> キャラクターを選択してください。
+          </p>`;
       } else {
         let html = '';
         activeSynergies.forEach(synName => {
@@ -306,57 +547,55 @@
           const effectText = synData ? synData.effect : "効果テキストなし";
 
           html += `
-            <div class="card">
-              <div class="card-title">
-                ${synName}
-                <span class="badge">${count}体</span>
+            <div class="fluent-card p-3.5 flex flex-col justify-between border-l-4 border-l-sky-500">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="font-bold text-sm text-slate-800">${synName}</span>
+                <span class="fluent-badge-accent font-semibold">${count}体発動</span>
               </div>
-              <div class="card-desc">${effectText}</div>
+              <p class="text-xs text-slate-600 leading-relaxed">${effectText}</p>
             </div>
           `;
         });
         synergyContainer.innerHTML = html;
       }
 
-      // 6. 合成可能結果の描画
       const synthesisContainer = document.getElementById('synthesis-results');
       if (availableCrafts.length === 0) {
-        synthesisContainer.innerHTML = '<p style="color: #888;">作成可能な合成レシピはありません。</p>';
+        synthesisContainer.innerHTML = `
+          <p class="text-slate-400 text-sm flex items-center gap-2 py-4 justify-center">
+            <i class="ph ph-ghost text-lg"></i> 作成可能な合成レシピはありません。
+          </p>`;
       } else {
         let craftHtml = '';
         availableCrafts.forEach(craft => {
           craftHtml += `
-            <div class="card" style="border-left-color: #28a745;">
-              <div class="card-title">完成：${craft.result}</div>
-              <div class="materials-list">必要素材: ${craft.materials.join(' + ')}</div>
+            <div class="fluent-card p-3 flex items-center justify-between border-l-4 border-l-emerald-500 bg-emerald-50/20">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
+                  <i class="ph ph-sparkle text-sm"></i>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-400">完成ユニット</div>
+                  <div class="font-bold text-sm text-slate-800">${craft.result}</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-[10px] text-slate-400">必要素材</div>
+                <div class="text-xs font-semibold text-slate-600">${craft.materials.join(' + ')}</div>
+              </div>
             </div>
           `;
         });
         synthesisContainer.innerHTML = craftHtml;
       }
     }
-    // 目標シナジーのリスト保存用
-    let targetSynergies = [];
 
-    // 初期化時にドロップダウンへシナジー一覧をセット
-    window.addEventListener('DOMContentLoaded', () => {
-      const select = document.getElementById('target-synergy-select');
-      sub4Master.forEach(syn => {
-        const opt = document.createElement('option');
-        opt.value = syn.name;
-        opt.innerText = syn.name;
-        select.appendChild(opt);
-      });
-    });
-
-    // 目標シナジーの追加
     function addTargetSynergy() {
       const name = document.getElementById('target-synergy-select').value;
       const count = parseInt(document.getElementById('target-synergy-count').value, 10);
-      
+
       if (!name || isNaN(count)) return;
 
-      // 重複チェック
       const existing = targetSynergies.find(t => t.name === name);
       if (existing) {
         existing.count = count;
@@ -366,95 +605,152 @@
       renderTargetSynergies();
     }
 
-    // 目標シナジーの削除
     function removeTargetSynergy(name) {
       targetSynergies = targetSynergies.filter(t => t.name !== name);
       renderTargetSynergies();
     }
 
-    // 目標シナジー描画
     function renderTargetSynergies() {
       const container = document.getElementById('target-synergies-list');
       if (targetSynergies.length === 0) {
-        container.innerHTML = '<p style="color:#888; font-size:12px;">目標条件が設定されていません</p>';
+        container.innerHTML = '<span class="text-xs text-slate-400 py-1">目標条件が設定されていません。上のメニューから追加してください。</span>';
         return;
       }
 
       let html = '';
       targetSynergies.forEach(t => {
         html += `
-          <span style="display:inline-block; background:#e9ecef; padding:4px 8px; border-radius:4px; font-size:13px; margin-right:4px; margin-bottom:4px;">
-            ${t.name} : ${t.count}以上 
-            <b style="color:red; cursor:pointer; margin-left:4px;" onclick="removeTargetSynergy('${t.name}')">×</b>
-          </span>
+          <div class="inline-flex items-center gap-1.5 bg-sky-50 text-sky-800 border border-sky-200 text-xs px-3 py-1.5 rounded-full font-medium">
+            <span>${t.name}</span>
+            <span class="bg-sky-200 text-sky-900 text-[10px] px-1.5 py-0.5 rounded-full font-bold">${t.count}以上</span>
+            <button onclick="removeTargetSynergy('${t.name}')" class="hover:text-red-600 transition-colors ml-1">
+              <i class="ph ph-x-circle-fill text-sm"></i>
+            </button>
+          </div>
         `;
       });
       container.innerHTML = html;
     }
 
-    // 組み合わせ検索処理 (コアロジック)
     function searchCombinations() {
       const resultsContainer = document.getElementById('search-results');
       if (targetSynergies.length === 0) {
-        resultsContainer.innerHTML = '<p style="color:red;">目標シナジーを1つ以上追加してください。</p>';
+        resultsContainer.innerHTML = `
+          <div class="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-center gap-2">
+            <i class="ph ph-warning-circle text-base"></i> 目標シナジーを1つ以上追加してください。
+          </div>`;
         return;
       }
 
-      // 1. ノーマルキャラの抽出（合成結果に存在しないキャラ）
-      const legendarySet = new Set(sub2Master.map(r => r.result));
-      const normalChars = sub1Master.filter(c => !legendarySet.has(c.name));
+      resultsContainer.innerHTML = `
+        <div class="p-4 text-center text-slate-500 text-xs">
+          <i class="ph ph-spinner animate-spin text-lg text-sky-600 mb-1"></i>
+          <div>${currentPartySize}体構成の組合せを計算中...</div>
+        </div>`;
 
-      const includeLegendary = document.getElementById('include-legendary').checked;
-      const matchedCombinations = [];
+      setTimeout(() => {
+        const legendarySet = new Set(sub2Master.map(r => r.result));
+        const normalChars = sub1Master.filter(c => !legendarySet.has(c.name));
 
-      // 2. 6体の組み合わせを生成（再帰関数）
-      function combine(startIndex, currentCombo) {
-        if (currentCombo.length === 6) {
-          if (checkCondition(currentCombo, includeLegendary)) {
-            matchedCombinations.push([...currentCombo]);
-          }
-          return;
-        }
+        const includeLegendary = document.getElementById('include-legendary').checked;
+        const matchedCombinations = [];
 
-        for (let i = startIndex; i < normalChars.length; i++) {
-          currentCombo.push(normalChars[i]);
-          combine(i + 1, currentCombo); // 重複なしで選ぶ場合
-          currentCombo.pop();
-        }
-      }
-
-      combine(0, []);
-
-      // 3. 結果の描画
-      if (matchedCombinations.length === 0) {
-        resultsContainer.innerHTML = '<p style="color:#888;">条件を満たす6体の組み合わせは見つかりませんでした。</p>';
-      } else {
-        let html = `<p style="font-weight:bold; color:#28a745;">ヒット数: ${matchedCombinations.length} 件</p>`;
-        // 件数が多い場合は上位20件程度を表示
-        const displayList = matchedCombinations.slice(0, 20);
-        
-        displayList.forEach((combo, index) => {
-          const names = combo.map(c => c.name).join(', ');
-          html += `
-            <div class="card" style="font-size:13px;">
-              <b>パターン ${index + 1}:</b> ${names}
-            </div>
-          `;
+        // Pruning pre-calculated values
+        const maxCounts = {};
+        targetSynergies.forEach(t => {
+          maxCounts[t.name] = 0;
         });
 
-        if (matchedCombinations.length > 20) {
-          html += `<p style="font-size:12px; color:#666;">※結果が多いため上位20件を表示しています。</p>`;
+        // Calculate maximum contribution per character for requested targets
+        const charTargetAttrCounts = normalChars.map(char => {
+          const map = {};
+          targetSynergies.forEach(t => { map[t.name] = 0; });
+          char.attributes.forEach(attr => {
+            if (map[attr] !== undefined) map[attr]++;
+          });
+          return { char, map };
+        });
+
+        function combine(startIndex, currentCombo, currentCounts) {
+          const neededCount = currentPartySize - currentCombo.length;
+
+          // Branch pruning optimization
+          for (let k = 0; k < targetSynergies.length; k++) {
+            const target = targetSynergies[k];
+            const currentVal = currentCounts[target.name] || 0;
+            // Max potential assuming best remaining picks give at most +2 or +3
+            if (currentVal + (neededCount * 2) < target.count) {
+              return;
+            }
+          }
+
+          if (currentCombo.length === currentPartySize) {
+            if (checkCondition(currentCombo, includeLegendary)) {
+              matchedCombinations.push([...currentCombo]);
+            }
+            return;
+          }
+
+          for (let i = startIndex; i < normalChars.length; i++) {
+            const charObj = charTargetAttrCounts[i];
+            currentCombo.push(charObj.char);
+
+            const nextCounts = {};
+            targetSynergies.forEach(t => {
+              nextCounts[t.name] = (currentCounts[t.name] || 0) + charObj.map[t.name];
+            });
+
+            combine(i + 1, currentCombo, nextCounts);
+            currentCombo.pop();
+
+            // Cap search to 50 matches for fast response
+            if (matchedCombinations.length >= 50) return;
+          }
         }
-        resultsContainer.innerHTML = html;
-      }
+
+        const initialCounts = {};
+        targetSynergies.forEach(t => { initialCounts[t.name] = 0; });
+
+        combine(0, [], initialCounts);
+
+        if (matchedCombinations.length === 0) {
+          resultsContainer.innerHTML = `
+            <div class="p-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg flex items-center gap-2">
+              <i class="ph ph-ghost text-base"></i> 条件を満たす${currentPartySize}体の組み合わせは見つかりませんでした。
+            </div>`;
+        } else {
+          let html = `
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-emerald-700 flex items-center gap-1">
+                <i class="ph ph-check-circle text-sm"></i> 検索結果: ${matchedCombinations.length}件以上発見
+              </span>
+              <span class="text-[11px] text-slate-400">※上位20件表示 (${currentPartySize}体編成)</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[340px] overflow-y-auto pr-1">
+          `;
+
+          const displayList = matchedCombinations.slice(0, 20);
+
+          displayList.forEach((combo, index) => {
+            const names = combo.map(c => c.name).join(' ・ ');
+            html += `
+              <div class="fluent-card p-2.5 text-xs bg-white/80">
+                <span class="font-bold text-sky-700 mr-1">パターン ${index + 1}:</span>
+                <span class="text-slate-700">${names}</span>
+              </div>
+            `;
+          });
+
+          html += `</div>`;
+          resultsContainer.innerHTML = html;
+        }
+      }, 30);
     }
 
-    // 条件判定用関数
     function checkCondition(combo, includeLegendary) {
       const selectedSet = new Set(combo.map(c => c.name));
       let targetNames = combo.map(c => c.name);
 
-      // 伝説も含める場合は合成可能な伝説キャラを追加
       if (includeLegendary) {
         sub2Master.forEach(recipe => {
           if (recipe.materials.every(mat => selectedSet.has(mat))) {
@@ -463,7 +759,6 @@
         });
       }
 
-      // シナジー数の集計
       const counts = {};
       targetNames.forEach(charName => {
         const charData = sub1Master.find(c => c.name === charName);
@@ -474,7 +769,6 @@
         }
       });
 
-      // 設定した目標シナジーを全て満たしているかチェック
       return targetSynergies.every(target => {
         return (counts[target.name] || 0) >= target.count;
       });
